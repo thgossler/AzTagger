@@ -260,5 +260,31 @@ namespace AzTagger
             var filterExpression = string.Join(" or ", tagKeys.Select(key => $"(tags['{key}'] == null or tags['{key}'] == '')"));
             return filterExpression;
         }
+
+        private void findItemsWithAllTagsButton_Click(object sender, EventArgs e)
+        {
+            var filterExpression = BuildFilterExpressionForAllTags();
+            searchTextBox.Text = filterExpression;
+        }
+
+        private string BuildFilterExpressionForAllTags()
+        {
+            var tagConditions = new List<string>();
+            foreach (DataGridViewRow row in tagsDataGridView.Rows)
+            {
+                if (row.Cells["Key"].Value != null && row.Cells["Value"].Value != null)
+                {
+                    var key = row.Cells["Key"].Value.ToString();
+                    var value = row.Cells["Value"].Value.ToString();
+                    if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(value))
+                    {
+                        tagConditions.Add($"(tags['{key}'] == '{value}')");
+                    }
+                }
+            }
+
+            var filterExpression = string.Join(" and ", tagConditions);
+            return filterExpression;
+        }
     }
 }

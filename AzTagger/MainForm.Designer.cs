@@ -25,6 +25,7 @@ namespace AzTagger
             this.tagTemplatesComboBox = new System.Windows.Forms.ComboBox();
             this.recentSearchesComboBox = new System.Windows.Forms.ComboBox();
             this.findItemsWithoutTagsButton = new System.Windows.Forms.Button();
+            this.findItemsWithAllTagsButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.resultsDataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tagsDataGridView)).BeginInit();
             this.SuspendLayout();
@@ -116,9 +117,20 @@ namespace AzTagger
             this.findItemsWithoutTagsButton.UseVisualStyleBackColor = true;
             this.findItemsWithoutTagsButton.Click += new System.EventHandler(this.findItemsWithoutTagsButton_Click);
             // 
+            // findItemsWithAllTagsButton
+            // 
+            this.findItemsWithAllTagsButton.Location = new System.Drawing.Point(424, 371);
+            this.findItemsWithAllTagsButton.Name = "findItemsWithAllTagsButton";
+            this.findItemsWithAllTagsButton.Size = new System.Drawing.Size(200, 23);
+            this.findItemsWithAllTagsButton.TabIndex = 10;
+            this.findItemsWithAllTagsButton.Text = "Find items with all these tags";
+            this.findItemsWithAllTagsButton.UseVisualStyleBackColor = true;
+            this.findItemsWithAllTagsButton.Click += new System.EventHandler(this.findItemsWithAllTagsButton_Click);
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(784, 561);
+            this.Controls.Add(this.findItemsWithAllTagsButton);
             this.Controls.Add(this.findItemsWithoutTagsButton);
             this.Controls.Add(this.recentSearchesComboBox);
             this.Controls.Add(this.tagTemplatesComboBox);
@@ -148,5 +160,6 @@ namespace AzTagger
         private System.Windows.Forms.ComboBox tagTemplatesComboBox;
         private System.Windows.Forms.ComboBox recentSearchesComboBox;
         private System.Windows.Forms.Button findItemsWithoutTagsButton;
+        private System.Windows.Forms.Button findItemsWithAllTagsButton;
     }
 }
