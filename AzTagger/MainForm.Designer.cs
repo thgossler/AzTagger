@@ -24,6 +24,7 @@ namespace AzTagger
             this.tagsDataGridView = new System.Windows.Forms.DataGridView();
             this.tagTemplatesComboBox = new System.Windows.Forms.ComboBox();
             this.recentSearchesComboBox = new System.Windows.Forms.ComboBox();
+            this.findItemsWithoutTagsButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.resultsDataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tagsDataGridView)).BeginInit();
             this.SuspendLayout();
@@ -105,9 +106,20 @@ namespace AzTagger
             this.recentSearchesComboBox.SelectedIndex = -1;
             this.recentSearchesComboBox.SelectedIndexChanged += new System.EventHandler(this.recentSearchesComboBox_SelectedIndexChanged);
             // 
+            // findItemsWithoutTagsButton
+            // 
+            this.findItemsWithoutTagsButton.Location = new System.Drawing.Point(218, 371);
+            this.findItemsWithoutTagsButton.Name = "findItemsWithoutTagsButton";
+            this.findItemsWithoutTagsButton.Size = new System.Drawing.Size(200, 23);
+            this.findItemsWithoutTagsButton.TabIndex = 9;
+            this.findItemsWithoutTagsButton.Text = "Find items without any of these tags";
+            this.findItemsWithoutTagsButton.UseVisualStyleBackColor = true;
+            this.findItemsWithoutTagsButton.Click += new System.EventHandler(this.findItemsWithoutTagsButton_Click);
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(784, 561);
+            this.Controls.Add(this.findItemsWithoutTagsButton);
             this.Controls.Add(this.recentSearchesComboBox);
             this.Controls.Add(this.tagTemplatesComboBox);
             this.Controls.Add(this.tagsDataGridView);
@@ -135,5 +147,6 @@ namespace AzTagger
         private System.Windows.Forms.DataGridView tagsDataGridView;
         private System.Windows.Forms.ComboBox tagTemplatesComboBox;
         private System.Windows.Forms.ComboBox recentSearchesComboBox;
+        private System.Windows.Forms.Button findItemsWithoutTagsButton;
     }
 }

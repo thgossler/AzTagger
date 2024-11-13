@@ -235,5 +235,30 @@ namespace AzTagger
                 searchTextBox.Text = recentSearchesComboBox.SelectedItem.ToString();
             }
         }
+
+        private void findItemsWithoutTagsButton_Click(object sender, EventArgs e)
+        {
+            var filterExpression = BuildFilterExpressionForMissingTags();
+            searchTextBox.Text = filterExpression;
+        }
+
+        private string BuildFilterExpressionForMissingTags()
+        {
+            var tagKeys = new List<string>();
+            foreach (DataGridViewRow row in tagsDataGridView.Rows)
+            {
+                if (row.Cells["Key"].Value != null)
+                {
+                    var key = row.Cells["Key"].Value.ToString();
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        tagKeys.Add(key);
+                    }
+                }
+            }
+
+            var filterExpression = string.Join(" or ", tagKeys.Select(key => $"(tags['{key}'] == null or tags['{key}'] == '')"));
+            return filterExpression;
+        }
     }
 }
