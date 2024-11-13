@@ -37,18 +37,27 @@ AzTagger is a .NET 8 Windows Desktop GUI application built using WinForms. It is
 - Ensure the application's responsiveness at all times by performing searches and tag updates on background threads.
 - Using asynchronous programming patterns (`async`/`await`) for I/O-bound operations.
 
-## License
+## Donate
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+If you are using the tool but are unable to contribute technically, please consider promoting it and donating an amount that reflects its value to you. You can do so either via PayPal
+
+[![Donate via PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=JVG7PFJ8DMW7J)
+
+or via [GitHub Sponsors](https://github.com/sponsors/thgossler).
 
 ## Contributing
 
-Contributions are welcome! Please read the [CONTRIBUTING](CONTRIBUTING.md) file for guidelines on how to contribute to this project.
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-## Sponsoring
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+Don't forget to give the project a star :wink: Thanks!
 
-If you find this project useful and would like to support its development, please consider sponsoring the project.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Contact
+## License
 
-For any questions or feedback, please open an issue on GitHub or contact the project maintainer.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
