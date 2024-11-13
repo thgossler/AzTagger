@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Identity.Client;
+using System.Text.Json;
 
 namespace AzTagger.Services
 {
@@ -53,13 +56,27 @@ namespace AzTagger.Services
 
         private async Task<List<Tenant>> FetchTenantsFromGraphApiAsync(string token)
         {
-            // Implement the logic to fetch tenants from the Microsoft Graph API
-            // This is a placeholder implementation
-            return new List<Tenant>
+            var tenants = new List<Tenant>();
+            using (var httpClient = new HttpClient())
             {
-                new Tenant { TenantId = "tenant1", DisplayName = "Tenant 1" },
-                new Tenant { TenantId = "tenant2", DisplayName = "Tenant 2" }
-            };
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await httpClient.GetAsync("https://graph.microsoft.com/v1.0/organization");
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+                    var jsonDoc = JsonDocument.Parse(jsonResponse);
+                    var tenantArray = jsonDoc.RootElement.GetProperty("value").EnumerateArray();
+                    foreach (var tenant in tenantArray)
+                    {
+                        tenants.Add(new Tenant
+                        {
+                            TenantId = tenant.GetProperty("id").GetString(),
+                            DisplayName = tenant.GetProperty("displayName").GetString()
+                        });
+                    }
+                }
+            }
+            return tenants;
         }
     }
 

@@ -139,14 +139,70 @@ namespace AzTagger
             resultsDataGridView.DataSource = _resources;
         }
 
-        private void applyTagsButton_Click(object sender, EventArgs e)
+        private async void applyTagsButton_Click(object sender, EventArgs e)
         {
-            ApplyTags();
+            await ApplyTagsAsync();
         }
 
-        private void ApplyTags()
+        private async Task ApplyTagsAsync()
         {
-            // Implement tag application logic here
+            try
+            {
+                var selectedResources = GetSelectedResources();
+                var tags = GetTagsFromDataGridView();
+                await _azureService.UpdateTagsAsync(selectedResources, tags);
+                UpdateLocalTags(selectedResources, tags);
+                MessageBox.Show("Tags applied successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to apply tags.");
+                MessageBox.Show("Failed to apply tags. Please check the error log for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private List<Resource> GetSelectedResources()
+        {
+            var selectedResources = new List<Resource>();
+            foreach (DataGridViewRow row in resultsDataGridView.SelectedRows)
+            {
+                var resource = row.DataBoundItem as Resource;
+                if (resource != null)
+                {
+                    selectedResources.Add(resource);
+                }
+            }
+            return selectedResources;
+        }
+
+        private Dictionary<string, string> GetTagsFromDataGridView()
+        {
+            var tags = new Dictionary<string, string>();
+            foreach (DataGridViewRow row in tagsDataGridView.Rows)
+            {
+                if (row.Cells["Key"].Value != null && row.Cells["Value"].Value != null)
+                {
+                    var key = row.Cells["Key"].Value.ToString();
+                    var value = row.Cells["Value"].Value.ToString();
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        tags[key] = value;
+                    }
+                }
+            }
+            return tags;
+        }
+
+        private void UpdateLocalTags(List<Resource> resources, Dictionary<string, string> tags)
+        {
+            foreach (var resource in resources)
+            {
+                foreach (var tag in tags)
+                {
+                    resource.Tags[tag.Key] = tag.Value;
+                }
+            }
+            resultsDataGridView.Refresh();
         }
     }
 }
