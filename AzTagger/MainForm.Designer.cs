@@ -12,6 +12,7 @@ namespace AzTagger
         private System.Windows.Forms.DataGridView mainDataGridView;
         private System.Windows.Forms.DataGridView tagsDataGridView;
         private System.Windows.Forms.Button applyTagsButton;
+        private System.Windows.Forms.ComboBox tagTemplatesComboBox;
 
         protected override void Dispose(bool disposing)
         {
@@ -33,6 +34,7 @@ namespace AzTagger
             this.mainDataGridView = new System.Windows.Forms.DataGridView();
             this.tagsDataGridView = new System.Windows.Forms.DataGridView();
             this.applyTagsButton = new System.Windows.Forms.Button();
+            this.tagTemplatesComboBox = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.mainDataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tagsDataGridView)).BeginInit();
             this.SuspendLayout();
@@ -121,11 +123,21 @@ namespace AzTagger
             this.applyTagsButton.UseVisualStyleBackColor = true;
             this.applyTagsButton.Click += new System.EventHandler(this.applyTagsButton_Click);
             // 
+            // tagTemplatesComboBox
+            // 
+            this.tagTemplatesComboBox.FormattingEnabled = true;
+            this.tagTemplatesComboBox.Location = new System.Drawing.Point(12, 527);
+            this.tagTemplatesComboBox.Name = "tagTemplatesComboBox";
+            this.tagTemplatesComboBox.Size = new System.Drawing.Size(200, 21);
+            this.tagTemplatesComboBox.TabIndex = 9;
+            this.tagTemplatesComboBox.SelectedIndexChanged += new System.EventHandler(this.tagTemplatesComboBox_SelectedIndexChanged);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 562);
+            this.Controls.Add(this.tagTemplatesComboBox);
             this.Controls.Add(this.applyTagsButton);
             this.Controls.Add(this.tagsDataGridView);
             this.Controls.Add(this.mainDataGridView);

@@ -7,6 +7,8 @@ using Microsoft.Identity.Client;
 using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.ResourceGraph;
 using Serilog;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace AzTagger
 {
@@ -19,12 +21,14 @@ namespace AzTagger
         private List<Resource> _resources;
         private List<Tag> _tags;
         private Settings _settings;
+        private List<Dictionary<string, string>> _tagTemplates;
 
         public MainForm()
         {
             InitializeComponent();
             InitializeAuthentication();
             LoadSettings();
+            LoadTagTemplates();
         }
 
         private void InitializeAuthentication()
@@ -90,6 +94,37 @@ namespace AzTagger
             _settings.Save();
         }
 
+        private void LoadTagTemplates()
+        {
+            var tagTemplatesFilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "AzTagger",
+                "tagtemplates.json");
+
+            if (!File.Exists(tagTemplatesFilePath))
+            {
+                var defaultTemplates = new List<Dictionary<string, string>>
+                {
+                    new Dictionary<string, string>
+                    {
+                        { "TemplateName", "Default" },
+                        { "Tags", JsonConvert.SerializeObject(new Dictionary<string, string>
+                            {
+                                { "Owner", "" },
+                                { "Purpose", "" }
+                            })
+                        }
+                    }
+                };
+                var json = JsonConvert.SerializeObject(defaultTemplates, Formatting.Indented);
+                File.WriteAllText(tagTemplatesFilePath, json);
+            }
+
+            var tagTemplatesJson = File.ReadAllText(tagTemplatesFilePath);
+            _tagTemplates = JsonConvert.DeserializeObject<List<Dictionary<string, string>>>(tagTemplatesJson);
+            tagTemplatesComboBox.DataSource = _tagTemplates.Select(t => t["TemplateName"]).ToList();
+        }
+
         private void searchTextBox_TextChanged(object sender, EventArgs e)
         {
             if (searchAsYouTypeCheckBox.Checked)
@@ -134,11 +169,12 @@ namespace AzTagger
         private void editQueryButton_Click(object sender, EventArgs e)
         {
             // Open modal dialog for editing query
-            using (var dialog = new EditQueryDialog())
+            using (var dialog = new EditQueryDialog(searchTextBox.Text))
             {
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     // Update query text and perform search
+                    searchTextBox.Text = dialog.QueryText;
                     PerformSearch();
                 }
             }
@@ -241,6 +277,34 @@ namespace AzTagger
                     {
                         resource.Tags.Add(newTag.Key, newTag.Value);
                     }
+                }
+            }
+        }
+
+        private void tagTemplatesComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var selectedTemplate = tagTemplatesComboBox.SelectedItem as string;
+            if (!string.IsNullOrEmpty(selectedTemplate))
+            {
+                var template = _tagTemplates.FirstOrDefault(t => t["TemplateName"] == selectedTemplate);
+                if (template != null)
+                {
+                    var tags = JsonConvert.DeserializeObject<Dictionary<string, string>>(template["Tags"]);
+                    foreach (var kv in tags)
+                    {
+                        var existingTag = _tags.FirstOrDefault(t => t.Key == kv.Key);
+                        if (existingTag != null)
+                        {
+                            existingTag.Value = kv.Value;
+                        }
+                        else
+                        {
+                            _tags.Add(new Tag { Key = kv.Key, Value = kv.Value });
+                        }
+                    }
+                    tagsDataGridView.DataSource = null;
+                    tagsDataGridView.DataSource = _tags;
+                    tagTemplatesComboBox.SelectedIndex = -1;
                 }
             }
         }
