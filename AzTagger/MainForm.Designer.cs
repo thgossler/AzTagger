@@ -7,6 +7,7 @@ namespace AzTagger
         private System.Windows.Forms.ComboBox environmentComboBox;
         private System.Windows.Forms.TextBox searchTextBox;
         private System.Windows.Forms.CheckBox searchAsYouTypeCheckBox;
+        private System.Windows.Forms.CheckBox searchAsKQLRegexCheckBox;
         private System.Windows.Forms.Button searchButton;
         private System.Windows.Forms.Button editQueryButton;
         private System.Windows.Forms.DataGridView mainDataGridView;
@@ -29,6 +30,7 @@ namespace AzTagger
             this.environmentComboBox = new System.Windows.Forms.ComboBox();
             this.searchTextBox = new System.Windows.Forms.TextBox();
             this.searchAsYouTypeCheckBox = new System.Windows.Forms.CheckBox();
+            this.searchAsKQLRegexCheckBox = new System.Windows.Forms.CheckBox();
             this.searchButton = new System.Windows.Forms.Button();
             this.editQueryButton = new System.Windows.Forms.Button();
             this.mainDataGridView = new System.Windows.Forms.DataGridView();
@@ -73,22 +75,32 @@ namespace AzTagger
             this.searchAsYouTypeCheckBox.Text = "Search as you type";
             this.searchAsYouTypeCheckBox.UseVisualStyleBackColor = true;
             // 
+            // searchAsKQLRegexCheckBox
+            // 
+            this.searchAsKQLRegexCheckBox.AutoSize = true;
+            this.searchAsKQLRegexCheckBox.Location = new System.Drawing.Point(545, 41);
+            this.searchAsKQLRegexCheckBox.Name = "searchAsKQLRegexCheckBox";
+            this.searchAsKQLRegexCheckBox.Size = new System.Drawing.Size(160, 17);
+            this.searchAsKQLRegexCheckBox.TabIndex = 4;
+            this.searchAsKQLRegexCheckBox.Text = "Search text is a KQL regex";
+            this.searchAsKQLRegexCheckBox.UseVisualStyleBackColor = true;
+            // 
             // searchButton
             // 
-            this.searchButton.Location = new System.Drawing.Point(545, 37);
+            this.searchButton.Location = new System.Drawing.Point(711, 37);
             this.searchButton.Name = "searchButton";
             this.searchButton.Size = new System.Drawing.Size(75, 23);
-            this.searchButton.TabIndex = 4;
+            this.searchButton.TabIndex = 5;
             this.searchButton.Text = "Search";
             this.searchButton.UseVisualStyleBackColor = true;
             this.searchButton.Click += new System.EventHandler(this.searchButton_Click);
             // 
             // editQueryButton
             // 
-            this.editQueryButton.Location = new System.Drawing.Point(626, 37);
+            this.editQueryButton.Location = new System.Drawing.Point(792, 37);
             this.editQueryButton.Name = "editQueryButton";
             this.editQueryButton.Size = new System.Drawing.Size(75, 23);
-            this.editQueryButton.TabIndex = 5;
+            this.editQueryButton.TabIndex = 6;
             this.editQueryButton.Text = "Edit Query";
             this.editQueryButton.UseVisualStyleBackColor = true;
             this.editQueryButton.Click += new System.EventHandler(this.editQueryButton_Click);
@@ -98,8 +110,8 @@ namespace AzTagger
             this.mainDataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.mainDataGridView.Location = new System.Drawing.Point(12, 65);
             this.mainDataGridView.Name = "mainDataGridView";
-            this.mainDataGridView.Size = new System.Drawing.Size(776, 300);
-            this.mainDataGridView.TabIndex = 6;
+            this.mainDataGridView.Size = new System.Drawing.Size(855, 300);
+            this.mainDataGridView.TabIndex = 7;
             this.mainDataGridView.SelectionChanged += new System.EventHandler(this.mainDataGridView_SelectionChanged);
             // 
             // tagsDataGridView
@@ -107,18 +119,18 @@ namespace AzTagger
             this.tagsDataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.tagsDataGridView.Location = new System.Drawing.Point(12, 371);
             this.tagsDataGridView.Name = "tagsDataGridView";
-            this.tagsDataGridView.Size = new System.Drawing.Size(776, 150);
-            this.tagsDataGridView.TabIndex = 7;
+            this.tagsDataGridView.Size = new System.Drawing.Size(855, 150);
+            this.tagsDataGridView.TabIndex = 8;
             this.tagsDataGridView.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.tagsDataGridView_CellValueChanged);
             this.tagsDataGridView.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.tagsDataGridView_UserDeletingRow);
             this.tagsDataGridView.UserAddedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.tagsDataGridView_UserAddedRow);
             // 
             // applyTagsButton
             // 
-            this.applyTagsButton.Location = new System.Drawing.Point(713, 527);
+            this.applyTagsButton.Location = new System.Drawing.Point(792, 527);
             this.applyTagsButton.Name = "applyTagsButton";
             this.applyTagsButton.Size = new System.Drawing.Size(75, 23);
-            this.applyTagsButton.TabIndex = 8;
+            this.applyTagsButton.TabIndex = 9;
             this.applyTagsButton.Text = "Apply Tags";
             this.applyTagsButton.UseVisualStyleBackColor = true;
             this.applyTagsButton.Click += new System.EventHandler(this.applyTagsButton_Click);
@@ -129,20 +141,21 @@ namespace AzTagger
             this.tagTemplatesComboBox.Location = new System.Drawing.Point(12, 527);
             this.tagTemplatesComboBox.Name = "tagTemplatesComboBox";
             this.tagTemplatesComboBox.Size = new System.Drawing.Size(200, 21);
-            this.tagTemplatesComboBox.TabIndex = 9;
+            this.tagTemplatesComboBox.TabIndex = 10;
             this.tagTemplatesComboBox.SelectedIndexChanged += new System.EventHandler(this.tagTemplatesComboBox_SelectedIndexChanged);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 562);
+            this.ClientSize = new System.Drawing.Size(879, 562);
             this.Controls.Add(this.tagTemplatesComboBox);
             this.Controls.Add(this.applyTagsButton);
             this.Controls.Add(this.tagsDataGridView);
             this.Controls.Add(this.mainDataGridView);
             this.Controls.Add(this.editQueryButton);
             this.Controls.Add(this.searchButton);
+            this.Controls.Add(this.searchAsKQLRegexCheckBox);
             this.Controls.Add(this.searchAsYouTypeCheckBox);
             this.Controls.Add(this.searchTextBox);
             this.Controls.Add(this.environmentComboBox);
