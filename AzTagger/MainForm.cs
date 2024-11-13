@@ -37,6 +37,7 @@ namespace AzTagger
             await AuthenticateUserAsync();
             await LoadTenantsAsync();
             LoadSettings();
+            LoadRecentSearches();
         }
 
         private async Task AuthenticateUserAsync()
@@ -81,9 +82,31 @@ namespace AzTagger
             }
         }
 
+        private void LoadRecentSearches()
+        {
+            recentSearchesComboBox.Items.Clear();
+            recentSearchesComboBox.Items.AddRange(_settings.RecentSearches.ToArray());
+            recentSearchesComboBox.SelectedIndex = -1;
+        }
+
+        private void SaveRecentSearch(string searchText)
+        {
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                _settings.RecentSearches.Remove(searchText);
+                _settings.RecentSearches.Insert(0, searchText);
+                if (_settings.RecentSearches.Count > 10)
+                {
+                    _settings.RecentSearches.RemoveAt(10);
+                }
+                _settings.Save();
+            }
+        }
+
         private async void searchButton_Click(object sender, EventArgs e)
         {
             await SearchResourcesAsync();
+            SaveRecentSearch(searchTextBox.Text);
         }
 
         private async Task SearchResourcesAsync()
@@ -203,6 +226,14 @@ namespace AzTagger
                 }
             }
             resultsDataGridView.Refresh();
+        }
+
+        private void recentSearchesComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (recentSearchesComboBox.SelectedItem != null)
+            {
+                searchTextBox.Text = recentSearchesComboBox.SelectedItem.ToString();
+            }
         }
     }
 }

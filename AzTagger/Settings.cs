@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -8,6 +9,7 @@ namespace AzTagger
     {
         public string SelectedTenantId { get; set; }
         public string AzureEnvironment { get; set; }
+        public List<string> RecentSearches { get; set; } = new List<string>();
 
         private static readonly string SettingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "settings.json");
 

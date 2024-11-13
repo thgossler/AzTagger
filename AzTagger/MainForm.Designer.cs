@@ -23,6 +23,7 @@ namespace AzTagger
             this.applyTagsButton = new System.Windows.Forms.Button();
             this.tagsDataGridView = new System.Windows.Forms.DataGridView();
             this.tagTemplatesComboBox = new System.Windows.Forms.ComboBox();
+            this.recentSearchesComboBox = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.resultsDataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tagsDataGridView)).BeginInit();
             this.SuspendLayout();
@@ -94,9 +95,20 @@ namespace AzTagger
             this.tagTemplatesComboBox.Size = new System.Drawing.Size(200, 21);
             this.tagTemplatesComboBox.TabIndex = 7;
             // 
+            // recentSearchesComboBox
+            // 
+            this.recentSearchesComboBox.FormattingEnabled = true;
+            this.recentSearchesComboBox.Location = new System.Drawing.Point(505, 37);
+            this.recentSearchesComboBox.Name = "recentSearchesComboBox";
+            this.recentSearchesComboBox.Size = new System.Drawing.Size(200, 21);
+            this.recentSearchesComboBox.TabIndex = 8;
+            this.recentSearchesComboBox.SelectedIndex = -1;
+            this.recentSearchesComboBox.SelectedIndexChanged += new System.EventHandler(this.recentSearchesComboBox_SelectedIndexChanged);
+            // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(784, 561);
+            this.Controls.Add(this.recentSearchesComboBox);
             this.Controls.Add(this.tagTemplatesComboBox);
             this.Controls.Add(this.tagsDataGridView);
             this.Controls.Add(this.applyTagsButton);
@@ -122,5 +134,6 @@ namespace AzTagger
         private System.Windows.Forms.Button applyTagsButton;
         private System.Windows.Forms.DataGridView tagsDataGridView;
         private System.Windows.Forms.ComboBox tagTemplatesComboBox;
+        private System.Windows.Forms.ComboBox recentSearchesComboBox;
     }
 }
