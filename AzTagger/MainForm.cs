@@ -22,6 +22,8 @@ namespace AzTagger
         private List<Tag> _tags;
         private Settings _settings;
         private List<Dictionary<string, string>> _tagTemplates;
+        private string _currentQuery;
+        private System.Threading.CancellationTokenSource _searchCancellationTokenSource;
 
         public MainForm()
         {
@@ -129,8 +131,17 @@ namespace AzTagger
         {
             if (searchAsYouTypeCheckBox.Checked)
             {
-                // Implement search-as-you-type functionality
-                Task.Delay(1000).ContinueWith(_ => PerformSearch());
+                _searchCancellationTokenSource?.Cancel();
+                _searchCancellationTokenSource = new System.Threading.CancellationTokenSource();
+                var token = _searchCancellationTokenSource.Token;
+
+                Task.Delay(1000, token).ContinueWith(t =>
+                {
+                    if (!t.IsCanceled)
+                    {
+                        PerformSearch();
+                    }
+                }, token);
             }
         }
 
@@ -169,12 +180,12 @@ namespace AzTagger
         private void editQueryButton_Click(object sender, EventArgs e)
         {
             // Open modal dialog for editing query
-            using (var dialog = new EditQueryDialog(searchTextBox.Text))
+            using (var dialog = new EditQueryDialog(_currentQuery))
             {
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     // Update query text and perform search
-                    searchTextBox.Text = dialog.QueryText;
+                    _currentQuery = dialog.QueryText;
                     PerformSearch();
                 }
             }
