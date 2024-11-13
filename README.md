@@ -14,6 +14,8 @@ AzTagger is a .NET 8 Windows Desktop GUI application built using WinForms. It is
 ### Search Functionality
 - Perform high-performance search and filtering of all Azure resources, resource groups, and subscriptions based on in-memory result data from Azure Resource Graph.
 - Provide a single text input field for easy and flexible filtering of resources.
+- Generate query filters to find all resources, resource groups, and subscriptions with any of the tags missing, or all of the tags and values matching.
+- Remember the history of 10 recent filter queries.
 
 ### Search Results Display
 - Support large number of search results without slowing down interactions like scrolling.
