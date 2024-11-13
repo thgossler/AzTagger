@@ -12,6 +12,7 @@
     <PackageReference Include="Azure.ResourceManager.ResourceGraph" Version="1.0.1" />
     <PackageReference Include="Azure.ResourceManager.Resources" Version="1.9.0" />
     <PackageReference Include="Azure.ResourceManager.Subscription" Version="1.1.0" />
+    <PackageReference Include="Azure.ResourceManager" Version="1.0.0" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.66.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Serilog" Version="4.1.0" />

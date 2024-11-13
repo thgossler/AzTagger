@@ -7,6 +7,7 @@ using Microsoft.Identity.Client;
 using Azure.ResourceManager.Subscription;
 using Azure.ResourceManager.ResourceGraph;
 using Azure.ResourceManager.Resources;
+using Azure.ResourceManager.Resources.Models;
 using Serilog;
 using System.IO;
 using Newtonsoft.Json;
@@ -19,8 +20,8 @@ namespace AzTagger
         private List<string> _tenants;
         private string _selectedTenant;
         private string _selectedEnvironment;
-        private List<Resource> _resources;
-        private List<Tag> _tags;
+        private List<GenericResource> _resources;
+        private List<TagResource> _tags;
         private Settings _settings;
         private List<Dictionary<string, string>> _tagTemplates;
         private string _currentQuery;
@@ -168,7 +169,7 @@ namespace AzTagger
                 };
 
                 var response = await resourceGraphClient.ResourcesAsync(query);
-                _resources = response.Data.ToObject<List<Resource>>();
+                _resources = response.Data.ToObject<List<GenericResource>>();
                 mainDataGridView.DataSource = _resources;
             }
             catch (Exception ex)
@@ -231,30 +232,30 @@ namespace AzTagger
         {
             // Update tags table based on selected items
             var selectedResources = mainDataGridView.SelectedRows.Cast<DataGridViewRow>()
-                .Select(row => row.DataBoundItem as Resource)
+                .Select(row => row.DataBoundItem as GenericResource)
                 .ToList();
             UpdateTagsTable(selectedResources);
         }
 
-        private void UpdateTagsTable(List<Resource> selectedResources)
+        private void UpdateTagsTable(List<GenericResource> selectedResources)
         {
             // Update tags table logic
             // This is a placeholder for the actual update logic
-            _tags = new List<Tag>(); // Replace with actual logic to get common tags
+            _tags = new List<TagResource>(); // Replace with actual logic to get common tags
             tagsDataGridView.DataSource = _tags;
         }
 
         private void tagsDataGridView_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             // Handle tag value changes
-            var changedTag = tagsDataGridView.Rows[e.RowIndex].DataBoundItem as Tag;
+            var changedTag = tagsDataGridView.Rows[e.RowIndex].DataBoundItem as TagResource;
             if (changedTag != null)
             {
                 // Update the tag value in the local in-memory data
-                var resource = _resources.FirstOrDefault(r => r.Tags.ContainsKey(changedTag.Key));
+                var resource = _resources.FirstOrDefault(r => r.Tags.ContainsKey(changedTag.Data.Key));
                 if (resource != null)
                 {
-                    resource.Tags[changedTag.Key] = changedTag.Value;
+                    resource.Tags[changedTag.Data.Key] = changedTag.Data.Value;
                 }
             }
         }
@@ -262,15 +263,15 @@ namespace AzTagger
         private void tagsDataGridView_UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e)
         {
             // Handle tag deletion
-            var deletingTag = e.Row.DataBoundItem as Tag;
+            var deletingTag = e.Row.DataBoundItem as TagResource;
             if (deletingTag != null)
             {
                 // Remove the tag from the local in-memory data
                 foreach (var resource in _resources)
                 {
-                    if (resource.Tags.ContainsKey(deletingTag.Key))
+                    if (resource.Tags.ContainsKey(deletingTag.Data.Key))
                     {
-                        resource.Tags.Remove(deletingTag.Key);
+                        resource.Tags.Remove(deletingTag.Data.Key);
                     }
                 }
             }
@@ -279,15 +280,15 @@ namespace AzTagger
         private void tagsDataGridView_UserAddedRow(object sender, DataGridViewRowEventArgs e)
         {
             // Handle adding new tags
-            var newTag = e.Row.DataBoundItem as Tag;
-            if (newTag != null && !string.IsNullOrEmpty(newTag.Key))
+            var newTag = e.Row.DataBoundItem as TagResource;
+            if (newTag != null && !string.IsNullOrEmpty(newTag.Data.Key))
             {
                 // Add the new tag to the local in-memory data
                 foreach (var resource in _resources)
                 {
-                    if (!resource.Tags.ContainsKey(newTag.Key))
+                    if (!resource.Tags.ContainsKey(newTag.Data.Key))
                     {
-                        resource.Tags.Add(newTag.Key, newTag.Value);
+                        resource.Tags.Add(newTag.Data.Key, newTag.Data.Value);
                     }
                 }
             }
@@ -304,14 +305,14 @@ namespace AzTagger
                     var tags = JsonConvert.DeserializeObject<Dictionary<string, string>>(template["Tags"]);
                     foreach (var kv in tags)
                     {
-                        var existingTag = _tags.FirstOrDefault(t => t.Key == kv.Key);
+                        var existingTag = _tags.FirstOrDefault(t => t.Data.Key == kv.Key);
                         if (existingTag != null)
                         {
-                            existingTag.Value = kv.Value;
+                            existingTag.Data.Value = kv.Value;
                         }
                         else
                         {
-                            _tags.Add(new Tag { Key = kv.Key, Value = kv.Value });
+                            _tags.Add(new TagResource { Data = new TagData { Key = kv.Key, Value = kv.Value } });
                         }
                     }
                     tagsDataGridView.DataSource = null;
