@@ -163,7 +163,7 @@ namespace AzTagger
                 var query = new QueryRequest
                 {
                     Subscriptions = new List<string> { _selectedTenant },
-                    Query = searchTextBox.Text
+                    Query = _currentQuery
                 };
 
                 var response = await resourceGraphClient.ResourcesAsync(query);
