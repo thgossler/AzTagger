@@ -1,6 +1,3 @@
-// Copyright (c) Thomas Gossler. All rights reserved.
-// Licensed under the MIT license.
-
 using AzTagger.Models;
 using AzTagger.Services;
 using Serilog;
@@ -129,57 +126,6 @@ public partial class MainForm : Form
             {
                 MessageBox.Show(this, "No tags with URLs found.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-        }
-
-        private void findItemsWithoutTagsButton_Click(object sender, EventArgs e)
-        {
-            var filterExpression = BuildFilterExpressionForMissingTags();
-            searchTextBox.Text = filterExpression;
-        }
-
-        private string BuildFilterExpressionForMissingTags()
-        {
-            var tagKeys = new List<string>();
-            foreach (DataGridViewRow row in tagsDataGridView.Rows)
-            {
-                if (row.Cells["Key"].Value != null)
-                {
-                    var key = row.Cells["Key"].Value.ToString();
-                    if (!string.IsNullOrEmpty(key))
-                    {
-                        tagKeys.Add(key);
-                    }
-                }
-            }
-
-            var filterExpression = string.Join(" or ", tagKeys.Select(key => $"(tags['{key}'] == null or tags['{key}'] == '')"));
-            return filterExpression;
-        }
-
-        private void findItemsWithAllTagsButton_Click(object sender, EventArgs e)
-        {
-            var filterExpression = BuildFilterExpressionForAllTags();
-            searchTextBox.Text = filterExpression;
-        }
-
-        private string BuildFilterExpressionForAllTags()
-        {
-            var tagConditions = new List<string>();
-            foreach (DataGridViewRow row in tagsDataGridView.Rows)
-            {
-                if (row.Cells["Key"].Value != null && row.Cells["Value"].Value != null)
-                {
-                    var key = row.Cells["Key"].Value.ToString();
-                    var value = row.Cells["Value"].Value.ToString();
-                    if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(value))
-                    {
-                        tagConditions.Add($"(tags['{key}'] == '{value}')");
-                    }
-                }
-            }
-
-            var filterExpression = string.Join(" and ", tagConditions);
-            return filterExpression;
         }
     }
 
@@ -830,10 +776,10 @@ public partial class MainForm : Form
         LoadTagTemplates();
 
         _cboQuickFilter1Column.SelectedIndexChanged += FilterInputsChanged;
-        _txtQuickFilter1Text.TextChanged += QuickFilter1_TextChanged;
+        _txtQuickFilter1Text.TextChanged += QuickFilter1TextChanged;
 
         _cboQuickFilter2Column.SelectedIndexChanged += FilterInputsChanged;
-        _txtQuickFilter2Text.TextChanged += QuickFilter2_TextChanged;
+        _txtQuickFilter2Text.TextChanged += QuickFilter2TextChanged;
     }
 
     private void FilterInputsChanged(object sender, EventArgs e)
@@ -854,13 +800,13 @@ public partial class MainForm : Form
         }
     }
 
-    private void QuickFilter1_TextChanged(object sender, EventArgs e)
+    private void QuickFilter1TextChanged(object sender, EventArgs e)
     {
         _debounceTimer1.Stop();
         _debounceTimer1.Start();
     }
 
-    private void QuickFilter2_TextChanged(object sender, EventArgs e)
+    private void QuickFilter2TextChanged(object sender, EventArgs e)
     {
         _debounceTimer2.Stop();
         _debounceTimer2.Start();

@@ -31,7 +31,7 @@ public class Settings
         {
             settings.RecentSearches.Add("test");
             settings.RecentSearches.Add("| where ResourceGroup contains 'test'");
-            settings.RecentSearches.Add("| where SubscriptionName match regex 'sandbox$'");
+            settings.RecentSearches.Add("| where SubscriptionName matches regex 'sandbox$'");
             settings.RecentSearches.Add("| where ResourceTags['SubjectForDeletion'] =~ 'suspected'");
             settings.RecentSearches.Add("| where SubscriptionTags['Owner'] =~ 'Finance' and ResourceGroupTags['Purpose'] contains 'Reporting'");
             settings.RecentSearches.Add("| where SubscriptionName =~ 'Prototypes'\r\n| where ResourceGroup =~ 'WebApp'\r\n| where ResourceName =~ 'webappstore'");
