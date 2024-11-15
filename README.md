@@ -1,41 +1,55 @@
 # AzTagger
 
-AzTagger is a .NET 8 Windows Desktop GUI application built using WinForms. It is a helper tool that allows high-performance search and filtering of all Azure resources, resource groups, and subscriptions using Azure Resource Graph across all tenants and subscriptions that the signed-in user has permissions to access.
+AzTagger is a Windows Desktop GUI application for fast and flexible querying of Azure resources 
+and tag management. It is a helper tool that allows fast search and filtering of all resources, 
+resource groups, and subscriptions using Azure Resource Graph for your Entra ID tenant.
 
 ## Features
 
 ### User Authentication and Tenant Selection
-- Use MSAL (Microsoft Authentication Library) for sign-in with Entra ID via web browser, including tenant selection and support for multi-factor authentication.
-- Select the Azure Environment (e.g., `AzureCloud`, `AzureChinaCloud`) before querying for accessible tenants.
-- Select from a list of all Entra ID tenants the user has access to in a drop-down list.
-- Apply subsequent searches only to the selected tenant.
-- Remember the selected tenant and Azure Environment upon exiting the application and reload them on the next start.
+
+- MSAL (Microsoft Authentication Library) for sign-in with Entra ID via web browser support for multi-factor authentication
+- Azure Environment (e.g., `AzureCloud`, `AzureChinaCloud`) and Entra ID tenant configured in settings file in the user's AppData Local folder
 
 ### Search Functionality
-- Perform high-performance search and filtering of all Azure resources, resource groups, and subscriptions based on in-memory result data from Azure Resource Graph.
-- Provide a single text input field for easy and flexible filtering of resources.
+
+- Fast search and filtering of all Azure resources, resource groups, and subscriptions based on in-memory result data from Azure Resource Graph
+- A single input field for easy and flexible querying of resources
+- Multiple input fields for easy and flexible local quick-filtering of resources
 
 ### Search Results Display
-- Support large number of search results without slowing down interactions like scrolling.
-- Enable column sorting and provide separate column-specific filter input fields above each column for quick filtering within that column's values.
-- Double-clicking an item opens the Azure Portal GUI for that item in the system's default web browser.
+
+- Support for large numbers of search results
+- Column sorting
+- Double-click on item to open it in the Azure Portal
 
 ### Tag Management
-- Enable easy deletion of tags and inline editing of any item's key and value.
-- Allow adding new tags by clicking into the last empty line's key or value cells and start typing.
-- Store tag templates in a `tagtemplates.json` file in the user's AppData Local folder.
-- Apply button to set or update all the specified tags on the selected subscriptions, resource groups, and resources.
 
-### Application Settings and Environment
-- Store user settings in a `settings.json` file in the user's AppData Local folder.
+- Easy inline editing and deletion of tags in a table
+- Add new tags by clicking into the last empty line's key or value cells and start typing
+- Maintain tag templates in a `tagtemplates.json` file in the user's AppData Local folder
+- Create and update all specified tags on the selected subscriptions, resource groups, and resources
 
 ### Error Handling and Logging
-- Log all errors via Serilog to an `errorlog.txt` file in the user's AppData Local folder.
-- Provide user-friendly error messages in message boxes when errors occur.
 
-### Performance and Responsiveness
-- Ensure the application's responsiveness at all times by performing searches and tag updates on background threads.
-- Using asynchronous programming patterns (`async`/`await`) for I/O-bound operations.
+- All errors logged to an `errorlog.txt` file in the user's AppData Local folder.
+
+## Ideas for Improvements
+
+- Support placeholder variable in tag templates (e.g. for dynamic values like the current date)
+
+## Used Technologies
+
+- C# .NET 9
+- WinForms
+- SeriLog
+- Azure Identity
+- Azure Resource Graph
+- Azure Resource Manager
+
+## Report Bugs
+
+Please open an issue on the GitHub repository with the tag "bug".
 
 ## Donate
 

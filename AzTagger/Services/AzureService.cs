@@ -1,66 +1,160 @@
-using Azure;
-using Azure.ResourceManager;
-using Azure.ResourceManager.Resources;
-using Azure.ResourceManager.Resources.Models;
-using Azure.ResourceGraph;
-using Azure.ResourceGraph.Models;
+// Copyright (c) Thomas Gossler. All rights reserved.
+// Licensed under the MIT license.
+
 using AzTagger.Models;
+using Azure.Core;
+using Azure.Identity;
+using Azure.ResourceManager;
+using Azure.ResourceManager.ResourceGraph;
+using Azure.ResourceManager.ResourceGraph.Models;
+using Azure.ResourceManager.Resources;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace AzTagger.Services
+namespace AzTagger.Services;
+
+public class AzureService
 {
-    public class AzureService
+    private Settings _settings;
+    private InteractiveBrowserCredential _credential;
+    private ArmClient _armClient;
+    private TenantResource _tenantResource;
+
+    public AzureService(Settings settings)
     {
-        private readonly ArmClient _armClient;
-        private readonly ResourceGraphClient _resourceGraphClient;
+        _settings = settings;
+    }
 
-        public AzureService(string tenantId, string clientId, string clientSecret, string subscriptionId)
+    public async Task SignInAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_settings.TenantId))
         {
-            var credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
-            _armClient = new ArmClient(credential, subscriptionId);
-            _resourceGraphClient = new ResourceGraphClient(credential);
+            throw new Exception("TenantId is not set in the settings.");
         }
 
-        public async Task<List<Resource>> QueryResourcesAsync(string query)
+        if (_credential != null && _armClient != null && _tenantResource != null)
         {
-            var request = new QueryRequest
+            if (await IsSessionValidAsync())
             {
-                Subscriptions = new List<string> { _armClient.DefaultSubscription.Id },
-                Query = query
-            };
-
-            var response = await _resourceGraphClient.ResourcesAsync(request);
-            var resources = response.Data.Select(r => new Resource
-            {
-                SubscriptionName = r["subscriptionName"]?.ToString(),
-                SubscriptionId = r["subscriptionId"]?.ToString(),
-                Type = r["type"]?.ToString(),
-                ResourceGroup = r["resourceGroup"]?.ToString(),
-                Name = r["name"]?.ToString(),
-                Tags = r["tags"]?.ToObject<Dictionary<string, string>>()
-            }).ToList();
-
-            return resources;
-        }
-
-        public async Task UpdateTagsAsync(List<Resource> resources, Dictionary<string, string> tags)
-        {
-            foreach (var resource in resources)
-            {
-                var resourceIdentifier = new ResourceIdentifier(resource.Id);
-                var genericResource = _armClient.GetGenericResource(resourceIdentifier);
-                var resourceTags = await genericResource.GetTagsAsync();
-
-                foreach (var tag in tags)
-                {
-                    resourceTags.Value.Data.Properties.Tags[tag.Key] = tag.Value;
-                }
-
-                await genericResource.SetTagsAsync(resourceTags.Value.Data.Properties.Tags);
+                return;
             }
+        }
+
+        await Task.Run(async () =>
+        {
+            _credential = new InteractiveBrowserCredential(new InteractiveBrowserCredentialOptions
+            {
+                TenantId = _settings.TenantId,
+                ClientId = _settings.ClientAppId,
+                TokenCachePersistenceOptions = new TokenCachePersistenceOptions
+                {
+                    Name = $"AzTaggerTokenCache_{_settings.TenantId}"
+                },
+                RedirectUri = new Uri("http://localhost")
+            });
+
+            ArmEnvironment azEnvironment = ArmEnvironment.AzurePublicCloud;
+            if (_settings.AzureEnvironment.Contains("China", System.StringComparison.OrdinalIgnoreCase))
+            {
+                azEnvironment = ArmEnvironment.AzureChina;
+            }
+            else if (_settings.AzureEnvironment.Contains("German", System.StringComparison.OrdinalIgnoreCase))
+            {
+                azEnvironment = ArmEnvironment.AzureGermany;
+            }
+            else if (_settings.AzureEnvironment.Contains("Government", System.StringComparison.OrdinalIgnoreCase))
+            {
+                azEnvironment = ArmEnvironment.AzureGovernment;
+            }
+
+            var armClientOptions = new ArmClientOptions { Environment = azEnvironment };
+            _armClient = new ArmClient(_credential, _settings.TenantId, armClientOptions);
+            var tenants = new List<TenantResource>();
+            await foreach (var tenant in _armClient.GetTenants().GetAllAsync())
+            {
+                tenants.Add(tenant);
+            }
+            _tenantResource = tenants.FirstOrDefault(t => t.Data.Id.EndsWith(_settings.TenantId, StringComparison.OrdinalIgnoreCase));
+        });
+
+        if (_tenantResource == null)
+        {
+            throw new Exception("Failed to sign in to Azure.");
+        }
+    }
+
+    private async Task<bool> IsSessionValidAsync()
+    {
+        try
+        {
+            var requestContext = new TokenRequestContext(new[] { "https://management.azure.com/.default" });
+            var token = await _credential.GetTokenAsync(requestContext, default);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<List<Resource>> QueryResourcesAsync(string query)
+    {
+        var result = new List<Resource>();
+        if (query == null)
+        {
+            return result;
+        }
+
+        string skipToken = null;
+        do
+        {
+            var resourceQuery = new ResourceQueryContent(query)
+            {
+                Options = new ResourceQueryRequestOptions
+                {
+                    ResultFormat = ResultFormat.ObjectArray,
+                    SkipToken = skipToken
+                }
+            };
+            var azureResult = await _tenantResource.GetResourcesAsync(resourceQuery);
+            var response = azureResult.GetRawResponse();
+            if (response.Status != 200)
+            {
+                throw new System.Exception($"Resource graph query failed with status code {response.Status}");
+            }
+
+            var queryResult = azureResult.Value;
+            if (queryResult == null)
+            {
+                break;
+            }
+
+            if (queryResult.Data != null)
+            {
+                var pageResults = queryResult.Data.ToObjectFromJson<List<Resource>>(new System.Text.Json.JsonSerializerOptions { });
+                if (pageResults != null)
+                {
+                    result.AddRange(pageResults);
+                }
+            }
+
+            skipToken = queryResult.SkipToken;
+        }
+        while (!string.IsNullOrEmpty(skipToken));
+
+        return result;
+    }
+
+    public async Task UpdateTagsAsync(List<Resource> resources, Dictionary<string, string> tags)
+    {
+        foreach (var resource in resources)
+        {
+            var resourceIdentifier = new ResourceIdentifier(resource.Id);
+            var genericResource = _armClient.GetGenericResource(resourceIdentifier);
+
+            await genericResource.SetTagsAsync(tags);
         }
     }
 }
