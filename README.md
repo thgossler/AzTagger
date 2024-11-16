@@ -13,7 +13,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/thgossler/AzTagger">
-    <img src="images/icon.png" alt="Icon" width="80" height="80">
+    <img src="AzTagger/images/icon.png" alt="Icon" width="80" height="80">
   </a>
 
   <h1 align="center">AzTagger</h1>
