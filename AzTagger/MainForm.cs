@@ -4,6 +4,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -27,6 +28,78 @@ public partial class MainForm : Form
     private const int debounceDelayMsecs = 500;
     private Timer _debounceTimer1;
     private Timer _debounceTimer2;
+    private List<string> _tagsToRemove = new List<string>();
+
+    private const string _baseQuery = @"resources
+| join kind=leftouter (
+    resourcecontainers
+    | where type =~ ""microsoft.resources/subscriptions/resourcegroups""
+    | project rg_subscriptionId = subscriptionId, resourceGroup = name, resourceGroupTags = tags
+) on $left.subscriptionId == $right.rg_subscriptionId and $left.resourceGroup == $right.resourceGroup
+| join kind=leftouter (
+    resourcecontainers
+    | where type =~ ""microsoft.resources/subscriptions""
+    | project sub_subscriptionId = subscriptionId, subscriptionTags = tags, subscriptionName = name
+) on $left.subscriptionId == $right.sub_subscriptionId
+| project 
+    EntityType = ""Resource"",
+    Id = id, 
+    SubscriptionName = subscriptionName, 
+    SubscriptionId = subscriptionId, 
+    ResourceGroup = resourceGroup, 
+    ResourceName = name, 
+    ResourceType = type, 
+    SubscriptionTags = subscriptionTags, 
+    ResourceGroupTags = resourceGroupTags, 
+    ResourceTags = tags
+| union (
+    resourcecontainers
+    | where type =~ ""microsoft.resources/subscriptions/resourcegroups""
+    | join kind=leftouter (
+        resourcecontainers
+        | where type =~ ""microsoft.resources/subscriptions""
+        | project subscriptionId, subscriptionTags = tags, subscriptionName = name
+    ) on $left.subscriptionId == $right.subscriptionId
+    | project 
+        EntityType = ""ResourceGroup"",
+        Id = id, 
+        SubscriptionName = subscriptionName, 
+        SubscriptionId = subscriptionId, 
+        ResourceGroup = name, 
+        ResourceName = """", 
+        ResourceType = """", 
+        SubscriptionTags = subscriptionTags, 
+        ResourceGroupTags = tags, 
+        ResourceTags = """"
+)
+| union (
+    resourcecontainers
+    | where type =~ ""microsoft.resources/subscriptions""
+    | project 
+        EntityType = ""Subscription"",
+        Id = id, 
+        SubscriptionName = name, 
+        SubscriptionId = subscriptionId, 
+        ResourceGroup = """", 
+        ResourceName = """", 
+        ResourceType = """", 
+        SubscriptionTags = tags, 
+        ResourceGroupTags = """", 
+        ResourceTags = """"
+)
+| project 
+    EntityType,
+    Id, 
+    SubscriptionName, 
+    SubscriptionId, 
+    ResourceGroup, 
+    ResourceName, 
+    ResourceType, 
+    SubscriptionTags, 
+    ResourceGroupTags = ResourceGroupTags_dynamic, 
+    ResourceTags = ResourceTags_dynamic
+";
+
 
     enum QueryMode
     {
@@ -57,11 +130,11 @@ public partial class MainForm : Form
     {
         _debounceTimer1 = new Timer();
         _debounceTimer1.Interval = debounceDelayMsecs;
-        _debounceTimer1.Tick += DebounceTimer1_Tick;
+        _debounceTimer1.Tick += Timer_DebounceTimer1_Tick;
 
         _debounceTimer2 = new Timer();
         _debounceTimer2.Interval = debounceDelayMsecs;
-        _debounceTimer2.Tick += DebounceTimer2_Tick;
+        _debounceTimer2.Tick += Timer_DebounceTimer2_Tick;
     }
 
     private void InitializeQuickFilterComboBoxes()
@@ -94,6 +167,10 @@ public partial class MainForm : Form
         var copyCellValueMenuItem = new ToolStripMenuItem("Copy cell value");
         copyCellValueMenuItem.Click += CopyCellValueMenuItem_Click;
         _contextMenu.Items.Add(copyCellValueMenuItem);
+
+        var refreshTagsMenuItem = new ToolStripMenuItem("Refresh tags from Azure");
+        refreshTagsMenuItem.Click += RefreshTagsMenuItem_Click;
+        _contextMenu.Items.Add(refreshTagsMenuItem);
     }
 
     private void OpenUrlsInTagValuesMenuItem_Click(object sender, EventArgs e)
@@ -157,6 +234,58 @@ public partial class MainForm : Form
         }
     }
 
+    private async void RefreshTagsMenuItem_Click(object sender, EventArgs e)
+    {
+        if (_gvwResults.SelectedRows.Count == 0)
+        {
+            return;
+        }
+
+        _progressBar.Style = ProgressBarStyle.Continuous;
+        _progressBar.Value = 0;
+        _progressBar.Style = ProgressBarStyle.Marquee;
+        _progressBar.Visible = true;
+
+        try
+        {
+            var selectedResources = _gvwResults.SelectedRows
+                .Cast<DataGridViewRow>()
+                .Select(row => row.DataBoundItem as Resource)
+                .Where(resource => resource != null)
+                .ToList();
+
+            var resourceIds = string.Join(", ", selectedResources.Select(r => $"'{r.Id}'"));
+            var query = _baseQuery + $@"| where Id in ({resourceIds}) | project Id, SubscriptionTags, ResourceGroupTags, ResourceTags";
+
+            var updatedResources = await _azureService.QueryResourcesAsync(query);
+
+            foreach (var updatedResource in updatedResources)
+            {
+                var localResource = _resources.FirstOrDefault(r => r.Id == updatedResource.Id);
+                if (localResource != null)
+                {
+                    localResource.SubscriptionTags = updatedResource.SubscriptionTags;
+                    localResource.ResourceGroupTags = updatedResource.ResourceGroupTags;
+                    localResource.ResourceTags = updatedResource.ResourceTags;
+                }
+            }
+
+            _gvwResults.Refresh();
+
+            // Update the tags table for the selected item
+            DataGridView_Results_SelectionChanged(null, null);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to refresh tags for selected resources from Azure.");
+            MessageBox.Show(this, "Failed to refresh tags for selected resources from Azure. Please check the error log file in the program's AppData Local folder for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            _progressBar.Visible = false;
+        }
+    }
+
     private void DataGridView_Results_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
     {
         if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
@@ -183,7 +312,8 @@ public partial class MainForm : Form
 
     private void OpenResourceIdInAzurePortal(string resourceId)
     {
-        var url = $"https://portal.azure.com/#@{_settings.TenantId}/resource{resourceId}";
+        var portalUrl = _azureService != null ? _azureService.GetAzurePortalUrl() : "https://portal.azure.com";
+        var url = $"{portalUrl}/#@{_settings.TenantId}/resource{resourceId}";
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
@@ -303,75 +433,7 @@ public partial class MainForm : Form
 
     private string BuildQuery()
     {
-        var baseQuery = @"resources
-| join kind=leftouter (
-    resourcecontainers
-    | where type =~ ""microsoft.resources/subscriptions/resourcegroups""
-    | project rg_subscriptionId = subscriptionId, resourceGroup = name, resourceGroupTags = tags
-) on $left.subscriptionId == $right.rg_subscriptionId and $left.resourceGroup == $right.resourceGroup
-| join kind=leftouter (
-    resourcecontainers
-    | where type =~ ""microsoft.resources/subscriptions""
-    | project sub_subscriptionId = subscriptionId, subscriptionTags = tags, subscriptionName = name
-) on $left.subscriptionId == $right.sub_subscriptionId
-| project 
-    EntityType = ""Resource"",
-    Id = id, 
-    SubscriptionName = subscriptionName, 
-    SubscriptionId = subscriptionId, 
-    ResourceGroup = resourceGroup, 
-    ResourceName = name, 
-    ResourceType = type, 
-    SubscriptionTags = subscriptionTags, 
-    ResourceGroupTags = resourceGroupTags, 
-    ResourceTags = tags
-| union (
-    resourcecontainers
-    | where type =~ ""microsoft.resources/subscriptions/resourcegroups""
-    | join kind=leftouter (
-        resourcecontainers
-        | where type =~ ""microsoft.resources/subscriptions""
-        | project subscriptionId, subscriptionTags = tags, subscriptionName = name
-    ) on $left.subscriptionId == $right.subscriptionId
-    | project 
-        EntityType = ""ResourceGroup"",
-        Id = id, 
-        SubscriptionName = subscriptionName, 
-        SubscriptionId = subscriptionId, 
-        ResourceGroup = name, 
-        ResourceName = """", 
-        ResourceType = """", 
-        SubscriptionTags = subscriptionTags, 
-        ResourceGroupTags = tags, 
-        ResourceTags = """"
-)
-| union (
-    resourcecontainers
-    | where type =~ ""microsoft.resources/subscriptions""
-    | project 
-        EntityType = ""Subscription"",
-        Id = id, 
-        SubscriptionName = name, 
-        SubscriptionId = subscriptionId, 
-        ResourceGroup = """", 
-        ResourceName = """", 
-        ResourceType = """", 
-        SubscriptionTags = tags, 
-        ResourceGroupTags = """", 
-        ResourceTags = """"
-)
-| project 
-    EntityType,
-    Id, 
-    SubscriptionName, 
-    SubscriptionId, 
-    ResourceGroup, 
-    ResourceName, 
-    ResourceType, 
-    SubscriptionTags, 
-    ResourceGroupTags = ResourceGroupTags_dynamic, 
-    ResourceTags = ResourceTags_dynamic
-";
+        var resultQuery = _baseQuery;
 
         if (!string.IsNullOrEmpty(_txtSearchQuery.Text) && _queryMode != QueryMode.KqlFull)
         {
@@ -386,10 +448,10 @@ public partial class MainForm : Form
        or ResourceGroup matches regex @""(?i){_txtSearchQuery.Text}""
        or SubscriptionName matches regex @""(?i){_txtSearchQuery.Text}""";
             }
-            baseQuery += filter;
+            resultQuery += filter;
         }
 
-        return baseQuery;
+        return resultQuery;
     }
 
     private void InitializeResultsDataGridView()
@@ -444,23 +506,49 @@ public partial class MainForm : Form
     private void InitializeTagsDataGridView()
     {
         _gvwTags.AutoGenerateColumns = true;
+        _gvwTags.CellFormatting += DataGridView_Results_CellFormatting;
+        _gvwTags.KeyDown += DataGridView_Tags_KeyDown;
     }
 
     private void DataGridView_Results_SelectionChanged(object sender, EventArgs e)
     {
         _gvwTags.Rows.Clear();
+        _tagsToRemove.Clear();
 
         if (_gvwResults.SelectedRows.Count > 0)
         {
-            var selectedRow = _gvwResults.SelectedRows[0];
-            var resource = selectedRow.DataBoundItem as Resource;
+            var selectedResources = _gvwResults.SelectedRows
+                .Cast<DataGridViewRow>()
+                .Select(row => row.DataBoundItem as Resource)
+                .Where(resource => resource != null)
+                .ToList();
 
-            if (resource != null)
+            if (selectedResources.Count == 1)
             {
+                var resource = selectedResources.First();
                 var tags = GetEntityTags(resource);
                 if (tags != null)
                 {
                     foreach (var tag in tags)
+                    {
+                        _gvwTags.Rows.Add(tag.Key, tag.Value);
+                    }
+                }
+            }
+            else
+            {
+                // Find common tags
+                var commonTags = selectedResources
+                    .Select(r => GetEntityTags(r))
+                    .Where(tags => tags != null)
+                    .Aggregate((prev, next) => prev.Keys.Intersect(next.Keys)
+                                                    .ToDictionary(k => k, k => prev[k]));
+
+                foreach (var tag in commonTags)
+                {
+                    bool allValuesEqual = selectedResources.All(r =>
+                        GetEntityTags(r).TryGetValue(tag.Key, out var value) && value == tag.Value);
+                    if (allValuesEqual)
                     {
                         _gvwTags.Rows.Add(tag.Key, tag.Value);
                     }
@@ -496,7 +584,8 @@ public partial class MainForm : Form
                 filtered = filtered.Where(r =>
                 {
                     var value = GetPropertyValue(r, column1)?.ToString() ?? string.Empty;
-                    return regex1.IsMatch(value);
+                    var isMatch = regex1.IsMatch(value);
+                    return isMatch;
                 }).ToList();
             }
             catch (Exception ex)
@@ -591,6 +680,27 @@ public partial class MainForm : Form
         }
     }
 
+    private void DataGridView_Tags_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Delete && _gvwTags.SelectedRows.Count > 0)
+        {
+            foreach (DataGridViewRow row in _gvwTags.SelectedRows)
+            {
+                var tagKey = row.Cells["Key"].Value?.ToString();
+                if (!string.IsNullOrEmpty(tagKey) && !_tagsToRemove.Contains(tagKey))
+                {
+                    _tagsToRemove.Add(tagKey);
+
+                    // Mark the row for deletion by using a different font
+                    var deletedFont = new Font(row.InheritedStyle.Font, FontStyle.Strikeout);
+                    row.DefaultCellStyle.Font = deletedFont;
+                    row.InheritedStyle.Font = deletedFont;
+                }
+            }
+            e.Handled = true;
+        }
+    }
+
     private async void Button_ApplyTags_Click(object sender, EventArgs e)
     {
         await ApplyTagsAsync();
@@ -601,9 +711,22 @@ public partial class MainForm : Form
         try
         {
             var selectedResources = GetSelectedResources();
-            var tags = GetTagsFromDataGridView();
-            await _azureService.UpdateTagsAsync(selectedResources, tags);
-            UpdateLocalTags(selectedResources, tags);
+            var tagsToUpdate = GetTagsFromDataGridView();
+
+            Dictionary<string, string> tagsToRemove = null;
+            if (_tagsToRemove.Any())
+            {
+                // Create a dictionary with tags to remove by setting their values to null
+                tagsToRemove = _tagsToRemove.ToDictionary(k => k, v => (string)null);
+            }
+
+            // Apply tag changes to all selected resources
+            await _azureService.UpdateTagsAsync(selectedResources, tagsToUpdate, tagsToRemove);
+            UpdateLocalTags(selectedResources, tagsToUpdate, tagsToRemove);
+
+            // Remove the marked for deletion tags from the tags table
+            RemoveDeletedTagsFromView();
+
             MessageBox.Show(this, "Tags applied successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
@@ -645,26 +768,55 @@ public partial class MainForm : Form
         return tags;
     }
 
-    private void UpdateLocalTags(List<Resource> resources, Dictionary<string, string> tags)
+    private void UpdateLocalTags(List<Resource> resources, Dictionary<string, string> tagsToUpdate, Dictionary<string, string> tagsToRemove)
     {
+        var multipleSelected = resources.Count > 1;
+
         foreach (var resource in resources)
         {
             var resTags = GetEntityTags(resource);
 
-            // Add or update tags
-            foreach (var tag in tags)
+            // Update and add tags
+            foreach (var tag in tagsToUpdate)
             {
                 resTags[tag.Key] = tag.Value;
             }
 
-            // Remove tags not present in the input dictionary
-            var keysToRemove = resTags.Keys.Except(tags.Keys).ToList();
-            foreach (var key in keysToRemove)
+            // Remove tags marked for deletion
+            if (tagsToRemove != null)
             {
-                resTags.Remove(key);
+                foreach (var tagKey in tagsToRemove.Keys)
+                {
+                    resTags.Remove(tagKey);
+                }
+            }
+
+            if (!multipleSelected)
+            {
+                // Remove any other tags not in tagsToUpdate
+                var keysToRemove = resTags.Keys.Except(tagsToUpdate.Keys).ToList();
+                foreach (var key in keysToRemove)
+                {
+                    resTags.Remove(key);
+                }
             }
         }
         _gvwResults.Refresh();
+    }
+
+    private void RemoveDeletedTagsFromView()
+    {
+        foreach (var tagKey in _tagsToRemove)
+        {
+            var rowToRemove = _gvwTags.Rows
+                .Cast<DataGridViewRow>()
+                .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tagKey);
+            if (rowToRemove != null)
+            {
+                _gvwTags.Rows.Remove(rowToRemove);
+            }
+        }
+        _tagsToRemove.Clear();
     }
 
     private static IDictionary<string, string> GetEntityTags(Resource resource)
@@ -776,10 +928,10 @@ public partial class MainForm : Form
         LoadTagTemplates();
 
         _cboQuickFilter1Column.SelectedIndexChanged += FilterInputsChanged;
-        _txtQuickFilter1Text.TextChanged += QuickFilter1TextChanged;
+        _txtQuickFilter1Text.TextChanged += TextBox_QuickFilter1_TextChanged;
 
         _cboQuickFilter2Column.SelectedIndexChanged += FilterInputsChanged;
-        _txtQuickFilter2Text.TextChanged += QuickFilter2TextChanged;
+        _txtQuickFilter2Text.TextChanged += TextBox_QuickFilter2_TextChanged;
     }
 
     private void FilterInputsChanged(object sender, EventArgs e)
@@ -800,25 +952,25 @@ public partial class MainForm : Form
         }
     }
 
-    private void QuickFilter1TextChanged(object sender, EventArgs e)
+    private void TextBox_QuickFilter1_TextChanged(object sender, EventArgs e)
     {
         _debounceTimer1.Stop();
         _debounceTimer1.Start();
     }
 
-    private void QuickFilter2TextChanged(object sender, EventArgs e)
+    private void TextBox_QuickFilter2_TextChanged(object sender, EventArgs e)
     {
         _debounceTimer2.Stop();
         _debounceTimer2.Start();
     }
 
-    private void DebounceTimer1_Tick(object sender, EventArgs e)
+    private void Timer_DebounceTimer1_Tick(object sender, EventArgs e)
     {
         _debounceTimer1.Stop();
         DisplayResults();
     }
 
-    private void DebounceTimer2_Tick(object sender, EventArgs e)
+    private void Timer_DebounceTimer2_Tick(object sender, EventArgs e)
     {
         _debounceTimer2.Stop();
         DisplayResults();
@@ -831,5 +983,11 @@ public partial class MainForm : Form
 
         _cboQuickFilter2Column.SelectedIndex = -1;
         _txtQuickFilter2Text.Text = string.Empty;
+    }
+
+    private void LinkLabel_EditTagTemplates_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
+        Process.Start(editor, TagTemplates.TagTemplatesFilePath);
     }
 }

@@ -16,7 +16,7 @@ public class TagTemplate
 
 public class TagTemplates
 {
-    private static readonly string TagTemplatesFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "tagtemplates.json");
+    public static readonly string TagTemplatesFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "tagtemplates.json");
 
     public static List<TagTemplate> Load()
     {

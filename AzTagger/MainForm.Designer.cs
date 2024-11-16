@@ -15,6 +15,7 @@ namespace AzTagger
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             _txtSearchQuery = new System.Windows.Forms.TextBox();
             _btnPerformSearch = new System.Windows.Forms.Button();
             _gvwResults = new System.Windows.Forms.DataGridView();
@@ -42,6 +43,7 @@ namespace AzTagger
             _txtQuickFilter2Text = new System.Windows.Forms.TextBox();
             _lnkResetQuickFilters = new System.Windows.Forms.LinkLabel();
             _lblResultsFilteredCount = new System.Windows.Forms.Label();
+            _lnkEditTagTemplates = new System.Windows.Forms.LinkLabel();
             ((System.ComponentModel.ISupportInitialize)_gvwResults).BeginInit();
             ((System.ComponentModel.ISupportInitialize)_gvwTags).BeginInit();
             _pnlQueryButtons.SuspendLayout();
@@ -94,7 +96,7 @@ namespace AzTagger
             _btnApplyTags.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             _btnApplyTags.AutoSize = true;
             _btnApplyTags.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnApplyTags.Location = new System.Drawing.Point(907, 656);
+            _btnApplyTags.Location = new System.Drawing.Point(907, 681);
             _btnApplyTags.Name = "_btnApplyTags";
             _btnApplyTags.Size = new System.Drawing.Size(174, 30);
             _btnApplyTags.TabIndex = 5;
@@ -336,9 +338,23 @@ namespace AzTagger
             _lblResultsFilteredCount.Text = "(0 items)";
             _lblResultsFilteredCount.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
+            // _lnkEditTagTemplates
+            // 
+            _lnkEditTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            _lnkEditTagTemplates.Location = new System.Drawing.Point(1018, 625);
+            _lnkEditTagTemplates.Name = "_lnkEditTagTemplates";
+            _lnkEditTagTemplates.Size = new System.Drawing.Size(133, 25);
+            _lnkEditTagTemplates.TabIndex = 21;
+            _lnkEditTagTemplates.TabStop = true;
+            _lnkEditTagTemplates.Text = "Edit Templates";
+            _lnkEditTagTemplates.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _lnkEditTagTemplates.VisitedLinkColor = System.Drawing.Color.Blue;
+            _lnkEditTagTemplates.LinkClicked += LinkLabel_EditTagTemplates_LinkClicked;
+            // 
             // MainForm
             // 
             ClientSize = new System.Drawing.Size(1262, 753);
+            Controls.Add(_lnkEditTagTemplates);
             Controls.Add(_lblResultsFilteredCount);
             Controls.Add(_pnlQuickFilters);
             Controls.Add(_pnlQueryButtons);
@@ -357,6 +373,7 @@ namespace AzTagger
             Controls.Add(_gvwResults);
             Controls.Add(_txtSearchQuery);
             DoubleBuffered = true;
+            Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
             MinimumSize = new System.Drawing.Size(1280, 800);
             Name = "MainForm";
             StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -401,5 +418,6 @@ namespace AzTagger
         private System.Windows.Forms.DataGridViewTextBoxColumn Value;
         private System.Windows.Forms.LinkLabel _lnkResetQuickFilters;
         private System.Windows.Forms.Label _lblResultsFilteredCount;
+        private System.Windows.Forms.LinkLabel _lnkEditTagTemplates;
     }
 }

@@ -11,6 +11,8 @@ using Azure.ResourceManager.Resources;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AzTagger.Services;
@@ -99,6 +101,24 @@ public class AzureService
         }
     }
 
+    public string GetAzurePortalUrl()
+    {
+        var url = "https://portal.azure.com";
+        if (_settings.AzureEnvironment.Contains("China", System.StringComparison.OrdinalIgnoreCase))
+        {
+            url = "https://portal.azure.cn";
+        }
+        else if (_settings.AzureEnvironment.Contains("German", System.StringComparison.OrdinalIgnoreCase))
+        {
+            url = "https://portal.microsoftazure.de";
+        }
+        else if (_settings.AzureEnvironment.Contains("Government", System.StringComparison.OrdinalIgnoreCase))
+        {
+            url = "https://portal.azure.us";
+        }
+        return url;
+    }
+
     public async Task<List<Resource>> QueryResourcesAsync(string query)
     {
         var result = new List<Resource>();
@@ -122,7 +142,7 @@ public class AzureService
             var response = azureResult.GetRawResponse();
             if (response.Status != 200)
             {
-                throw new System.Exception($"Resource graph query failed with status code {response.Status}");
+                throw new Exception($"Resource graph query failed with status code {response.Status}");
             }
 
             var queryResult = azureResult.Value;
@@ -133,7 +153,7 @@ public class AzureService
 
             if (queryResult.Data != null)
             {
-                var pageResults = queryResult.Data.ToObjectFromJson<List<Resource>>(new System.Text.Json.JsonSerializerOptions { });
+                var pageResults = queryResult.Data.ToObjectFromJson<List<Resource>>(new JsonSerializerOptions { });
                 if (pageResults != null)
                 {
                     result.AddRange(pageResults);
@@ -147,14 +167,53 @@ public class AzureService
         return result;
     }
 
-    public async Task UpdateTagsAsync(List<Resource> resources, Dictionary<string, string> tags)
+    public async Task UpdateTagsAsync(List<Resource> resources, Dictionary<string, string> tagsToUpdate, Dictionary<string, string> tagsToRemove)
     {
-        foreach (var resource in resources)
-        {
-            var resourceIdentifier = new ResourceIdentifier(resource.Id);
-            var genericResource = _armClient.GetGenericResource(resourceIdentifier);
+        var maxDegreeOfParallelism = 10;
+        var semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
 
-            await genericResource.SetTagsAsync(tags);
-        }
+        var tasks = resources.Select(async resource =>
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                var resourceIdentifier = new ResourceIdentifier(resource.Id);
+                var genericResource = _armClient.GetGenericResource(resourceIdentifier);
+
+                // Retrieve the current tags using GetAsync()
+                var resourceResponse = await genericResource.GetAsync();
+                var currentTags = resourceResponse.Value.Data.Tags;
+
+                // Update tags
+                if (tagsToUpdate != null && tagsToUpdate.Count > 0)
+                {
+                    foreach (var tagToUpdate in tagsToUpdate)
+                    {
+                        currentTags[tagToUpdate.Key] = tagToUpdate.Value;
+                    }
+                }
+
+                // Remove tags
+                if (tagsToRemove != null && tagsToRemove.Count > 0)
+                {
+                    foreach (var tagToRemove in tagsToRemove)
+                    {
+                        if (currentTags.ContainsKey(tagToRemove.Key))
+                        {
+                            currentTags.Remove(tagToRemove.Key);
+                        }
+                    }
+                }
+
+                // Set the updated tags
+                await genericResource.SetTagsAsync(currentTags);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
     }
 }
