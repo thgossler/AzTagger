@@ -1,4 +1,34 @@
-# AzTagger
+<!-- SHIELDS -->
+<div align="center">
+
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+
+</div>
+
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <h1 align="center">AzTagger</h1>
+  <p align="center">
+    Query and filter your Azure resources fast and tag them easily.
+    <br />
+    <a href="https://github.com/thgossler/AzTagger/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/thgossler/AzTagger/issues">Request Feature</a>
+    ·
+    <a href="https://github.com/thgossler/AzTagger#contributing">Contribute</a>
+    ·
+    <a href="https://github.com/sponsors/thgossler">Sponsor project</a>
+    ·
+    <a href="https://www.paypal.com/donate/?hosted_button_id=JVG7PFJ8DMW7J">Sponsor via PayPal</a>
+  </p>
+</div>
+
+# Introduction
 
 AzTagger is a Windows Desktop GUI application for fast and flexible querying of Azure resources 
 and tag management. It is a helper tool that allows fast search and filtering of all resources, 
@@ -8,8 +38,8 @@ resource groups, and subscriptions using Azure Resource Graph for your Entra ID 
 
 ### User Authentication and Tenant Selection
 
-- MSAL (Microsoft Authentication Library) for sign-in with Entra ID via web browser support for multi-factor authentication
-- Azure Environment (e.g., `AzureCloud`, `AzureChinaCloud`) and Entra ID tenant configured in settings file in the user's AppData Local folder
+- Interactive sign-in to Entra ID via web browser, support for multi-factor authentication
+- Azure Environment (e.g., AzureCloud, AzureChinaCloud) and Entra ID tenant configured in settings file in the user's AppData Local folder
 
 ### Search Functionality
 
@@ -75,3 +105,15 @@ Don't forget to give the project a star :wink: Thanks!
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+<!-- MARKDOWN LINKS & IMAGES (https://www.markdownguide.org/basic-syntax/#reference-style-links) -->
+[contributors-shield]: https://img.shields.io/github/contributors/thgossler/AzTagger.svg
+[contributors-url]: https://github.com/thgossler/AzTagger/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/thgossler/AzTagger.svg
+[forks-url]: https://github.com/thgossler/AzTagger/network/members
+[stars-shield]: https://img.shields.io/github/stars/thgossler/AzTagger.svg
+[stars-url]: https://github.com/thgossler/AzTagger/stargazers
+[issues-shield]: https://img.shields.io/github/issues/thgossler/AzTagger.svg
+[issues-url]: https://github.com/thgossler/AzTagger/issues
+[license-shield]: https://img.shields.io/github/license/thgossler/AzTagger.svg
+[license-url]: https://github.com/thgossler/AzTagger/blob/main/LICENSE
