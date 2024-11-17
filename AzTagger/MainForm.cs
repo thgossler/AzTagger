@@ -1,5 +1,7 @@
 using AzTagger.Models;
 using AzTagger.Services;
+using Azure.Identity;
+using Microsoft.Graph;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -67,7 +69,7 @@ public partial class MainForm : Form
         SubscriptionId = subscriptionId, 
         ResourceGroup = name, 
         ResourceName = """", 
-        ResourceType = """", 
+        ResourceType = type, 
         SubscriptionTags = subscriptionTags, 
         ResourceGroupTags = tags, 
         ResourceTags = """"
@@ -82,7 +84,7 @@ public partial class MainForm : Form
         SubscriptionId = subscriptionId, 
         ResourceGroup = """", 
         ResourceName = """", 
-        ResourceType = """", 
+        ResourceType = type, 
         SubscriptionTags = tags, 
         ResourceGroupTags = """", 
         ResourceTags = """"
@@ -98,8 +100,8 @@ public partial class MainForm : Form
     SubscriptionTags, 
     ResourceGroupTags = ResourceGroupTags_dynamic, 
     ResourceTags = ResourceTags_dynamic
+| order by EntityType desc, (tolower(SubscriptionName)) asc, (tolower(ResourceGroup)) asc, (tolower(ResourceName)) asc
 ";
-
 
     enum QueryMode
     {
@@ -419,9 +421,14 @@ public partial class MainForm : Form
     {
         try
         {
+            // Reset the sort mode of the grid view
+            _currentSortColumn = "EntityType";
+            _sortAscending = false;
+
             var query = BuildQuery();
             _fullQuery = query;
             _resources = await _azureService.QueryResourcesAsync(query);
+
             DisplayResults();
         }
         catch (Exception ex)
@@ -481,8 +488,8 @@ public partial class MainForm : Form
         }
 
         _resources = _sortAscending
-            ? _resources.OrderBy(r => GetPropertyValue(r, columnName)).ToList()
-            : _resources.OrderByDescending(r => GetPropertyValue(r, columnName)).ToList();
+            ? _resources.OrderBy(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList()
+            : _resources.OrderByDescending(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList();
 
         DisplayResults();
     }
@@ -872,16 +879,18 @@ public partial class MainForm : Form
         }
     }
 
-    private void ComboBox_TagTemplates_SelectedIndexChanged(object sender, EventArgs e)
+    private async void ComboBox_TagTemplates_SelectedIndexChanged(object sender, EventArgs e)
     {
         if (_cboTagTemplates.SelectedIndex < 0)
         {
             return;
         }
         var tags = _tagTemplates[_cboTagTemplates.SelectedIndex].Tags;
+        tags = await ResolveTagVariables(tags);
         foreach (var tag in tags)
         {
-            var existingRow = _gvwTags.Rows.Cast<DataGridViewRow>().FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tag.Key);
+            var existingRow = _gvwTags.Rows.Cast<DataGridViewRow>()
+                .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tag.Key);
             if (existingRow != null)
             {
                 if (!string.IsNullOrEmpty(tag.Value))
@@ -895,6 +904,38 @@ public partial class MainForm : Form
             }
         }
         _cboTagTemplates.SelectedIndex = -1;
+    }
+
+    public async Task<Dictionary<string, string>> ResolveTagVariables(Dictionary<string, string> tags)
+    {
+        var resolvedTags = new Dictionary<string, string>();
+        var userEmail = await GetUserEmail();
+        foreach (var tag in tags)
+        {
+            resolvedTags.Add(tag.Key, tag.Value
+                .Replace("{Date}", DateTime.UtcNow.ToString("yyyy-MM-dd"))
+                .Replace("{Time}", DateTime.UtcNow.ToString("HH:mm:ss"))
+                .Replace("{DateTime}", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss"))
+                .Replace("{User}", userEmail));
+        }
+        return resolvedTags;
+    }
+
+    private async Task<string> GetUserEmail()
+    {
+        if (_azureService == null)
+        {
+            return Environment.UserName;
+        }
+        var credential = _azureService.CurrentCredential;
+        if (credential == null)
+        {
+            return Environment.UserName;
+        }
+        var scopes = new[] { "User.Read" };
+        var graphClient = new GraphServiceClient(_azureService.CurrentCredential, scopes);
+        var user = await graphClient.Me.GetAsync();
+        return user.Mail ?? user.UserPrincipalName ?? Environment.UserName;
     }
 
     private void MainForm_ResizeEnd(object sender, EventArgs e)

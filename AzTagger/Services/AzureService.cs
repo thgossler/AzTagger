@@ -24,6 +24,8 @@ public class AzureService
     private ArmClient _armClient;
     private TenantResource _tenantResource;
 
+    public InteractiveBrowserCredential CurrentCredential => _credential;
+
     public AzureService(Settings settings)
     {
         _settings = settings;
@@ -153,7 +155,7 @@ public class AzureService
 
             if (queryResult.Data != null)
             {
-                var pageResults = queryResult.Data.ToObjectFromJson<List<Resource>>(new JsonSerializerOptions { });
+                var pageResults = queryResult.Data.ToObjectFromJson<List<Resource>>();
                 if (pageResults != null)
                 {
                     result.AddRange(pageResults);

@@ -63,6 +63,7 @@ resource groups, and subscriptions using Azure Resource Graph for your Entra ID 
 - Easy inline editing and deletion of tags in a table
 - Add new tags by clicking into the last empty line's key or value cells and start typing
 - Maintain tag templates in a `tagtemplates.json` file in the user's AppData Local folder
+- Use variables in tag template values such as {Date}, {Time}, {DateTime}, {User} 
 - Create and update all specified tags on the selected subscriptions, resource groups, and resources
 
 ### Error Handling and Logging

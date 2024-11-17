@@ -21,8 +21,6 @@ namespace AzTagger
             _gvwResults = new System.Windows.Forms.DataGridView();
             _btnApplyTags = new System.Windows.Forms.Button();
             _gvwTags = new System.Windows.Forms.DataGridView();
-            Key = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            Value = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _cboTagTemplates = new System.Windows.Forms.ComboBox();
             _cboRecentSearches = new System.Windows.Forms.ComboBox();
             _lblRecentQueries = new System.Windows.Forms.Label();
@@ -44,6 +42,8 @@ namespace AzTagger
             _lnkResetQuickFilters = new System.Windows.Forms.LinkLabel();
             _lblResultsFilteredCount = new System.Windows.Forms.Label();
             _lnkEditTagTemplates = new System.Windows.Forms.LinkLabel();
+            Key = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            Value = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)_gvwResults).BeginInit();
             ((System.ComponentModel.ISupportInitialize)_gvwTags).BeginInit();
             _pnlQueryButtons.SuspendLayout();
@@ -87,7 +87,7 @@ namespace AzTagger
             _gvwResults.ShowCellErrors = false;
             _gvwResults.ShowEditingIcon = false;
             _gvwResults.ShowRowErrors = false;
-            _gvwResults.Size = new System.Drawing.Size(1238, 287);
+            _gvwResults.Size = new System.Drawing.Size(1238, 340);
             _gvwResults.StandardTab = true;
             _gvwResults.TabIndex = 4;
             // 
@@ -96,7 +96,7 @@ namespace AzTagger
             _btnApplyTags.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             _btnApplyTags.AutoSize = true;
             _btnApplyTags.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnApplyTags.Location = new System.Drawing.Point(907, 681);
+            _btnApplyTags.Location = new System.Drawing.Point(907, 733);
             _btnApplyTags.Name = "_btnApplyTags";
             _btnApplyTags.Size = new System.Drawing.Size(174, 30);
             _btnApplyTags.TabIndex = 5;
@@ -110,36 +110,20 @@ namespace AzTagger
             _gvwTags.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             _gvwTags.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             _gvwTags.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { Key, Value });
-            _gvwTags.Location = new System.Drawing.Point(12, 571);
+            _gvwTags.Location = new System.Drawing.Point(12, 624);
             _gvwTags.MultiSelect = false;
             _gvwTags.Name = "_gvwTags";
             _gvwTags.RowHeadersWidth = 51;
             _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            _gvwTags.Size = new System.Drawing.Size(864, 170);
+            _gvwTags.Size = new System.Drawing.Size(864, 244);
             _gvwTags.TabIndex = 6;
-            // 
-            // Key
-            // 
-            Key.HeaderText = "Key";
-            Key.MaxInputLength = 255;
-            Key.MinimumWidth = 6;
-            Key.Name = "Key";
-            Key.Width = 300;
-            // 
-            // Value
-            // 
-            Value.HeaderText = "Value";
-            Value.MaxInputLength = 255;
-            Value.MinimumWidth = 6;
-            Value.Name = "Value";
-            Value.Width = 510;
             // 
             // _cboTagTemplates
             // 
             _cboTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             _cboTagTemplates.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboTagTemplates.FormattingEnabled = true;
-            _cboTagTemplates.Location = new System.Drawing.Point(907, 594);
+            _cboTagTemplates.Location = new System.Drawing.Point(907, 647);
             _cboTagTemplates.Name = "_cboTagTemplates";
             _cboTagTemplates.Size = new System.Drawing.Size(244, 28);
             _cboTagTemplates.TabIndex = 7;
@@ -187,7 +171,7 @@ namespace AzTagger
             // 
             _lblTags.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             _lblTags.AutoSize = true;
-            _lblTags.Location = new System.Drawing.Point(12, 548);
+            _lblTags.Location = new System.Drawing.Point(12, 601);
             _lblTags.Name = "_lblTags";
             _lblTags.Size = new System.Drawing.Size(41, 20);
             _lblTags.TabIndex = 12;
@@ -197,7 +181,7 @@ namespace AzTagger
             // 
             _lblTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             _lblTagTemplates.AutoSize = true;
-            _lblTagTemplates.Location = new System.Drawing.Point(907, 571);
+            _lblTagTemplates.Location = new System.Drawing.Point(907, 624);
             _lblTagTemplates.Name = "_lblTagTemplates";
             _lblTagTemplates.Size = new System.Drawing.Size(107, 20);
             _lblTagTemplates.TabIndex = 13;
@@ -331,7 +315,7 @@ namespace AzTagger
             // _lblResultsFilteredCount
             // 
             _lblResultsFilteredCount.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lblResultsFilteredCount.Location = new System.Drawing.Point(634, 530);
+            _lblResultsFilteredCount.Location = new System.Drawing.Point(634, 583);
             _lblResultsFilteredCount.Name = "_lblResultsFilteredCount";
             _lblResultsFilteredCount.Size = new System.Drawing.Size(616, 26);
             _lblResultsFilteredCount.TabIndex = 20;
@@ -341,7 +325,7 @@ namespace AzTagger
             // _lnkEditTagTemplates
             // 
             _lnkEditTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            _lnkEditTagTemplates.Location = new System.Drawing.Point(1018, 625);
+            _lnkEditTagTemplates.Location = new System.Drawing.Point(1018, 678);
             _lnkEditTagTemplates.Name = "_lnkEditTagTemplates";
             _lnkEditTagTemplates.Size = new System.Drawing.Size(133, 25);
             _lnkEditTagTemplates.TabIndex = 21;
@@ -351,9 +335,25 @@ namespace AzTagger
             _lnkEditTagTemplates.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkEditTagTemplates.LinkClicked += LinkLabel_EditTagTemplates_LinkClicked;
             // 
+            // Key
+            // 
+            Key.HeaderText = "Key";
+            Key.MaxInputLength = 255;
+            Key.MinimumWidth = 6;
+            Key.Name = "Key";
+            Key.Width = 300;
+            // 
+            // Value
+            // 
+            Value.HeaderText = "Value";
+            Value.MaxInputLength = 255;
+            Value.MinimumWidth = 6;
+            Value.Name = "Value";
+            Value.Width = 490;
+            // 
             // MainForm
             // 
-            ClientSize = new System.Drawing.Size(1262, 753);
+            ClientSize = new System.Drawing.Size(1262, 880);
             Controls.Add(_lnkEditTagTemplates);
             Controls.Add(_lblResultsFilteredCount);
             Controls.Add(_pnlQuickFilters);
@@ -414,10 +414,10 @@ namespace AzTagger
         private System.Windows.Forms.ComboBox _cboQuickFilter1Column;
         private System.Windows.Forms.ComboBox _cboQuickFilter2Column;
         private System.Windows.Forms.TextBox _txtQuickFilter2Text;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Key;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
         private System.Windows.Forms.LinkLabel _lnkResetQuickFilters;
         private System.Windows.Forms.Label _lblResultsFilteredCount;
         private System.Windows.Forms.LinkLabel _lnkEditTagTemplates;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Key;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
     }
 }

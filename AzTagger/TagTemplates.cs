@@ -32,13 +32,14 @@ public class TagTemplates
             {
                 new TagTemplate
                 {
-                    TemplateName = "Example",
+                    TemplateName = "General",
                     Tags = new Dictionary<string, string>
                     {
                         { "Project", "" },
                         { "Environment", "" },
                         { "Application", "" },
-                        { "Owner", "" },
+                        { "CreatedBy", "{User}" },
+                        { "CreatedTime", "{DateTime}" },
                         { "CostCenter", "" }
                     }
                 }
