@@ -16,7 +16,8 @@ public class Settings
     public string TenantId { get; set; } = string.Empty;
     public List<string> RecentSearches { get; set; } = new List<string>();
 
-    public static readonly string SettingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "settings.json");
+    public static readonly string SettingsFilePath = 
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "settings.json");
 
     public static Settings Load()
     {

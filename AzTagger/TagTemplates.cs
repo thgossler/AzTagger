@@ -32,15 +32,49 @@ public class TagTemplates
             {
                 new TagTemplate
                 {
-                    TemplateName = "General",
+                    TemplateName = "Created",
                     Tags = new Dictionary<string, string>
                     {
-                        { "Project", "" },
-                        { "Environment", "" },
-                        { "Application", "" },
                         { "CreatedBy", "{User}" },
-                        { "CreatedTime", "{DateTime}" },
+                        { "CreatedTime", "{DateTime}" }
+                    }
+                },
+                new TagTemplate
+                {
+                    TemplateName = "Purpose",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "Purpose", "" }
+                    }
+                },
+                new TagTemplate
+                {
+                    TemplateName = "Accounting",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "Organization", "" },
+                        { "Project", "" },
                         { "CostCenter", "" }
+                    }
+                },
+                new TagTemplate
+                {
+                    TemplateName = "Classification",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "Scope", "" },
+                        { "Environment", "" },
+                        { "Asset", "" },
+                        { "SecurityContact", "" }
+                    }
+                },
+                new TagTemplate
+                {
+                    TemplateName = "ReviewRequired",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "ReviewRequiredBy", "{User}" },
+                        { "ReviewRequiredTime", "{DateTime}" }
                     }
                 }
             };

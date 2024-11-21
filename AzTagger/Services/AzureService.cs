@@ -12,7 +12,6 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -185,11 +184,9 @@ public class AzureService
                 var resourceIdentifier = new ResourceIdentifier(resource.Id);
                 var genericResource = _armClient.GetGenericResource(resourceIdentifier);
 
-                // Retrieve the current tags using GetAsync()
                 var resourceResponse = await genericResource.GetAsync();
                 var currentTags = resourceResponse.Value.Data.Tags;
 
-                // Update tags
                 if (tagsToUpdate != null && tagsToUpdate.Count > 0)
                 {
                     foreach (var tagToUpdate in tagsToUpdate)
@@ -198,7 +195,6 @@ public class AzureService
                     }
                 }
 
-                // Remove tags
                 if (tagsToRemove != null && tagsToRemove.Count > 0)
                 {
                     foreach (var tagToRemove in tagsToRemove)
@@ -210,7 +206,6 @@ public class AzureService
                     }
                 }
 
-                // Set the updated tags
                 await genericResource.SetTagsAsync(currentTags);
             }
             catch (Exception ex)

@@ -1,3 +1,6 @@
+// Copyright (c) Thomas Gossler. All rights reserved.
+// Licensed under the MIT license.
+
 using AzTagger.Models;
 using AzTagger.Services;
 using Microsoft.Graph;
@@ -18,25 +21,30 @@ namespace AzTagger;
 
 public partial class MainForm : Form
 {
+    private const int ClickDelayMsecs = 300;
+    private const int DebounceDelayMsecs = 500;
+
     private readonly Settings _settings;
-    private List<TagTemplate> _tagTemplates;
+
+    private Timer _resizeTimer;
+    private DateTime _lastResizeTime;
+
     private AzureService _azureService;
+
     private List<Resource> _resources;
     private ContextMenuStrip _contextMenu;
     private DataGridViewCell _contextMenuClickedCell;
     private string _fullQuery = string.Empty;
     private CancellationTokenSource _queryCancellationTokenSource;
-    private Timer _resizeTimer;
-    private DateTime _lastResizeTime;
     private string _currentSortColumn = string.Empty;
-    private bool _sortAscending = true;
-    private const int debounceDelayMsecs = 500;
     private Timer _debounceTimer1;
     private Timer _debounceTimer2;
-    private Timer _clickTimer;
+    private Timer _headerColumnClickTimer;
     private bool _isHeaderColumnDoubleClick = false;
-    private int _headerClickColumnIndex = 0;
-    private const int ClickDelayMsecs = 300;
+    private int _headerColumnClickColumnIndex = 0;
+    private bool _sortAscending = true;
+
+    private List<TagTemplate> _tagTemplates;
     private List<string> _tagsToRemove = new List<string>();
 
     private const string _baseQuery = @"resources
@@ -127,34 +135,79 @@ public partial class MainForm : Form
 
     public MainForm(Settings settings)
     {
+        _settings = settings;
+
         InitializeComponent();
+        AutoScaleMode = AutoScaleMode.Dpi;
+
+        var version = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
+        version = version.Substring(0, version.LastIndexOf('.'));
+        _lblVersion.Text = $"Version: {version}";
+
+        _fullQuery = BuildQuery();
+        _resources = new List<Resource>();
+
         InitializeResultsDataGridView();
         InitializeTagsDataGridView();
         InitializeContextMenu();
         InitializeResizeTimer();
-        InitializeQuickFilterComboBoxes(); // Added initialization for quick filter combo boxes
+        InitializeQuickFilterComboBoxes();
         InitializeDebounceTimers();
 
-        _settings = settings;
-        _fullQuery = BuildQuery();
-        _resources = new List<Resource>();
-
-        Load += Form_Load;
-
-        _clickTimer = new Timer();
-        _clickTimer.Interval = ClickDelayMsecs;
-        _clickTimer.Tick += ClickTimer_Tick;
+        _headerColumnClickTimer = new Timer();
+        _headerColumnClickTimer.Interval = ClickDelayMsecs;
+        _headerColumnClickTimer.Tick += ClickTimer_Tick;
     }
 
-    private void InitializeDebounceTimers()
+    private void InitializeContextMenu()
     {
-        _debounceTimer1 = new Timer();
-        _debounceTimer1.Interval = debounceDelayMsecs;
-        _debounceTimer1.Tick += Timer_DebounceTimer1_Tick;
+        _contextMenu = new ContextMenuStrip();
 
-        _debounceTimer2 = new Timer();
-        _debounceTimer2.Interval = debounceDelayMsecs;
-        _debounceTimer2.Tick += Timer_DebounceTimer2_Tick;
+        var openInAzurePortalMenuItem = new ToolStripMenuItem("Open in Azure Portal");
+        openInAzurePortalMenuItem.Click += MenuItem_OpenInAzurePortal_Click;
+        _contextMenu.Items.Add(openInAzurePortalMenuItem);
+
+        var openUrlsInTagValuesMenuItem = new ToolStripMenuItem("Open URLs in tags");
+        openUrlsInTagValuesMenuItem.Click += MenuItem_OpenUrlsInTagValues_Click;
+        _contextMenu.Items.Add(openUrlsInTagValuesMenuItem);
+
+        var copyCellValueMenuItem = new ToolStripMenuItem("Copy cell value");
+        copyCellValueMenuItem.Click += MenuItem_CopyCellValue_Click;
+        _contextMenu.Items.Add(copyCellValueMenuItem);
+
+        var addToFilterQueryMenuItem = new ToolStripMenuItem("Add to filter query");
+        addToFilterQueryMenuItem.Name = "AddToFilterQueryMenuItem";
+        addToFilterQueryMenuItem.Click += MenuItem_AddToFilterQuery_Click;
+        _contextMenu.Items.Add(addToFilterQueryMenuItem);
+
+        var excludeInFilterQueryMenuItem = new ToolStripMenuItem("Exclude in filter query");
+        addToFilterQueryMenuItem.Name = "ExcludeInFilterQueryMenuItem";
+        excludeInFilterQueryMenuItem.Click += MenuItem_AddToFilterQuery_Click;
+        _contextMenu.Items.Add(excludeInFilterQueryMenuItem);
+
+        var refreshTagsMenuItem = new ToolStripMenuItem("Refresh tags from Azure");
+        refreshTagsMenuItem.Click += MenuItem_RefreshTags_Click;
+        _contextMenu.Items.Add(refreshTagsMenuItem);
+    }
+
+    private void InitializeResultsDataGridView()
+    {
+        _gvwResults.AutoGenerateColumns = true;
+        _gvwResults.CellFormatting += DataGridView_Results_CellFormatting;
+        _gvwResults.CellMouseClick += DataGridView_Results_CellMouseClick;
+        _gvwResults.CellDoubleClick += DataGridView_Results_CellDoubleClick;
+        _gvwResults.SelectionChanged += DataGridView_Results_SelectionChanged;
+        _gvwResults.ColumnHeaderMouseClick += DataGridView_Results_ColumnHeaderMouseClick;
+        _gvwResults.ColumnHeaderMouseDoubleClick += DataGridView_Results_ColumnHeaderMouseDoubleClick;
+        _gvwResults.DataSource = new List<Resource>();
+
+        // Prevent automatic sorting when a column header is double-clicked
+        foreach (DataGridViewColumn column in _gvwResults.Columns)
+        {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
+
+        UpdateResultsColumnsWidth();
     }
 
     private void InitializeQuickFilterComboBoxes()
@@ -166,6 +219,24 @@ public partial class MainForm : Form
         _cboQuickFilter2Column.Items.AddRange(resourceProperties);
     }
 
+    private void InitializeTagsDataGridView()
+    {
+        _gvwTags.AutoGenerateColumns = true;
+        _gvwTags.CellFormatting += DataGridView_Results_CellFormatting;
+        _gvwTags.KeyDown += DataGridView_Tags_KeyDown;
+    }
+
+    private void InitializeDebounceTimers()
+    {
+        _debounceTimer1 = new Timer();
+        _debounceTimer1.Interval = DebounceDelayMsecs;
+        _debounceTimer1.Tick += Timer_DebounceTimer1_Tick;
+
+        _debounceTimer2 = new Timer();
+        _debounceTimer2.Interval = DebounceDelayMsecs;
+        _debounceTimer2.Tick += Timer_DebounceTimer2_Tick;
+    }
+
     private void InitializeResizeTimer()
     {
         _resizeTimer = new System.Windows.Forms.Timer();
@@ -174,45 +245,97 @@ public partial class MainForm : Form
         _resizeTimer.Start();
     }
 
-    private void InitializeContextMenu()
+    private void Form_Load(object sender, EventArgs e)
     {
-        _contextMenu = new ContextMenuStrip();
+        LoadRecentSearches();
+        LoadTagTemplates();
 
-        var openInAzurePortalMenuItem = new ToolStripMenuItem("Open in Azure Portal");
-        openInAzurePortalMenuItem.Click += OpenInAzurePortalMenuItem_Click;
-        _contextMenu.Items.Add(openInAzurePortalMenuItem);
+        _cboQuickFilter1Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
+        _txtQuickFilter1Text.TextChanged += TextBox_QuickFilter1_TextChanged;
 
-        var openUrlsInTagValuesMenuItem = new ToolStripMenuItem("Open URLs in tags");
-        openUrlsInTagValuesMenuItem.Click += OpenUrlsInTagValuesMenuItem_Click;
-        _contextMenu.Items.Add(openUrlsInTagValuesMenuItem);
-
-        var copyCellValueMenuItem = new ToolStripMenuItem("Copy cell value");
-        copyCellValueMenuItem.Click += CopyCellValueMenuItem_Click;
-        _contextMenu.Items.Add(copyCellValueMenuItem);
-
-        var addToFilterQueryMenuItem = new ToolStripMenuItem("Add to filter query");
-        addToFilterQueryMenuItem.Name = "AddToFilterQueryMenuItem";
-        addToFilterQueryMenuItem.Click += AddToFilterQueryMenuItem_Click;
-        _contextMenu.Items.Add(addToFilterQueryMenuItem);
-
-        var excludeInFilterQueryMenuItem = new ToolStripMenuItem("Exclude in filter query");
-        addToFilterQueryMenuItem.Name = "ExcludeInFilterQueryMenuItem";
-        excludeInFilterQueryMenuItem.Click += AddToFilterQueryMenuItem_Click;
-        _contextMenu.Items.Add(excludeInFilterQueryMenuItem);
-
-        var refreshTagsMenuItem = new ToolStripMenuItem("Refresh tags from Azure");
-        refreshTagsMenuItem.Click += RefreshTagsMenuItem_Click;
-        _contextMenu.Items.Add(refreshTagsMenuItem);
+        _cboQuickFilter2Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
+        _txtQuickFilter2Text.TextChanged += TextBox_QuickFilter2_TextChanged;
     }
 
-    private void OpenUrlsInTagValuesMenuItem_Click(object sender, EventArgs e)
+    private void Form_SizeChanged(object sender, EventArgs e)
+    {
+        _lastResizeTime = DateTime.Now;
+    }
+
+    private void Form_ResizeEnd(object sender, EventArgs e)
+    {
+        UpdateResultsColumnsWidth();
+    }
+
+    private async void Button_PerformSearch_Click(object sender, EventArgs e)
+    {
+        if (_queryMode == QueryMode.KqlFull)
+        {
+            MessageBox.Show(this, "KQL full expressions are not supported! Please use KQL filter-only expressions or a regular expression.",
+                "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        bool isSignedIn = await SignInToAzureAsync();
+        if (!isSignedIn)
+        {
+            MessageBox.Show(this, "Azure sign-in failed. Please check your credentials and try again.",
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        _gvwResults.DataSource = new List<Resource>();
+        UpdateResultsCountLabel(true);
+
+        if (_queryCancellationTokenSource != null)
+        {
+            _queryCancellationTokenSource.Cancel();
+            await Task.Delay(300);
+        }
+        _queryCancellationTokenSource = new CancellationTokenSource();
+
+        ShowActivityIndicator(ActivityIndicatorType.Query, true);
+        SaveRecentSearch(_txtSearchQuery.Text);
+
+        await SearchResourcesAsync(_queryCancellationTokenSource.Token);
+
+        ShowActivityIndicator(ActivityIndicatorType.Query, false);
+    }
+
+    private async void Button_RefreshSignin_Click(object sender, EventArgs e)
+    {
+        bool isSignedIn = await SignInToAzureAsync(true);
+        if (!isSignedIn)
+        {
+            MessageBox.Show(this, "Azure sign-in failed. Please check your credentials and try again.",
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+    }
+
+    private void Button_CopyQuery_Click(object sender, EventArgs e)
+    {
+        Clipboard.SetText(_fullQuery);
+    }
+
+    private async void Button_ApplyTags_Click(object sender, EventArgs e)
+    {
+        _btnApplyTags.Enabled = false;
+        ShowActivityIndicator(ActivityIndicatorType.Results, true);
+
+        await ApplyTagsAsync();
+
+        ShowActivityIndicator(ActivityIndicatorType.Results, false);
+        _btnApplyTags.Enabled = true;
+    }
+
+    private void MenuItem_OpenUrlsInTagValues_Click(object sender, EventArgs e)
     {
         if (_gvwResults.SelectedRows.Count > 0)
         {
             var selectedRow = _gvwResults.SelectedRows[0];
             var resource = selectedRow.DataBoundItem as Resource;
 
-            // Extract all hyperlink URLs from all tag values based on a regular expression
             var urls = new List<string>();
             var tags = GetEntityTags(resource);
             foreach (var tag in tags)
@@ -238,7 +361,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void OpenInAzurePortalMenuItem_Click(object sender, EventArgs e)
+    private void MenuItem_OpenInAzurePortal_Click(object sender, EventArgs e)
     {
         if (_gvwResults.SelectedRows.Count > 0)
         {
@@ -251,7 +374,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void CopyCellValueMenuItem_Click(object sender, EventArgs e)
+    private void MenuItem_CopyCellValue_Click(object sender, EventArgs e)
     {
         if (_contextMenuClickedCell?.Value != null)
         {
@@ -266,7 +389,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void AddToFilterQueryMenuItem_Click(object sender, EventArgs e)
+    private void MenuItem_AddToFilterQuery_Click(object sender, EventArgs e)
     {
         if (_contextMenuClickedCell?.Value == null)
         {
@@ -313,7 +436,7 @@ public partial class MainForm : Form
         _txtSearchQuery.Text = queryText;
     }
 
-    private async void RefreshTagsMenuItem_Click(object sender, EventArgs e)
+    private async void MenuItem_RefreshTags_Click(object sender, EventArgs e)
     {
         if (_gvwResults.SelectedRows.Count == 0)
         {
@@ -348,7 +471,6 @@ public partial class MainForm : Form
 
             _gvwResults.Refresh();
 
-            // Update the tags table for the selected item
             DataGridView_Results_SelectionChanged(null, null);
         }
         catch (Exception ex)
@@ -359,309 +481,6 @@ public partial class MainForm : Form
         {
             ShowActivityIndicator(ActivityIndicatorType.Query, false);
         }
-    }
-
-    private void ShowActivityIndicator(ActivityIndicatorType type, bool visible)
-    {
-        if (type == ActivityIndicatorType.Query || type == ActivityIndicatorType.All)
-        {
-            _queryActivityIndicator.Style = ProgressBarStyle.Continuous;
-            _queryActivityIndicator.Value = 0;
-            _queryActivityIndicator.Style = ProgressBarStyle.Marquee;
-            _queryActivityIndicator.Visible = visible;
-        }
-        if (type == ActivityIndicatorType.Results || type == ActivityIndicatorType.All)
-        {
-            _resultsActivityIndicator.Style = ProgressBarStyle.Continuous;
-            _resultsActivityIndicator.Value = 0;
-            _resultsActivityIndicator.Style = ProgressBarStyle.Marquee;
-            _resultsActivityIndicator.Visible = visible;
-        }
-        Cursor.Current = visible ? Cursors.WaitCursor : Cursors.Default;
-    }
-
-    private void DataGridView_Results_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
-    {
-        if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
-        {
-            _gvwResults.ClearSelection();
-            _gvwResults.Rows[e.RowIndex].Selected = true;
-            _contextMenuClickedCell = _gvwResults.Rows[e.RowIndex].Cells[e.ColumnIndex];
-            _contextMenu.Show(Cursor.Position);
-        }
-    }
-
-    private void DataGridView_Results_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
-    {
-        if (e.RowIndex >= 0)
-        {
-            var selectedRow = _gvwResults.Rows[e.RowIndex];
-            var resource = selectedRow.DataBoundItem as Resource;
-            if (resource != null)
-            {
-                OpenResourceIdInAzurePortal(resource.Id);
-            }
-        }
-    }
-
-    private void OpenResourceIdInAzurePortal(string resourceId)
-    {
-        var portalUrl = _azureService != null ? _azureService.GetAzurePortalUrl() : "https://portal.azure.com";
-        var url = $"{portalUrl}/#@{_settings.TenantId}/resource{resourceId}";
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-    }
-
-    private void Form_Load(object sender, EventArgs e)
-    {
-        LoadRecentSearches();
-        LoadTagTemplates();
-    }
-
-    private void LoadTagTemplates()
-    {
-        _tagTemplates = TagTemplates.Load();
-        _cboTagTemplates.Items.Clear();
-        _cboTagTemplates.Items.AddRange(_tagTemplates.Select(t => t.TemplateName).ToArray());
-        _cboTagTemplates.SelectedIndex = -1;
-    }
-
-    private void LoadRecentSearches()
-    {
-        _cboRecentSearches.Items.Clear();
-        foreach (var queryText in _settings.RecentSearches)
-        {
-            _cboRecentSearches.Items.Add(new RecentSearchItem(queryText));
-        }
-        _cboRecentSearches.SelectedIndex = -1;
-    }
-
-    private void SaveRecentSearch(string queryText)
-    {
-        if (!string.IsNullOrEmpty(queryText))
-        {
-            _settings.RecentSearches.Insert(0, queryText);
-            _settings.RemoveDuplicatesFromRecentSearches();
-            if (_settings.RecentSearches.Count > 10)
-            {
-                _settings.RecentSearches.RemoveAt(10);
-            }
-            _settings.Save();
-
-            var displayText = queryText.Replace("\r\n", " ").Replace("\n", " ");
-            var itemsToRemove = _cboRecentSearches.Items.Cast<RecentSearchItem>().Where(i => i.DisplayText.Equals(displayText, StringComparison.OrdinalIgnoreCase)).ToList();
-            foreach (var item in itemsToRemove)
-            {
-                _cboRecentSearches.Items.Remove(item);
-            }
-            _cboRecentSearches.Items.Insert(0, new RecentSearchItem(queryText));
-
-            if (_cboRecentSearches.Items.Count > 10)
-            {
-                _cboRecentSearches.Items.RemoveAt(_cboRecentSearches.Items.Count - 1);
-            }
-        }
-    }
-
-    private async void Button_PerformSearch_Click(object sender, EventArgs e)
-    {
-        if (_queryMode == QueryMode.KqlFull)
-        {
-            MessageBox.Show(this, "KQL full expressions are not supported! Please use KQL filter-only expressions or a regular expression.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        bool isSignedIn = await SignInToAzureAsync();
-        if (!isSignedIn)
-        {
-            MessageBox.Show(this, "Azure sign-in failed. Please check your credentials and try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return;
-        }
-
-        _gvwResults.DataSource = new List<Resource>();
-        UpdateResultsCountLabel(true);
-
-        if (_queryCancellationTokenSource != null)
-        {
-            _queryCancellationTokenSource.Cancel();
-            await Task.Delay(300);
-        }
-        _queryCancellationTokenSource = new CancellationTokenSource();
-
-        ShowActivityIndicator(ActivityIndicatorType.Query, true);
-        SaveRecentSearch(_txtSearchQuery.Text);
-
-        await SearchResourcesAsync(_queryCancellationTokenSource.Token);
-
-        ShowActivityIndicator(ActivityIndicatorType.Query, false);
-    }
-
-    private async Task<bool> SignInToAzureAsync(bool refresh = false)
-    {
-        try
-        {
-            if (_azureService == null)
-            {
-                _azureService = new AzureService(_settings);
-            }
-            await _azureService.SignInAsync(refresh);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Azure sign-in failed.");
-            return false;
-        }
-    }
-
-    private async Task SearchResourcesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            // Reset the sort mode of the grid view
-            _currentSortColumn = "EntityType";
-            _sortAscending = false;
-
-            var query = BuildQuery();
-            _fullQuery = query;
-            _resources = await _azureService.QueryResourcesAsync(query, cancellationToken);
-
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                DisplayResults();
-            }
-        }
-        catch (Exception ex)
-        {
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                Log.Error(ex, "Search failed.");
-                MessageBox.Show(this, "Search failed! Please check the error log file in the\nprogram's local app data folder for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-    }
-
-    private string BuildQuery()
-    {
-        var resultQuery = _baseQuery;
-
-        if (!string.IsNullOrEmpty(_txtSearchQuery.Text) && _queryMode != QueryMode.KqlFull)
-        {
-            var filter = string.Empty;
-            if (_queryMode == QueryMode.KqlFilter)
-            {
-                filter = _txtSearchQuery.Text;
-            }
-            else
-            {
-                filter = $@"| where ResourceName matches regex @""(?i){_txtSearchQuery.Text}""
-       or ResourceGroup matches regex @""(?i){_txtSearchQuery.Text}""
-       or SubscriptionName matches regex @""(?i){_txtSearchQuery.Text}""";
-            }
-            resultQuery += filter;
-        }
-
-        return resultQuery;
-    }
-
-    private void InitializeResultsDataGridView()
-    {
-        _gvwResults.AutoGenerateColumns = true;
-        _gvwResults.CellFormatting += DataGridView_Results_CellFormatting;
-        _gvwResults.CellMouseClick += DataGridView_Results_CellMouseClick;
-        _gvwResults.CellDoubleClick += DataGridView_Results_CellDoubleClick;
-        _gvwResults.SelectionChanged += DataGridView_Results_SelectionChanged;
-        _gvwResults.ColumnHeaderMouseClick += DataGridView_Results_ColumnHeaderMouseClick;
-        _gvwResults.ColumnHeaderMouseDoubleClick += DataGridView_Results_ColumnHeaderMouseDoubleClick;
-        _gvwResults.DataSource = new List<Resource>();
-
-        // Prevent automatic sorting when a column header is double-clicked
-        foreach (DataGridViewColumn column in _gvwResults.Columns)
-        {
-            column.SortMode = DataGridViewColumnSortMode.NotSortable;
-        }
-
-        UpdateResultsColumnsWidth();
-    }
-
-    private void DataGridView_Results_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
-    {
-        _headerClickColumnIndex = e.ColumnIndex;
-        _isHeaderColumnDoubleClick = false;
-        _clickTimer?.Start();
-    }
-
-    private void ClickTimer_Tick(object sender, EventArgs e)
-    {
-        _clickTimer?.Stop();
-        if (!_isHeaderColumnDoubleClick)
-        {
-            // Place your single-click logic here
-            string columnName = _gvwResults.Columns[_headerClickColumnIndex].DataPropertyName;
-
-            if (_currentSortColumn == columnName)
-            {
-                _sortAscending = !_sortAscending;
-            }
-            else
-            {
-                _currentSortColumn = columnName;
-                _sortAscending = true;
-            }
-
-            _resources = _sortAscending
-                ? _resources.OrderBy(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList()
-                : _resources.OrderByDescending(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList();
-
-            DisplayResults(false);
-        }
-    }
-
-    private void DataGridView_Results_ColumnHeaderMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
-    {
-        _isHeaderColumnDoubleClick = true;
-        _clickTimer?.Stop();
-
-        var columnName = _gvwResults.Columns[e.ColumnIndex].DataPropertyName;
-        var queryText = _txtSearchQuery.Text;
-        var selectionStart = _txtSearchQuery.SelectionStart;
-        var selectionLength = _txtSearchQuery.SelectionLength;
-        bool endsWithSpace = false;
-
-        if (selectionLength > 0)
-        {
-            var selectedText = queryText.Substring(selectionStart, selectionLength);
-            endsWithSpace = selectedText.EndsWith(" ");
-            queryText = queryText.Remove(selectionStart, selectionLength);
-        }
-
-        var newText = queryText.Insert(selectionStart, columnName + (endsWithSpace ? " " : ""));
-        _txtSearchQuery.Text = newText;
-        _txtSearchQuery.SelectionStart = selectionStart + columnName.Length + (endsWithSpace ? 1 : 0);
-        _txtSearchQuery.Focus();
-    }
-
-    private object GetPropertyValue(Resource resource, string propertyName)
-    {
-        var propertyInfo = typeof(Resource).GetProperty(propertyName);
-        var value = propertyInfo?.GetValue(resource, null);
-
-        if (value is IDictionary<string, string> tags)
-        {
-            var sortedTags = tags.OrderBy(tag => tag.Key);
-            var jsonTags = System.Text.Json.JsonSerializer.Serialize(sortedTags);
-            return jsonTags;
-        }
-        else
-        {
-            return value;
-        }
-    }
-
-    private void InitializeTagsDataGridView()
-    {
-        _gvwTags.AutoGenerateColumns = true;
-        _gvwTags.CellFormatting += DataGridView_Results_CellFormatting;
-        _gvwTags.KeyDown += DataGridView_Tags_KeyDown;
     }
 
     private void DataGridView_Results_SelectionChanged(object sender, EventArgs e)
@@ -691,7 +510,6 @@ public partial class MainForm : Form
             }
             else
             {
-                // Find common tags
                 var commonTags = selectedResources
                     .Select(r => GetEntityTags(r))
                     .Where(tags => tags != null)
@@ -721,11 +539,440 @@ public partial class MainForm : Form
         }
     }
 
+    private void DataGridView_Results_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
+        {
+            _gvwResults.ClearSelection();
+            _gvwResults.Rows[e.RowIndex].Selected = true;
+            _contextMenuClickedCell = _gvwResults.Rows[e.RowIndex].Cells[e.ColumnIndex];
+            _contextMenu.Show(Cursor.Position);
+        }
+    }
+
+    private void DataGridView_Results_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex >= 0)
+        {
+            var selectedRow = _gvwResults.Rows[e.RowIndex];
+            var resource = selectedRow.DataBoundItem as Resource;
+            if (resource != null)
+            {
+                OpenResourceIdInAzurePortal(resource.Id);
+            }
+        }
+    }
+
+    private void ClickTimer_Tick(object sender, EventArgs e)
+    {
+        _headerColumnClickTimer?.Stop();
+        if (!_isHeaderColumnDoubleClick)
+        {
+            string columnName = _gvwResults.Columns[_headerColumnClickColumnIndex].DataPropertyName;
+
+            if (_currentSortColumn == columnName)
+            {
+                _sortAscending = !_sortAscending;
+            }
+            else
+            {
+                _currentSortColumn = columnName;
+                _sortAscending = true;
+            }
+
+            _resources = _sortAscending
+                ? _resources.OrderBy(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList()
+                : _resources.OrderByDescending(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList();
+
+            DisplayResults(false);
+        }
+    }
+
+    private void ResizeTimer_Tick(object sender, EventArgs e)
+    {
+        var timeDiff = DateTime.Now - _lastResizeTime;
+        var threshold = TimeSpan.FromMilliseconds(500);
+        if (timeDiff > threshold && timeDiff < TimeSpan.FromSeconds(3))
+        {
+            Form_ResizeEnd(this, EventArgs.Empty);
+        }
+    }
+
+    private void DataGridView_Results_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+    {
+        _headerColumnClickColumnIndex = e.ColumnIndex;
+        _isHeaderColumnDoubleClick = false;
+        _headerColumnClickTimer?.Start();
+    }
+
+    private void DataGridView_Results_ColumnHeaderMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
+    {
+        _isHeaderColumnDoubleClick = true;
+        _headerColumnClickTimer?.Stop();
+
+        var columnName = _gvwResults.Columns[e.ColumnIndex].DataPropertyName;
+        var queryText = _txtSearchQuery.Text;
+        var selectionStart = _txtSearchQuery.SelectionStart;
+        var selectionLength = _txtSearchQuery.SelectionLength;
+        bool endsWithSpace = false;
+
+        if (selectionLength > 0)
+        {
+            var selectedText = queryText.Substring(selectionStart, selectionLength);
+            endsWithSpace = selectedText.EndsWith(" ");
+            queryText = queryText.Remove(selectionStart, selectionLength);
+        }
+
+        var newText = queryText.Insert(selectionStart, columnName + (endsWithSpace ? " " : ""));
+        _txtSearchQuery.Text = newText;
+        _txtSearchQuery.SelectionStart = selectionStart + columnName.Length + (endsWithSpace ? 1 : 0);
+        _txtSearchQuery.Focus();
+    }
+
+    private void DataGridView_Tags_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Delete && _gvwTags.SelectedRows.Count > 0)
+        {
+            foreach (DataGridViewRow row in _gvwTags.SelectedRows)
+            {
+                var tagKey = row.Cells["Key"].Value?.ToString();
+                if (!string.IsNullOrEmpty(tagKey) && !_tagsToRemove.Contains(tagKey))
+                {
+                    _tagsToRemove.Add(tagKey);
+
+                    var deletedFont = new Font(row.InheritedStyle.Font, FontStyle.Strikeout);
+                    row.DefaultCellStyle.Font = deletedFont;
+                    row.InheritedStyle.Font = deletedFont;
+                }
+            }
+            e.Handled = true;
+        }
+    }
+
+    private void ComboBox_RecentSearches_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (_cboRecentSearches.SelectedItem is RecentSearchItem item)
+        {
+            _txtSearchQuery.Text = item.ActualText;
+            _cboRecentSearches.SelectedIndex = -1;
+        }
+    }
+
+    private void TextBox_SearchQuery_TextChanged(object sender, EventArgs e)
+    {
+        var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "");
+        if (normalizedQuery.StartsWith("resources|") || normalizedQuery.StartsWith("resourcecontainers|"))
+        {
+            _lblQueryMode.Text = "(KQL full expression) --> not supported";
+            _queryMode = QueryMode.KqlFull;
+        }
+        else if (normalizedQuery.StartsWith("|"))
+        {
+            _lblQueryMode.Text = "(KQL filter-only expression)";
+            _queryMode = QueryMode.KqlFilter;
+        }
+        else
+        {
+            _lblQueryMode.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
+            _queryMode = QueryMode.Regex;
+        }
+        _fullQuery = BuildQuery();
+    }
+
+    private void TextBox_SearchQuery_KeyPress(object sender, KeyPressEventArgs e)
+    {
+        if (e.KeyChar == 10 && ModifierKeys.HasFlag(Keys.Control))
+        {
+            e.Handled = true;
+            Button_PerformSearch_Click(sender, e);
+        }
+    }
+
+    private void TextBox_SearchQuery_MouseDoubleClick(object sender, MouseEventArgs e)
+    {
+        int index = _txtSearchQuery.GetCharIndexFromPosition(e.Location);
+        string text = _txtSearchQuery.Text;
+
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        int start = index;
+        int end = index;
+
+        string delimiters = " \t\r\n.,;:!?()[]{}<>\"'=/~%$§#+*|";
+
+        while (start > 0 && !delimiters.Contains(text[start - 1]))
+        {
+            start--;
+        }
+
+        while (end < text.Length && !delimiters.Contains(text[end]))
+        {
+            end++;
+        }
+
+        _txtSearchQuery.SelectionStart = start;
+        _txtSearchQuery.SelectionLength = end - start;
+    }
+
+    private async void ComboBox_TagTemplates_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (_cboTagTemplates.SelectedIndex < 0)
+        {
+            return;
+        }
+        var tags = _tagTemplates[_cboTagTemplates.SelectedIndex].Tags;
+        tags = await ResolveTagVariables(tags);
+        foreach (var tag in tags)
+        {
+            var existingRow = _gvwTags.Rows.Cast<DataGridViewRow>()
+                .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tag.Key);
+            if (existingRow != null)
+            {
+                if (!string.IsNullOrEmpty(tag.Value))
+                {
+                    existingRow.Cells["Value"].Value = tag.Value;
+                }
+            }
+            else
+            {
+                _gvwTags.Rows.Add(tag.Key, tag.Value);
+            }
+        }
+        _cboTagTemplates.SelectedIndex = -1;
+    }
+
+    private void ComboBox_QuickFilter_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (sender == _cboQuickFilter1Column)
+        {
+            if (!string.IsNullOrWhiteSpace(_txtQuickFilter1Text.Text))
+            {
+                DisplayResults(false);
+            }
+        }
+        else if (sender == _cboQuickFilter2Column)
+        {
+            if (!string.IsNullOrWhiteSpace(_txtQuickFilter2Text.Text))
+            {
+                DisplayResults(false);
+            }
+        }
+    }
+
+    private void TextBox_QuickFilter1_TextChanged(object sender, EventArgs e)
+    {
+        _debounceTimer1.Stop();
+        _debounceTimer1.Start();
+    }
+
+    private void TextBox_QuickFilter2_TextChanged(object sender, EventArgs e)
+    {
+        _debounceTimer2.Stop();
+        _debounceTimer2.Start();
+    }
+
+    private void Timer_DebounceTimer1_Tick(object sender, EventArgs e)
+    {
+        _debounceTimer1.Stop();
+        DisplayResults();
+    }
+
+    private void Timer_DebounceTimer2_Tick(object sender, EventArgs e)
+    {
+        _debounceTimer2.Stop();
+        DisplayResults();
+    }
+
+    private void LinkLabel_ResetQuickFilters_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        _cboQuickFilter1Column.SelectedIndex = -1;
+        _txtQuickFilter1Text.Text = string.Empty;
+
+        _cboQuickFilter2Column.SelectedIndex = -1;
+        _txtQuickFilter2Text.Text = string.Empty;
+    }
+
+    private void LinkLabel_EditTagTemplates_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
+        Process.Start(editor, TagTemplates.TagTemplatesFilePath);
+    }
+
+    private void LinkLabel_Donation_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        const string url = "https://www.paypal.com/donate/?hosted_button_id=JVG7PFJ8DMW7J";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+    private void LinkLabel_GitHubLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        const string url = "https://github.com/thgossler/AzTagger";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private void ShowActivityIndicator(ActivityIndicatorType type, bool visible)
+    {
+        if (type == ActivityIndicatorType.Query || type == ActivityIndicatorType.All)
+        {
+            _queryActivityIndicator.Style = ProgressBarStyle.Continuous;
+            _queryActivityIndicator.Value = 0;
+            _queryActivityIndicator.Style = ProgressBarStyle.Marquee;
+            _queryActivityIndicator.Visible = visible;
+        }
+        if (type == ActivityIndicatorType.Results || type == ActivityIndicatorType.All)
+        {
+            _resultsActivityIndicator.Style = ProgressBarStyle.Continuous;
+            _resultsActivityIndicator.Value = 0;
+            _resultsActivityIndicator.Style = ProgressBarStyle.Marquee;
+            _resultsActivityIndicator.Visible = visible;
+        }
+        Cursor.Current = visible ? Cursors.WaitCursor : Cursors.Default;
+    }
+
+    private string BuildQuery()
+    {
+        var resultQuery = _baseQuery;
+
+        if (!string.IsNullOrEmpty(_txtSearchQuery.Text) && _queryMode != QueryMode.KqlFull)
+        {
+            var filter = string.Empty;
+            if (_queryMode == QueryMode.KqlFilter)
+            {
+                filter = _txtSearchQuery.Text;
+            }
+            else
+            {
+                filter = $@"| where ResourceName matches regex @""(?i){_txtSearchQuery.Text}""
+       or ResourceGroup matches regex @""(?i){_txtSearchQuery.Text}""
+       or SubscriptionName matches regex @""(?i){_txtSearchQuery.Text}""";
+            }
+            resultQuery += filter;
+        }
+
+        return resultQuery;
+    }
+
+    private async Task<bool> SignInToAzureAsync(bool refresh = false)
+    {
+        try
+        {
+            if (_azureService == null)
+            {
+                _azureService = new AzureService(_settings);
+            }
+            await _azureService.SignInAsync(refresh);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Azure sign-in failed.");
+            return false;
+        }
+    }
+
+    private async Task SearchResourcesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _currentSortColumn = "EntityType";
+            _sortAscending = false;
+
+            var query = BuildQuery();
+            _fullQuery = query;
+            _resources = await _azureService.QueryResourcesAsync(query, cancellationToken);
+
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                DisplayResults();
+            }
+        }
+        catch (Exception ex)
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                Log.Error(ex, "Search failed.");
+                MessageBox.Show(this, "Search failed! Please check the error log file in the\nprogram's local app data folder for details.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+
+    private void OpenResourceIdInAzurePortal(string resourceId)
+    {
+        var portalUrl = _azureService != null ? _azureService.GetAzurePortalUrl() : "https://portal.azure.com";
+        var url = $"{portalUrl}/#@{_settings.TenantId}/resource{resourceId}";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private void LoadRecentSearches()
+    {
+        _cboRecentSearches.Items.Clear();
+        foreach (var queryText in _settings.RecentSearches)
+        {
+            _cboRecentSearches.Items.Add(new RecentSearchItem(queryText));
+        }
+        _cboRecentSearches.SelectedIndex = -1;
+    }
+
+    private void LoadTagTemplates()
+    {
+        _tagTemplates = TagTemplates.Load();
+        _cboTagTemplates.Items.Clear();
+        _cboTagTemplates.Items.AddRange(_tagTemplates.Select(t => t.TemplateName).ToArray());
+        _cboTagTemplates.SelectedIndex = -1;
+    }
+
+    private void SaveRecentSearch(string queryText)
+    {
+        if (!string.IsNullOrEmpty(queryText))
+        {
+            _settings.RecentSearches.Insert(0, queryText);
+            _settings.RemoveDuplicatesFromRecentSearches();
+            if (_settings.RecentSearches.Count > 10)
+            {
+                _settings.RecentSearches.RemoveAt(10);
+            }
+            _settings.Save();
+
+            var displayText = queryText.Replace("\r\n", " ").Replace("\n", " ");
+            var itemsToRemove = _cboRecentSearches.Items.Cast<RecentSearchItem>().
+                Where(i => i.DisplayText.Equals(displayText, StringComparison.OrdinalIgnoreCase)).ToList();
+            foreach (var item in itemsToRemove)
+            {
+                _cboRecentSearches.Items.Remove(item);
+            }
+            _cboRecentSearches.Items.Insert(0, new RecentSearchItem(queryText));
+
+            if (_cboRecentSearches.Items.Count > 10)
+            {
+                _cboRecentSearches.Items.RemoveAt(_cboRecentSearches.Items.Count - 1);
+            }
+        }
+    }
+
+    private object GetPropertyValue(Resource resource, string propertyName)
+    {
+        var propertyInfo = typeof(Resource).GetProperty(propertyName);
+        var value = propertyInfo?.GetValue(resource, null);
+
+        if (value is IDictionary<string, string> tags)
+        {
+            var sortedTags = tags.OrderBy(tag => tag.Key);
+            var jsonTags = System.Text.Json.JsonSerializer.Serialize(sortedTags);
+            return jsonTags;
+        }
+        else
+        {
+            return value;
+        }
+    }
+
     private List<Resource> ApplyQuickFilters(List<Resource> resources)
     {
         var filtered = resources;
 
-        // Apply Quick Filter 1
         if (_cboQuickFilter1Column.SelectedItem != null &&
             _cboQuickFilter1Column.SelectedItem.ToString() != string.Empty &&
             !string.IsNullOrWhiteSpace(_txtQuickFilter1Text.Text))
@@ -751,7 +998,6 @@ public partial class MainForm : Form
             }
         }
 
-        // Apply Quick Filter 2
         if (_cboQuickFilter2Column.SelectedItem != null &&
             _cboQuickFilter2Column.SelectedItem.ToString() != string.Empty &&
             !string.IsNullOrWhiteSpace(_txtQuickFilter2Text.Text))
@@ -838,38 +1084,6 @@ public partial class MainForm : Form
         }
     }
 
-    private void DataGridView_Tags_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.KeyCode == Keys.Delete && _gvwTags.SelectedRows.Count > 0)
-        {
-            foreach (DataGridViewRow row in _gvwTags.SelectedRows)
-            {
-                var tagKey = row.Cells["Key"].Value?.ToString();
-                if (!string.IsNullOrEmpty(tagKey) && !_tagsToRemove.Contains(tagKey))
-                {
-                    _tagsToRemove.Add(tagKey);
-
-                    // Mark the row for deletion by using a different font
-                    var deletedFont = new Font(row.InheritedStyle.Font, FontStyle.Strikeout);
-                    row.DefaultCellStyle.Font = deletedFont;
-                    row.InheritedStyle.Font = deletedFont;
-                }
-            }
-            e.Handled = true;
-        }
-    }
-
-    private async void Button_ApplyTags_Click(object sender, EventArgs e)
-    {
-        _btnApplyTags.Enabled = false;
-        ShowActivityIndicator(ActivityIndicatorType.Results, true);
-
-        await ApplyTagsAsync();
-
-        ShowActivityIndicator(ActivityIndicatorType.Results, false);
-        _btnApplyTags.Enabled = true;
-    }
-
     private async Task ApplyTagsAsync()
     {
         try
@@ -880,17 +1094,14 @@ public partial class MainForm : Form
             Dictionary<string, string> tagsToRemove = null;
             if (_tagsToRemove.Any())
             {
-                // Create a dictionary with tags to remove by setting their values to null
                 tagsToRemove = _tagsToRemove.ToDictionary(k => k, v => (string)null);
             }
 
-            // Apply tag changes to all selected resources
             var errors = await _azureService.UpdateTagsAsync(selectedResources, tagsToUpdate, tagsToRemove);
             if (errors.Length == 0)
             {
                 UpdateLocalTags(selectedResources, tagsToUpdate, tagsToRemove);
 
-                // Remove the marked for deletion tags from the tags table
                 RemoveDeletedTagsFromView();
             }
             else
@@ -962,13 +1173,11 @@ public partial class MainForm : Form
         {
             var resTags = GetEntityTags(resource);
 
-            // Update and add tags
             foreach (var tag in tagsToUpdate)
             {
                 resTags[tag.Key] = tag.Value;
             }
 
-            // Remove tags marked for deletion
             if (tagsToRemove != null)
             {
                 foreach (var tagKey in tagsToRemove.Keys)
@@ -979,7 +1188,6 @@ public partial class MainForm : Form
 
             if (!multipleSelected)
             {
-                // Remove any other tags not in tagsToUpdate
                 var keysToRemove = resTags.Keys.Except(tagsToUpdate.Keys).ToList();
                 foreach (var key in keysToRemove)
                 {
@@ -1019,72 +1227,6 @@ public partial class MainForm : Form
         return resTags ?? new Dictionary<string, string>();
     }
 
-    private void ComboBox_RecentSearches_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        if (_cboRecentSearches.SelectedItem is RecentSearchItem item)
-        {
-            _txtSearchQuery.Text = item.ActualText;
-            _cboRecentSearches.SelectedIndex = -1;
-        }
-    }
-
-    private void TextBox_SearchQuery_TextChanged(object sender, EventArgs e)
-    {
-        var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "");
-        if (normalizedQuery.StartsWith("resources|") || normalizedQuery.StartsWith("resourcecontainers|"))
-        {
-            _lblQueryMode.Text = "(KQL full expression) --> not supported";
-            _queryMode = QueryMode.KqlFull;
-        }
-        else if (normalizedQuery.StartsWith("|"))
-        {
-            _lblQueryMode.Text = "(KQL filter-only expression)";
-            _queryMode = QueryMode.KqlFilter;
-        }
-        else
-        {
-            _lblQueryMode.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
-            _queryMode = QueryMode.Regex;
-        }
-        _fullQuery = BuildQuery();
-    }
-
-    private void TextBox_SearchQuery_KeyPress(object sender, KeyPressEventArgs e)
-    {
-        if (e.KeyChar == 10 && ModifierKeys.HasFlag(Keys.Control))
-        {
-            e.Handled = true;
-            Button_PerformSearch_Click(sender, e);
-        }
-    }
-
-    private async void ComboBox_TagTemplates_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        if (_cboTagTemplates.SelectedIndex < 0)
-        {
-            return;
-        }
-        var tags = _tagTemplates[_cboTagTemplates.SelectedIndex].Tags;
-        tags = await ResolveTagVariables(tags);
-        foreach (var tag in tags)
-        {
-            var existingRow = _gvwTags.Rows.Cast<DataGridViewRow>()
-                .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tag.Key);
-            if (existingRow != null)
-            {
-                if (!string.IsNullOrEmpty(tag.Value))
-                {
-                    existingRow.Cells["Value"].Value = tag.Value;
-                }
-            }
-            else
-            {
-                _gvwTags.Rows.Add(tag.Key, tag.Value);
-            }
-        }
-        _cboTagTemplates.SelectedIndex = -1;
-    }
-
     public async Task<Dictionary<string, string>> ResolveTagVariables(Dictionary<string, string> tags)
     {
         var resolvedTags = new Dictionary<string, string>();
@@ -1115,145 +1257,5 @@ public partial class MainForm : Form
         var graphClient = new GraphServiceClient(_azureService.CurrentCredential, scopes);
         var user = await graphClient.Me.GetAsync();
         return user.Mail ?? user.UserPrincipalName ?? Environment.UserName;
-    }
-
-    private void MainForm_ResizeEnd(object sender, EventArgs e)
-    {
-        UpdateResultsColumnsWidth();
-    }
-
-    private void Button_CopyQuery_Click(object sender, EventArgs e)
-    {
-        Clipboard.SetText(_fullQuery);
-    }
-
-    private void MainForm_SizeChanged(object sender, EventArgs e)
-    {
-        _lastResizeTime = DateTime.Now;
-    }
-
-    private void ResizeTimer_Tick(object sender, EventArgs e)
-    {
-        var timeDiff = DateTime.Now - _lastResizeTime;
-        var threshold = TimeSpan.FromMilliseconds(500);
-        if (timeDiff > threshold && timeDiff < TimeSpan.FromSeconds(3))
-        {
-            MainForm_ResizeEnd(this, EventArgs.Empty);
-        }
-    }
-
-    private void MainForm_Load(object sender, EventArgs e)
-    {
-        LoadRecentSearches();
-        LoadTagTemplates();
-
-        _cboQuickFilter1Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
-        _txtQuickFilter1Text.TextChanged += TextBox_QuickFilter1_TextChanged;
-
-        _cboQuickFilter2Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
-        _txtQuickFilter2Text.TextChanged += TextBox_QuickFilter2_TextChanged;
-    }
-
-    private void ComboBox_QuickFilter_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        if (sender == _cboQuickFilter1Column)
-        {
-            if (!string.IsNullOrWhiteSpace(_txtQuickFilter1Text.Text))
-            {
-                DisplayResults(false);
-            }
-        }
-        else if (sender == _cboQuickFilter2Column)
-        {
-            if (!string.IsNullOrWhiteSpace(_txtQuickFilter2Text.Text))
-            {
-                DisplayResults(false);
-            }
-        }
-    }
-
-    private void TextBox_QuickFilter1_TextChanged(object sender, EventArgs e)
-    {
-        _debounceTimer1.Stop();
-        _debounceTimer1.Start();
-    }
-
-    private void TextBox_QuickFilter2_TextChanged(object sender, EventArgs e)
-    {
-        _debounceTimer2.Stop();
-        _debounceTimer2.Start();
-    }
-
-    private void Timer_DebounceTimer1_Tick(object sender, EventArgs e)
-    {
-        _debounceTimer1.Stop();
-        DisplayResults();
-    }
-
-    private void Timer_DebounceTimer2_Tick(object sender, EventArgs e)
-    {
-        _debounceTimer2.Stop();
-        DisplayResults();
-    }
-
-    private void LinkLabel_ResetQuickFilters_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-    {
-        _cboQuickFilter1Column.SelectedIndex = -1;
-        _txtQuickFilter1Text.Text = string.Empty;
-
-        _cboQuickFilter2Column.SelectedIndex = -1;
-        _txtQuickFilter2Text.Text = string.Empty;
-    }
-
-    private void LinkLabel_EditTagTemplates_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-    {
-        var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
-        Process.Start(editor, TagTemplates.TagTemplatesFilePath);
-    }
-
-    private void LinkLabel_GitHubLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-    {
-        var url = $"https://{_lnkGitHubLink.Text}";
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-    }
-
-    private async void Button_RefreshSignin_Click(object sender, EventArgs e)
-    {
-        bool isSignedIn = await SignInToAzureAsync(true);
-        if (!isSignedIn)
-        {
-            MessageBox.Show(this, "Azure sign-in failed. Please check your credentials and try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return;
-        }
-    }
-
-    private void TextBox_SearchQuery_MouseDoubleClick(object sender, MouseEventArgs e)
-    {
-        int index = _txtSearchQuery.GetCharIndexFromPosition(e.Location);
-        string text = _txtSearchQuery.Text;
-
-        if (string.IsNullOrEmpty(text))
-            return;
-
-        int start = index;
-        int end = index;
-
-        // Define characters to exclude from selection
-        string delimiters = " \t\r\n.,;:!?()[]{}<>\"'=/~%$§#+*|";
-
-        // Move start index to the beginning of the word
-        while (start > 0 && !delimiters.Contains(text[start - 1]))
-        {
-            start--;
-        }
-
-        // Move end index to the end of the word
-        while (end < text.Length && !delimiters.Contains(text[end]))
-        {
-            end++;
-        }
-
-        _txtSearchQuery.SelectionStart = start;
-        _txtSearchQuery.SelectionLength = end - start;
     }
 }
