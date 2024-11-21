@@ -238,6 +238,7 @@ namespace AzTagger
             // 
             // _cboRecentSearches
             // 
+            _cboRecentSearches.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             _cboRecentSearches.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboRecentSearches.FormattingEnabled = true;
             _cboRecentSearches.Location = new System.Drawing.Point(129, 12);
@@ -543,6 +544,7 @@ namespace AzTagger
             // 
             // _lnkResourceGraphDocs
             // 
+            _lnkResourceGraphDocs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             _lnkResourceGraphDocs.Location = new System.Drawing.Point(1171, 56);
             _lnkResourceGraphDocs.Name = "_lnkResourceGraphDocs";
             _lnkResourceGraphDocs.Size = new System.Drawing.Size(299, 25);
@@ -581,7 +583,7 @@ namespace AzTagger
             Controls.Add(_txtSearchQuery);
             DoubleBuffered = true;
             Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
-            MinimumSize = new System.Drawing.Size(1280, 930);
+            MinimumSize = new System.Drawing.Size(1290, 930);
             Name = "MainForm";
             StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             Text = "AzTagger";
