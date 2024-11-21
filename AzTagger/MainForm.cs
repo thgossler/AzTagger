@@ -181,7 +181,7 @@ public partial class MainForm : Form
         _contextMenu.Items.Add(addToFilterQueryMenuItem);
 
         var excludeInFilterQueryMenuItem = new ToolStripMenuItem("Exclude in filter query");
-        addToFilterQueryMenuItem.Name = "ExcludeInFilterQueryMenuItem";
+        excludeInFilterQueryMenuItem.Name = "ExcludeInFilterQueryMenuItem";
         excludeInFilterQueryMenuItem.Click += MenuItem_AddToFilterQuery_Click;
         _contextMenu.Items.Add(excludeInFilterQueryMenuItem);
 
@@ -410,26 +410,26 @@ public partial class MainForm : Form
             var cellValue = _contextMenuClickedCell.Value;
             var tagFilter = string.Join(" and ", tags.Select(tag => $"{columnName}[\"{tag.Key}\"] =~ '{tag.Value}'"));
             queryText = queryText.TrimEnd();
-            if (menuItem.Name.Equals("AddToFilterQueryMenuItem"))
+            if (menuItem.Name.Equals("ExcludeInFilterQueryMenuItem"))
             {
-                queryText += Environment.NewLine + $"| where {tagFilter}";
+                queryText += Environment.NewLine + $"| where not({tagFilter})";
             }
             else
             {
-                queryText += Environment.NewLine + $"| where not({tagFilter})";
+                queryText += Environment.NewLine + $"| where {tagFilter}";
             }
         }
         else
         {
             var cellValue = _contextMenuClickedCell.Value.ToString();
             queryText = queryText.TrimEnd();
-            if (menuItem.Name.Equals("AddToFilterQueryMenuItem"))
+            if (menuItem.Name.Equals("ExcludeInFilterQueryMenuItem"))
             {
-                queryText += Environment.NewLine + $"| where {columnName} =~ '{cellValue}'";
+                queryText += Environment.NewLine + $"| where {columnName} != '{cellValue}'";
             }
             else
             {
-                queryText += Environment.NewLine + $"| where {columnName} != '{cellValue}'";
+                queryText += Environment.NewLine + $"| where {columnName} =~ '{cellValue}'";
             }
         }
 

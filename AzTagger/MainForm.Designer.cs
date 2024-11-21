@@ -499,7 +499,7 @@ namespace AzTagger
             // 
             _lblVersion.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
             _lblVersion.AutoSize = true;
-            _lblVersion.Location = new System.Drawing.Point(1095, 921);
+            _lblVersion.Location = new System.Drawing.Point(1130, 921);
             _lblVersion.Name = "_lblVersion";
             _lblVersion.Size = new System.Drawing.Size(91, 20);
             _lblVersion.TabIndex = 26;
