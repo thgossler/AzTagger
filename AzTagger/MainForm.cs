@@ -1,6 +1,5 @@
 using AzTagger.Models;
 using AzTagger.Services;
-using Azure.Identity;
 using Microsoft.Graph;
 using Serilog;
 using System;
@@ -8,9 +7,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Timer = System.Windows.Forms.Timer;
 
 namespace AzTagger;
 
@@ -23,6 +25,7 @@ public partial class MainForm : Form
     private ContextMenuStrip _contextMenu;
     private DataGridViewCell _contextMenuClickedCell;
     private string _fullQuery = string.Empty;
+    private CancellationTokenSource _queryCancellationTokenSource;
     private Timer _resizeTimer;
     private DateTime _lastResizeTime;
     private string _currentSortColumn = string.Empty;
@@ -30,6 +33,10 @@ public partial class MainForm : Form
     private const int debounceDelayMsecs = 500;
     private Timer _debounceTimer1;
     private Timer _debounceTimer2;
+    private Timer _clickTimer;
+    private bool _isHeaderColumnDoubleClick = false;
+    private int _headerClickColumnIndex = 0;
+    private const int ClickDelayMsecs = 300;
     private List<string> _tagsToRemove = new List<string>();
 
     private const string _baseQuery = @"resources
@@ -40,7 +47,7 @@ public partial class MainForm : Form
 ) on $left.subscriptionId == $right.rg_subscriptionId and $left.resourceGroup == $right.resourceGroup
 | join kind=leftouter (
     resourcecontainers
-    | where type =~ ""microsoft.resources/subscriptions""
+    | where type =~ ""microsoft.resources/subscriptions"" and not(properties['state'] =~ 'disabled')
     | project sub_subscriptionId = subscriptionId, subscriptionTags = tags, subscriptionName = name
 ) on $left.subscriptionId == $right.sub_subscriptionId
 | project 
@@ -76,7 +83,7 @@ public partial class MainForm : Form
 )
 | union (
     resourcecontainers
-    | where type =~ ""microsoft.resources/subscriptions""
+    | where type =~ ""microsoft.resources/subscriptions"" and not(properties['state'] =~ 'disabled')
     | project 
         EntityType = ""Subscription"",
         Id = id, 
@@ -111,6 +118,13 @@ public partial class MainForm : Form
     }
     private QueryMode _queryMode = QueryMode.Regex;
 
+    private enum ActivityIndicatorType
+    {
+        Query,
+        Results,
+        All
+    }
+
     public MainForm(Settings settings)
     {
         InitializeComponent();
@@ -126,6 +140,10 @@ public partial class MainForm : Form
         _resources = new List<Resource>();
 
         Load += Form_Load;
+
+        _clickTimer = new Timer();
+        _clickTimer.Interval = ClickDelayMsecs;
+        _clickTimer.Tick += ClickTimer_Tick;
     }
 
     private void InitializeDebounceTimers()
@@ -142,7 +160,9 @@ public partial class MainForm : Form
     private void InitializeQuickFilterComboBoxes()
     {
         var resourceProperties = typeof(Resource).GetProperties().Select(p => p.Name).ToArray();
+        _cboQuickFilter1Column.Items.Add(string.Empty);
         _cboQuickFilter1Column.Items.AddRange(resourceProperties);
+        _cboQuickFilter2Column.Items.Add(string.Empty);
         _cboQuickFilter2Column.Items.AddRange(resourceProperties);
     }
 
@@ -169,6 +189,16 @@ public partial class MainForm : Form
         var copyCellValueMenuItem = new ToolStripMenuItem("Copy cell value");
         copyCellValueMenuItem.Click += CopyCellValueMenuItem_Click;
         _contextMenu.Items.Add(copyCellValueMenuItem);
+
+        var addToFilterQueryMenuItem = new ToolStripMenuItem("Add to filter query");
+        addToFilterQueryMenuItem.Name = "AddToFilterQueryMenuItem";
+        addToFilterQueryMenuItem.Click += AddToFilterQueryMenuItem_Click;
+        _contextMenu.Items.Add(addToFilterQueryMenuItem);
+
+        var excludeInFilterQueryMenuItem = new ToolStripMenuItem("Exclude in filter query");
+        addToFilterQueryMenuItem.Name = "ExcludeInFilterQueryMenuItem";
+        excludeInFilterQueryMenuItem.Click += AddToFilterQueryMenuItem_Click;
+        _contextMenu.Items.Add(excludeInFilterQueryMenuItem);
 
         var refreshTagsMenuItem = new ToolStripMenuItem("Refresh tags from Azure");
         refreshTagsMenuItem.Click += RefreshTagsMenuItem_Click;
@@ -236,6 +266,53 @@ public partial class MainForm : Form
         }
     }
 
+    private void AddToFilterQueryMenuItem_Click(object sender, EventArgs e)
+    {
+        if (_contextMenuClickedCell?.Value == null)
+        {
+            return;
+        }
+
+        var menuItem = sender as ToolStripMenuItem;
+        if (menuItem == null)
+        {
+            return;
+        }
+
+        var queryText = _txtSearchQuery.Text;
+        var columnName = _gvwResults.Columns[_contextMenuClickedCell.ColumnIndex].DataPropertyName;
+
+        if (_contextMenuClickedCell.Value is IDictionary<string, string> tags)
+        {
+            var cellValue = _contextMenuClickedCell.Value;
+            var tagFilter = string.Join(" and ", tags.Select(tag => $"{columnName}[\"{tag.Key}\"] =~ '{tag.Value}'"));
+            queryText = queryText.TrimEnd();
+            if (menuItem.Name.Equals("AddToFilterQueryMenuItem"))
+            {
+                queryText += Environment.NewLine + $"| where {tagFilter}";
+            }
+            else
+            {
+                queryText += Environment.NewLine + $"| where not({tagFilter})";
+            }
+        }
+        else
+        {
+            var cellValue = _contextMenuClickedCell.Value.ToString();
+            queryText = queryText.TrimEnd();
+            if (menuItem.Name.Equals("AddToFilterQueryMenuItem"))
+            {
+                queryText += Environment.NewLine + $"| where {columnName} =~ '{cellValue}'";
+            }
+            else
+            {
+                queryText += Environment.NewLine + $"| where {columnName} != '{cellValue}'";
+            }
+        }
+
+        _txtSearchQuery.Text = queryText;
+    }
+
     private async void RefreshTagsMenuItem_Click(object sender, EventArgs e)
     {
         if (_gvwResults.SelectedRows.Count == 0)
@@ -243,10 +320,7 @@ public partial class MainForm : Form
             return;
         }
 
-        _progressBar.Style = ProgressBarStyle.Continuous;
-        _progressBar.Value = 0;
-        _progressBar.Style = ProgressBarStyle.Marquee;
-        _progressBar.Visible = true;
+        ShowActivityIndicator(ActivityIndicatorType.Query, true);
 
         try
         {
@@ -280,12 +354,30 @@ public partial class MainForm : Form
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to refresh tags for selected resources from Azure.");
-            MessageBox.Show(this, "Failed to refresh tags for selected resources from Azure. Please check the error log file in the program's AppData Local folder for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {
-            _progressBar.Visible = false;
+            ShowActivityIndicator(ActivityIndicatorType.Query, false);
         }
+    }
+
+    private void ShowActivityIndicator(ActivityIndicatorType type, bool visible)
+    {
+        if (type == ActivityIndicatorType.Query || type == ActivityIndicatorType.All)
+        {
+            _queryActivityIndicator.Style = ProgressBarStyle.Continuous;
+            _queryActivityIndicator.Value = 0;
+            _queryActivityIndicator.Style = ProgressBarStyle.Marquee;
+            _queryActivityIndicator.Visible = visible;
+        }
+        if (type == ActivityIndicatorType.Results || type == ActivityIndicatorType.All)
+        {
+            _resultsActivityIndicator.Style = ProgressBarStyle.Continuous;
+            _resultsActivityIndicator.Value = 0;
+            _resultsActivityIndicator.Style = ProgressBarStyle.Marquee;
+            _resultsActivityIndicator.Visible = visible;
+        }
+        Cursor.Current = visible ? Cursors.WaitCursor : Cursors.Default;
     }
 
     private void DataGridView_Results_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
@@ -388,18 +480,22 @@ public partial class MainForm : Form
         _gvwResults.DataSource = new List<Resource>();
         UpdateResultsCountLabel(true);
 
-        _progressBar.Visible = true;
-        _progressBar.Style = ProgressBarStyle.Continuous;
-        _progressBar.Value = 0;
-        _progressBar.Style = ProgressBarStyle.Marquee;
+        if (_queryCancellationTokenSource != null)
+        {
+            _queryCancellationTokenSource.Cancel();
+            await Task.Delay(300);
+        }
+        _queryCancellationTokenSource = new CancellationTokenSource();
 
-        await SearchResourcesAsync();
+        ShowActivityIndicator(ActivityIndicatorType.Query, true);
         SaveRecentSearch(_txtSearchQuery.Text);
 
-        _progressBar.Visible = false;
+        await SearchResourcesAsync(_queryCancellationTokenSource.Token);
+
+        ShowActivityIndicator(ActivityIndicatorType.Query, false);
     }
 
-    private async Task<bool> SignInToAzureAsync()
+    private async Task<bool> SignInToAzureAsync(bool refresh = false)
     {
         try
         {
@@ -407,7 +503,7 @@ public partial class MainForm : Form
             {
                 _azureService = new AzureService(_settings);
             }
-            await _azureService.SignInAsync();
+            await _azureService.SignInAsync(refresh);
             return true;
         }
         catch (Exception ex)
@@ -417,7 +513,7 @@ public partial class MainForm : Form
         }
     }
 
-    private async Task SearchResourcesAsync()
+    private async Task SearchResourcesAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -427,14 +523,20 @@ public partial class MainForm : Form
 
             var query = BuildQuery();
             _fullQuery = query;
-            _resources = await _azureService.QueryResourcesAsync(query);
+            _resources = await _azureService.QueryResourcesAsync(query, cancellationToken);
 
-            DisplayResults();
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                DisplayResults();
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Search failed.");
-            MessageBox.Show(this, "Search failed! Please check the error log file in the\nprogram's local app data folder for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                Log.Error(ex, "Search failed.");
+                MessageBox.Show(this, "Search failed! Please check the error log file in the\nprogram's local app data folder for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 
@@ -469,30 +571,75 @@ public partial class MainForm : Form
         _gvwResults.CellDoubleClick += DataGridView_Results_CellDoubleClick;
         _gvwResults.SelectionChanged += DataGridView_Results_SelectionChanged;
         _gvwResults.ColumnHeaderMouseClick += DataGridView_Results_ColumnHeaderMouseClick;
+        _gvwResults.ColumnHeaderMouseDoubleClick += DataGridView_Results_ColumnHeaderMouseDoubleClick;
         _gvwResults.DataSource = new List<Resource>();
+
+        // Prevent automatic sorting when a column header is double-clicked
+        foreach (DataGridViewColumn column in _gvwResults.Columns)
+        {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
+
         UpdateResultsColumnsWidth();
     }
 
     private void DataGridView_Results_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
     {
-        string columnName = _gvwResults.Columns[e.ColumnIndex].DataPropertyName;
-
-        if (_currentSortColumn == columnName)
-        {
-            _sortAscending = !_sortAscending;
-        }
-        else
-        {
-            _currentSortColumn = columnName;
-            _sortAscending = true;
-        }
-
-        _resources = _sortAscending
-            ? _resources.OrderBy(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList()
-            : _resources.OrderByDescending(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList();
-
-        DisplayResults();
+        _headerClickColumnIndex = e.ColumnIndex;
+        _isHeaderColumnDoubleClick = false;
+        _clickTimer?.Start();
     }
+
+    private void ClickTimer_Tick(object sender, EventArgs e)
+    {
+        _clickTimer?.Stop();
+        if (!_isHeaderColumnDoubleClick)
+        {
+            // Place your single-click logic here
+            string columnName = _gvwResults.Columns[_headerClickColumnIndex].DataPropertyName;
+
+            if (_currentSortColumn == columnName)
+            {
+                _sortAscending = !_sortAscending;
+            }
+            else
+            {
+                _currentSortColumn = columnName;
+                _sortAscending = true;
+            }
+
+            _resources = _sortAscending
+                ? _resources.OrderBy(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList()
+                : _resources.OrderByDescending(r => GetPropertyValue(r, columnName)?.ToString(), StringComparer.OrdinalIgnoreCase).ToList();
+
+            DisplayResults(false);
+        }
+    }
+
+    private void DataGridView_Results_ColumnHeaderMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
+    {
+        _isHeaderColumnDoubleClick = true;
+        _clickTimer?.Stop();
+
+        var columnName = _gvwResults.Columns[e.ColumnIndex].DataPropertyName;
+        var queryText = _txtSearchQuery.Text;
+        var selectionStart = _txtSearchQuery.SelectionStart;
+        var selectionLength = _txtSearchQuery.SelectionLength;
+        bool endsWithSpace = false;
+
+        if (selectionLength > 0)
+        {
+            var selectedText = queryText.Substring(selectionStart, selectionLength);
+            endsWithSpace = selectedText.EndsWith(" ");
+            queryText = queryText.Remove(selectionStart, selectionLength);
+        }
+
+        var newText = queryText.Insert(selectionStart, columnName + (endsWithSpace ? " " : ""));
+        _txtSearchQuery.Text = newText;
+        _txtSearchQuery.SelectionStart = selectionStart + columnName.Length + (endsWithSpace ? 1 : 0);
+        _txtSearchQuery.Focus();
+    }
+
     private object GetPropertyValue(Resource resource, string propertyName)
     {
         var propertyInfo = typeof(Resource).GetProperty(propertyName);
@@ -579,7 +726,9 @@ public partial class MainForm : Form
         var filtered = resources;
 
         // Apply Quick Filter 1
-        if (_cboQuickFilter1Column.SelectedItem != null && !string.IsNullOrWhiteSpace(_txtQuickFilter1Text.Text))
+        if (_cboQuickFilter1Column.SelectedItem != null &&
+            _cboQuickFilter1Column.SelectedItem.ToString() != string.Empty &&
+            !string.IsNullOrWhiteSpace(_txtQuickFilter1Text.Text))
         {
             string column1 = _cboQuickFilter1Column.SelectedItem.ToString();
             string pattern1 = _txtQuickFilter1Text.Text;
@@ -603,7 +752,9 @@ public partial class MainForm : Form
         }
 
         // Apply Quick Filter 2
-        if (_cboQuickFilter2Column.SelectedItem != null && !string.IsNullOrWhiteSpace(_txtQuickFilter2Text.Text))
+        if (_cboQuickFilter2Column.SelectedItem != null &&
+            _cboQuickFilter2Column.SelectedItem.ToString() != string.Empty &&
+            !string.IsNullOrWhiteSpace(_txtQuickFilter2Text.Text))
         {
             string column2 = _cboQuickFilter2Column.SelectedItem.ToString();
             string pattern2 = _txtQuickFilter2Text.Text;
@@ -710,7 +861,13 @@ public partial class MainForm : Form
 
     private async void Button_ApplyTags_Click(object sender, EventArgs e)
     {
+        _btnApplyTags.Enabled = false;
+        ShowActivityIndicator(ActivityIndicatorType.Results, true);
+
         await ApplyTagsAsync();
+
+        ShowActivityIndicator(ActivityIndicatorType.Results, false);
+        _btnApplyTags.Enabled = true;
     }
 
     private async Task ApplyTagsAsync()
@@ -728,18 +885,40 @@ public partial class MainForm : Form
             }
 
             // Apply tag changes to all selected resources
-            await _azureService.UpdateTagsAsync(selectedResources, tagsToUpdate, tagsToRemove);
-            UpdateLocalTags(selectedResources, tagsToUpdate, tagsToRemove);
+            var errors = await _azureService.UpdateTagsAsync(selectedResources, tagsToUpdate, tagsToRemove);
+            if (errors.Length == 0)
+            {
+                UpdateLocalTags(selectedResources, tagsToUpdate, tagsToRemove);
 
-            // Remove the marked for deletion tags from the tags table
-            RemoveDeletedTagsFromView();
+                // Remove the marked for deletion tags from the tags table
+                RemoveDeletedTagsFromView();
+            }
+            else
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("Not all tags could be applied successfully.").AppendLine();
+                const int limit = 3;
+                sb.AppendLine("Errors:");
+                foreach (var error in errors.Distinct().Take(limit))
+                {
+                    sb.AppendLine(error).AppendLine();
+                }
+                if (errors.Length > limit)
+                {
+                    sb.Append($"... (overall {errors.Length} errors)");
+                }
+                var message = sb.ToString();
+                Log.Error(message);
 
-            MessageBox.Show(this, "Tags applied successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ShowActivityIndicator(ActivityIndicatorType.All, false);
+
+                MessageBox.Show(this, message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to apply tags.");
-            MessageBox.Show(this, "Failed to apply tags. Please check the error log file in the program's AppData Local folder for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, "Not all tags could be applied successfully. Please check the error log file in the program's AppData Local folder for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -837,7 +1016,7 @@ public partial class MainForm : Form
         {
             resTags = resource.SubscriptionTags;
         }
-        return resTags;
+        return resTags ?? new Dictionary<string, string>();
     }
 
     private void ComboBox_RecentSearches_SelectedIndexChanged(object sender, EventArgs e)
@@ -968,14 +1147,14 @@ public partial class MainForm : Form
         LoadRecentSearches();
         LoadTagTemplates();
 
-        _cboQuickFilter1Column.SelectedIndexChanged += FilterInputsChanged;
+        _cboQuickFilter1Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
         _txtQuickFilter1Text.TextChanged += TextBox_QuickFilter1_TextChanged;
 
-        _cboQuickFilter2Column.SelectedIndexChanged += FilterInputsChanged;
+        _cboQuickFilter2Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
         _txtQuickFilter2Text.TextChanged += TextBox_QuickFilter2_TextChanged;
     }
 
-    private void FilterInputsChanged(object sender, EventArgs e)
+    private void ComboBox_QuickFilter_SelectedIndexChanged(object sender, EventArgs e)
     {
         if (sender == _cboQuickFilter1Column)
         {
@@ -1030,5 +1209,51 @@ public partial class MainForm : Form
     {
         var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
         Process.Start(editor, TagTemplates.TagTemplatesFilePath);
+    }
+
+    private void LinkLabel_GitHubLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        var url = $"https://{_lnkGitHubLink.Text}";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private async void Button_RefreshSignin_Click(object sender, EventArgs e)
+    {
+        bool isSignedIn = await SignInToAzureAsync(true);
+        if (!isSignedIn)
+        {
+            MessageBox.Show(this, "Azure sign-in failed. Please check your credentials and try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+    }
+
+    private void TextBox_SearchQuery_MouseDoubleClick(object sender, MouseEventArgs e)
+    {
+        int index = _txtSearchQuery.GetCharIndexFromPosition(e.Location);
+        string text = _txtSearchQuery.Text;
+
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        int start = index;
+        int end = index;
+
+        // Define characters to exclude from selection
+        string delimiters = " \t\r\n.,;:!?()[]{}<>\"'=/~%$§#+*|";
+
+        // Move start index to the beginning of the word
+        while (start > 0 && !delimiters.Contains(text[start - 1]))
+        {
+            start--;
+        }
+
+        // Move end index to the end of the word
+        while (end < text.Length && !delimiters.Contains(text[end]))
+        {
+            end++;
+        }
+
+        _txtSearchQuery.SelectionStart = start;
+        _txtSearchQuery.SelectionLength = end - start;
     }
 }

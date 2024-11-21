@@ -8,6 +8,7 @@ using Azure.ResourceManager;
 using Azure.ResourceManager.ResourceGraph;
 using Azure.ResourceManager.ResourceGraph.Models;
 using Azure.ResourceManager.Resources;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +32,7 @@ public class AzureService
         _settings = settings;
     }
 
-    public async Task SignInAsync()
+    public async Task SignInAsync(bool refresh = false)
     {
         if (string.IsNullOrWhiteSpace(_settings.TenantId))
         {
@@ -40,7 +41,7 @@ public class AzureService
 
         if (_credential != null && _armClient != null && _tenantResource != null)
         {
-            if (await IsSessionValidAsync())
+            if (!refresh && await IsSessionValidAsync())
             {
                 return;
             }
@@ -121,7 +122,7 @@ public class AzureService
         return url;
     }
 
-    public async Task<List<Resource>> QueryResourcesAsync(string query)
+    public async Task<List<Resource>> QueryResourcesAsync(string query, CancellationToken cancellationToken = default)
     {
         var result = new List<Resource>();
         if (query == null)
@@ -140,7 +141,7 @@ public class AzureService
                     SkipToken = skipToken
                 }
             };
-            var azureResult = await _tenantResource.GetResourcesAsync(resourceQuery);
+            var azureResult = await _tenantResource.GetResourcesAsync(resourceQuery, cancellationToken);
             var response = azureResult.GetRawResponse();
             if (response.Status != 200)
             {
@@ -169,10 +170,12 @@ public class AzureService
         return result;
     }
 
-    public async Task UpdateTagsAsync(List<Resource> resources, Dictionary<string, string> tagsToUpdate, Dictionary<string, string> tagsToRemove)
+    public async Task<string[]> UpdateTagsAsync(List<Resource> resources, Dictionary<string, string> tagsToUpdate, Dictionary<string, string> tagsToRemove)
     {
         var maxDegreeOfParallelism = 10;
         var semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+
+        var errors = new List<string>();
 
         var tasks = resources.Select(async resource =>
         {
@@ -210,6 +213,11 @@ public class AzureService
                 // Set the updated tags
                 await genericResource.SetTagsAsync(currentTags);
             }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error updating tags for resource {resource.Id}");
+                errors.Add(ex.Message.Split(Environment.NewLine)[0]);
+            }
             finally
             {
                 semaphore.Release();
@@ -217,5 +225,6 @@ public class AzureService
         });
 
         await Task.WhenAll(tasks);
+        return errors.ToArray();
     }
 }
