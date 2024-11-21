@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <metadata name="_toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <data name="_txtSearchQuery.ToolTip" xml:space="preserve">
+    <value>If left blank, this search field will display all Azure resources, resource groups, and subscriptions. You can enter simple text or a regular expression to filter the ResourceName, ResourceGroup, and SubscriptionName columns. To apply a filter using the Azure Resource Graph Query Language (KQL), start your query with a | character.</value>
+  </data>
   <metadata name="Key.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>

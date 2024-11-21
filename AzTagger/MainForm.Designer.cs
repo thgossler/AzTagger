@@ -86,8 +86,9 @@ namespace AzTagger
 
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             _txtSearchQuery = new System.Windows.Forms.TextBox();
             _btnPerformSearch = new System.Windows.Forms.Button();
             _gvwResults = new System.Windows.Forms.DataGridView();
@@ -115,6 +116,7 @@ namespace AzTagger
             _cboQuickFilter2Column = new System.Windows.Forms.ComboBox();
             _txtQuickFilter2Text = new System.Windows.Forms.TextBox();
             _lnkResetQuickFilters = new System.Windows.Forms.LinkLabel();
+            _lnkDotNetRegExDocs = new System.Windows.Forms.LinkLabel();
             _lblResultsFilteredCount = new System.Windows.Forms.Label();
             _lnkEditTagTemplates = new System.Windows.Forms.LinkLabel();
             _lnkGitHubLink = new System.Windows.Forms.LinkLabel();
@@ -122,6 +124,8 @@ namespace AzTagger
             _resultsActivityIndicator = new System.Windows.Forms.ProgressBar();
             _lnkDonation = new System.Windows.Forms.LinkLabel();
             _lblVersion = new System.Windows.Forms.Label();
+            _toolTip = new System.Windows.Forms.ToolTip(components);
+            _lnkResourceGraphDocs = new System.Windows.Forms.LinkLabel();
             ((System.ComponentModel.ISupportInitialize)_gvwResults).BeginInit();
             ((System.ComponentModel.ISupportInitialize)_gvwTags).BeginInit();
             _pnlQueryButtons.SuspendLayout();
@@ -137,6 +141,7 @@ namespace AzTagger
             _txtSearchQuery.Name = "_txtSearchQuery";
             _txtSearchQuery.Size = new System.Drawing.Size(1458, 69);
             _txtSearchQuery.TabIndex = 2;
+            _toolTip.SetToolTip(_txtSearchQuery, resources.GetString("_txtSearchQuery.ToolTip"));
             _txtSearchQuery.TextChanged += TextBox_SearchQuery_TextChanged;
             _txtSearchQuery.KeyPress += TextBox_SearchQuery_KeyPress;
             _txtSearchQuery.MouseDoubleClick += TextBox_SearchQuery_MouseDoubleClick;
@@ -150,6 +155,7 @@ namespace AzTagger
             _btnPerformSearch.Size = new System.Drawing.Size(119, 30);
             _btnPerformSearch.TabIndex = 3;
             _btnPerformSearch.Text = "Perform Search";
+            _toolTip.SetToolTip(_btnPerformSearch, "Search the Azure Resource Graph using your query to find matching resources, resource groups, and subscriptions.");
             _btnPerformSearch.UseVisualStyleBackColor = true;
             _btnPerformSearch.Click += Button_PerformSearch_Click;
             // 
@@ -174,6 +180,7 @@ namespace AzTagger
             _gvwResults.Size = new System.Drawing.Size(1458, 413);
             _gvwResults.StandardTab = true;
             _gvwResults.TabIndex = 4;
+            _toolTip.SetToolTip(_gvwResults, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
             // 
             // _btnApplyTags
             // 
@@ -226,6 +233,7 @@ namespace AzTagger
             _cboTagTemplates.Name = "_cboTagTemplates";
             _cboTagTemplates.Size = new System.Drawing.Size(244, 28);
             _cboTagTemplates.TabIndex = 7;
+            _toolTip.SetToolTip(_cboTagTemplates, "When you select a template, its tags will be added to your current list, and any existing tags will be updated.");
             _cboTagTemplates.SelectedIndexChanged += ComboBox_TagTemplates_SelectedIndexChanged;
             // 
             // _cboRecentSearches
@@ -235,7 +243,7 @@ namespace AzTagger
             _cboRecentSearches.Location = new System.Drawing.Point(129, 12);
             _cboRecentSearches.MaxDropDownItems = 10;
             _cboRecentSearches.Name = "_cboRecentSearches";
-            _cboRecentSearches.Size = new System.Drawing.Size(1121, 28);
+            _cboRecentSearches.Size = new System.Drawing.Size(1341, 28);
             _cboRecentSearches.TabIndex = 8;
             _cboRecentSearches.SelectedIndexChanged += ComboBox_RecentSearches_SelectedIndexChanged;
             // 
@@ -315,6 +323,7 @@ namespace AzTagger
             _lblResultsCount.TabIndex = 16;
             _lblResultsCount.Text = "(0 items)";
             _lblResultsCount.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _toolTip.SetToolTip(_lblResultsCount, "These values represent all results returned by the KQL query without applying any quick filters.");
             // 
             // _btnCopyQuery
             // 
@@ -325,6 +334,7 @@ namespace AzTagger
             _btnCopyQuery.Size = new System.Drawing.Size(96, 30);
             _btnCopyQuery.TabIndex = 17;
             _btnCopyQuery.Text = "Copy Query";
+            _toolTip.SetToolTip(_btnCopyQuery, "Copy the complete KQL query to your clipboard for use in Azure Resource Graph Explorer.");
             _btnCopyQuery.UseVisualStyleBackColor = true;
             _btnCopyQuery.Click += Button_CopyQuery_Click;
             // 
@@ -347,6 +357,7 @@ namespace AzTagger
             _btnRefreshSignin.Size = new System.Drawing.Size(119, 30);
             _btnRefreshSignin.TabIndex = 18;
             _btnRefreshSignin.Text = "Refresh Sign-in";
+            _toolTip.SetToolTip(_btnRefreshSignin, "Refresh your sign-in if your Azure role-based permissions have been updated, such as when requesting elevated RBAC permissions through Privileged Identity Management.");
             _btnRefreshSignin.UseVisualStyleBackColor = true;
             _btnRefreshSignin.Click += Button_RefreshSignin_Click;
             // 
@@ -358,9 +369,10 @@ namespace AzTagger
             _pnlQuickFilters.Controls.Add(_cboQuickFilter2Column);
             _pnlQuickFilters.Controls.Add(_txtQuickFilter2Text);
             _pnlQuickFilters.Controls.Add(_lnkResetQuickFilters);
+            _pnlQuickFilters.Controls.Add(_lnkDotNetRegExDocs);
             _pnlQuickFilters.Location = new System.Drawing.Point(166, 205);
             _pnlQuickFilters.Name = "_pnlQuickFilters";
-            _pnlQuickFilters.Size = new System.Drawing.Size(915, 35);
+            _pnlQuickFilters.Size = new System.Drawing.Size(1247, 35);
             _pnlQuickFilters.TabIndex = 19;
             // 
             // _lblQuickFiltersLabel
@@ -383,6 +395,7 @@ namespace AzTagger
             _cboQuickFilter1Column.Name = "_cboQuickFilter1Column";
             _cboQuickFilter1Column.Size = new System.Drawing.Size(151, 28);
             _cboQuickFilter1Column.TabIndex = 2;
+            _toolTip.SetToolTip(_cboQuickFilter1Column, "Column to apply quick filter 1 to");
             // 
             // _txtQuickFilter1Text
             // 
@@ -391,6 +404,7 @@ namespace AzTagger
             _txtQuickFilter1Text.Name = "_txtQuickFilter1Text";
             _txtQuickFilter1Text.Size = new System.Drawing.Size(115, 27);
             _txtQuickFilter1Text.TabIndex = 1;
+            _toolTip.SetToolTip(_txtQuickFilter1Text, "Quick filter 1 regular expression");
             // 
             // _cboQuickFilter2Column
             // 
@@ -403,6 +417,7 @@ namespace AzTagger
             _cboQuickFilter2Column.Name = "_cboQuickFilter2Column";
             _cboQuickFilter2Column.Size = new System.Drawing.Size(151, 28);
             _cboQuickFilter2Column.TabIndex = 3;
+            _toolTip.SetToolTip(_cboQuickFilter2Column, "Column to apply quick filter 2 to");
             // 
             // _txtQuickFilter2Text
             // 
@@ -411,18 +426,33 @@ namespace AzTagger
             _txtQuickFilter2Text.Name = "_txtQuickFilter2Text";
             _txtQuickFilter2Text.Size = new System.Drawing.Size(115, 27);
             _txtQuickFilter2Text.TabIndex = 4;
+            _toolTip.SetToolTip(_txtQuickFilter2Text, "Quick filter 2 regular expression");
             // 
             // _lnkResetQuickFilters
             // 
+            _lnkResetQuickFilters.AutoSize = true;
             _lnkResetQuickFilters.Location = new System.Drawing.Point(746, 7);
             _lnkResetQuickFilters.Margin = new System.Windows.Forms.Padding(15, 7, 3, 0);
             _lnkResetQuickFilters.Name = "_lnkResetQuickFilters";
-            _lnkResetQuickFilters.Size = new System.Drawing.Size(139, 25);
+            _lnkResetQuickFilters.Size = new System.Drawing.Size(127, 20);
             _lnkResetQuickFilters.TabIndex = 5;
             _lnkResetQuickFilters.TabStop = true;
-            _lnkResetQuickFilters.Text = "Reset Quick Filters";
+            _lnkResetQuickFilters.Text = "Clear Quick Filters";
             _lnkResetQuickFilters.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkResetQuickFilters.LinkClicked += LinkLabel_ResetQuickFilters_LinkClicked;
+            // 
+            // _lnkDotNetRegExDocs
+            // 
+            _lnkDotNetRegExDocs.AutoSize = true;
+            _lnkDotNetRegExDocs.Location = new System.Drawing.Point(891, 7);
+            _lnkDotNetRegExDocs.Margin = new System.Windows.Forms.Padding(15, 7, 3, 0);
+            _lnkDotNetRegExDocs.Name = "_lnkDotNetRegExDocs";
+            _lnkDotNetRegExDocs.Size = new System.Drawing.Size(205, 20);
+            _lnkDotNetRegExDocs.TabIndex = 6;
+            _lnkDotNetRegExDocs.TabStop = true;
+            _lnkDotNetRegExDocs.Text = ".NET Regular Expression Docs";
+            _lnkDotNetRegExDocs.VisitedLinkColor = System.Drawing.Color.Blue;
+            _lnkDotNetRegExDocs.LinkClicked += LinkLabel_DotNetRegExDocs_LinkClicked;
             // 
             // _lblResultsFilteredCount
             // 
@@ -433,6 +463,7 @@ namespace AzTagger
             _lblResultsFilteredCount.TabIndex = 20;
             _lblResultsFilteredCount.Text = "(0 items)";
             _lblResultsFilteredCount.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _toolTip.SetToolTip(_lblResultsFilteredCount, "These values represent only the items after the quick filters have been applied.");
             // 
             // _lnkEditTagTemplates
             // 
@@ -450,7 +481,7 @@ namespace AzTagger
             // _lnkGitHubLink
             // 
             _lnkGitHubLink.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkGitHubLink.Location = new System.Drawing.Point(1266, 893);
+            _lnkGitHubLink.Location = new System.Drawing.Point(1270, 893);
             _lnkGitHubLink.Name = "_lnkGitHubLink";
             _lnkGitHubLink.Size = new System.Drawing.Size(202, 24);
             _lnkGitHubLink.TabIndex = 22;
@@ -470,6 +501,7 @@ namespace AzTagger
             _lblCopyPasteHint.TabIndex = 23;
             _lblCopyPasteHint.Text = "(Use Ctrl+C to copy data into clipboard)";
             _lblCopyPasteHint.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            _toolTip.SetToolTip(_lblCopyPasteHint, "Copies the selected rows, including column headers, as tab-separated plain text (TSV) that can be directly pasted into an Excel spreadsheet.");
             // 
             // _resultsActivityIndicator
             // 
@@ -490,7 +522,7 @@ namespace AzTagger
             _lnkDonation.Size = new System.Drawing.Size(248, 24);
             _lnkDonation.TabIndex = 25;
             _lnkDonation.TabStop = true;
-            _lnkDonation.Text = "Thumbs-up with a Donation 👍🏼";
+            _lnkDonation.Text = "👍 Thumbs-up with a Donation";
             _lnkDonation.TextAlign = System.Drawing.ContentAlignment.BottomRight;
             _lnkDonation.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkDonation.LinkClicked += LinkLabel_Donation_LinkClicked;
@@ -505,9 +537,25 @@ namespace AzTagger
             _lblVersion.TabIndex = 26;
             _lblVersion.Text = "Version: x.x.x";
             // 
+            // _toolTip
+            // 
+            _toolTip.AutomaticDelay = 400;
+            // 
+            // _lnkResourceGraphDocs
+            // 
+            _lnkResourceGraphDocs.Location = new System.Drawing.Point(1171, 56);
+            _lnkResourceGraphDocs.Name = "_lnkResourceGraphDocs";
+            _lnkResourceGraphDocs.Size = new System.Drawing.Size(299, 25);
+            _lnkResourceGraphDocs.TabIndex = 27;
+            _lnkResourceGraphDocs.TabStop = true;
+            _lnkResourceGraphDocs.Text = "Azure Resource Graph query language docs";
+            _lnkResourceGraphDocs.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _lnkResourceGraphDocs.LinkClicked += LinkLabel_ResourceGraphDocs_LinkClicked;
+            // 
             // MainForm
             // 
             ClientSize = new System.Drawing.Size(1482, 953);
+            Controls.Add(_lnkResourceGraphDocs);
             Controls.Add(_lblVersion);
             Controls.Add(_lnkDonation);
             Controls.Add(_resultsActivityIndicator);
@@ -549,5 +597,9 @@ namespace AzTagger
             ResumeLayout(false);
             PerformLayout();
         }
+
+        private System.Windows.Forms.ToolTip _toolTip;
+        private System.Windows.Forms.LinkLabel _lnkDotNetRegExDocs;
+        private System.Windows.Forms.LinkLabel _lnkResourceGraphDocs;
     }
 }

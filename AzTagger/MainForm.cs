@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Timer = System.Windows.Forms.Timer;
 
 namespace AzTagger;
@@ -23,6 +24,7 @@ public partial class MainForm : Form
 {
     private const int ClickDelayMsecs = 300;
     private const int DebounceDelayMsecs = 500;
+    private const int MaxToolTipLineLength = 60;
 
     private readonly Settings _settings;
 
@@ -205,6 +207,7 @@ public partial class MainForm : Form
         foreach (DataGridViewColumn column in _gvwResults.Columns)
         {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
+            column.ToolTipText = WrapText("Double-click to add the column name to the search query. Single-click to toggle the column’s sort order between ascending and descending.", MaxToolTipLineLength);
         }
 
         UpdateResultsColumnsWidth();
@@ -247,6 +250,8 @@ public partial class MainForm : Form
 
     private void Form_Load(object sender, EventArgs e)
     {
+        ProcessToolTips(this, _toolTip, MaxToolTipLineLength);
+
         LoadRecentSearches();
         LoadTagTemplates();
 
@@ -611,21 +616,32 @@ public partial class MainForm : Form
         _headerColumnClickTimer?.Stop();
 
         var columnName = _gvwResults.Columns[e.ColumnIndex].DataPropertyName;
-        var queryText = _txtSearchQuery.Text;
         var selectionStart = _txtSearchQuery.SelectionStart;
         var selectionLength = _txtSearchQuery.SelectionLength;
         bool endsWithSpace = false;
 
-        if (selectionLength > 0)
+        if (_txtSearchQuery.Text.Length == 0)
         {
-            var selectedText = queryText.Substring(selectionStart, selectionLength);
-            endsWithSpace = selectedText.EndsWith(" ");
-            queryText = queryText.Remove(selectionStart, selectionLength);
+            var queryText = $"| where {columnName} =~ ''";
+            _txtSearchQuery.Text = queryText;
+            _txtSearchQuery.SelectionStart = queryText.Length-1;
+        }
+        else
+        {
+            var queryText = _txtSearchQuery.Text;
+
+            if (selectionLength > 0)
+            {
+                var selectedText = queryText.Substring(selectionStart, selectionLength);
+                endsWithSpace = selectedText.EndsWith(" ");
+                queryText = queryText.Remove(selectionStart, selectionLength);
+            }
+
+            var newText = queryText.Insert(selectionStart, columnName + (endsWithSpace ? " " : ""));
+            _txtSearchQuery.Text = newText;
+            _txtSearchQuery.SelectionStart = selectionStart + columnName.Length + (endsWithSpace ? 1 : 0);
         }
 
-        var newText = queryText.Insert(selectionStart, columnName + (endsWithSpace ? " " : ""));
-        _txtSearchQuery.Text = newText;
-        _txtSearchQuery.SelectionStart = selectionStart + columnName.Length + (endsWithSpace ? 1 : 0);
         _txtSearchQuery.Focus();
     }
 
@@ -810,6 +826,64 @@ public partial class MainForm : Form
     {
         const string url = "https://github.com/thgossler/AzTagger";
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private void LinkLabel_ResourceGraphDocs_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        const string url = "https://learn.microsoft.com/en-us/azure/governance/resource-graph/concepts/query-language";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private void LinkLabel_DotNetRegExDocs_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        const string url = "https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private void ProcessToolTips(Control parent, System.Windows.Forms.ToolTip toolTip, int maxLineLength)
+    {
+        foreach (Control ctrl in parent.Controls)
+        {
+            string currentToolTip = toolTip.GetToolTip(ctrl);
+
+            if (!string.IsNullOrEmpty(currentToolTip))
+            {
+                string wrappedToolTip = WrapText(currentToolTip, maxLineLength);
+
+                toolTip.SetToolTip(ctrl, wrappedToolTip);
+            }
+
+            if (ctrl.HasChildren)
+            {
+                ProcessToolTips(ctrl, toolTip, maxLineLength);
+            }
+        }
+    }
+
+    private string WrapText(string text, int maxLineLength)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        StringBuilder wrappedText = new StringBuilder();
+        int currentLineLength = 0;
+
+        foreach (var word in words)
+        {
+            if (currentLineLength + word.Length + 1 > maxLineLength)
+            {
+                wrappedText.AppendLine();
+                currentLineLength = 0;
+            }
+
+            wrappedText.Append(word + " ");
+            currentLineLength += word.Length + 1;
+        }
+
+        return wrappedText.ToString().TrimEnd();
     }
 
     private void ShowActivityIndicator(ActivityIndicatorType type, bool visible)
