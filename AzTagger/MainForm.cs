@@ -15,7 +15,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Timer = System.Windows.Forms.Timer;
 
 namespace AzTagger;
@@ -320,6 +319,9 @@ public partial class MainForm : Form
 
         ShowActivityIndicator(ActivityIndicatorType.Query, true);
         SaveRecentSearch(_txtSearchQuery.Text);
+
+        _cboQuickFilter1Column.SelectedIndex = -1;
+        _cboQuickFilter2Column.SelectedIndex = -1;
 
         await SearchResourcesAsync(_queryCancellationTokenSource.Token);
 
