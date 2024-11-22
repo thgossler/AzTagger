@@ -45,6 +45,10 @@ public partial class MainForm : Form
     private bool _isHeaderColumnDoubleClick = false;
     private int _headerColumnClickColumnIndex = 0;
     private bool _sortAscending = true;
+    private CustomToolTipForm _customToolTipForm;
+    private DataGridViewCell _lastCellWithToolTip;
+    private Timer _tooltipTimer;
+    private DataGridViewCellEventArgs _currentCellEventArgs;
 
     private List<TagTemplate> _tagTemplates;
     private List<string> _tagsToRemove = new List<string>();
@@ -142,6 +146,8 @@ public partial class MainForm : Form
         InitializeComponent();
         AutoScaleMode = AutoScaleMode.Dpi;
 
+        _customToolTipForm = new CustomToolTipForm();
+
         var version = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
         version = version.Substring(0, version.LastIndexOf('.'));
         _lblVersion.Text = $"Version: {version}";
@@ -159,6 +165,10 @@ public partial class MainForm : Form
         _headerColumnClickTimer = new Timer();
         _headerColumnClickTimer.Interval = ClickDelayMsecs;
         _headerColumnClickTimer.Tick += ClickTimer_Tick;
+
+        _tooltipTimer = new Timer();
+        _tooltipTimer.Interval = _toolTip.AutomaticDelay;
+        _tooltipTimer.Tick += ToolTipTimer_Tick;
     }
 
     private void InitializeContextMenu()
@@ -201,13 +211,16 @@ public partial class MainForm : Form
         _gvwResults.SelectionChanged += DataGridView_Results_SelectionChanged;
         _gvwResults.ColumnHeaderMouseClick += DataGridView_Results_ColumnHeaderMouseClick;
         _gvwResults.ColumnHeaderMouseDoubleClick += DataGridView_Results_ColumnHeaderMouseDoubleClick;
+        _gvwResults.CellMouseEnter += DataGridView_Results_CellMouseEnter;
+        _gvwResults.CellMouseLeave += DataGridView_Results_CellMouseLeave;
+        _gvwResults.MouseLeave += DataGridView_Results_MouseLeave;
         _gvwResults.DataSource = new List<Resource>();
 
         // Prevent automatic sorting when a column header is double-clicked
         foreach (DataGridViewColumn column in _gvwResults.Columns)
         {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
-            column.ToolTipText = WrapText("Double-click to add the column name to the search query. Single-click to toggle the column’s sort order between ascending and descending.", MaxToolTipLineLength);
+            column.HeaderCell.ToolTipText = WrapText("Double-click to add the column name to the search query. Single-click to toggle the column’s sort order between ascending and descending.", MaxToolTipLineLength);
         }
 
         UpdateResultsColumnsWidth();
@@ -270,6 +283,12 @@ public partial class MainForm : Form
     private void Form_ResizeEnd(object sender, EventArgs e)
     {
         UpdateResultsColumnsWidth();
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        _customToolTipForm?.Dispose();
+        base.OnFormClosing(e);
     }
 
     private async void Button_PerformSearch_Click(object sender, EventArgs e)
@@ -385,7 +404,7 @@ public partial class MainForm : Form
         {
             if (_contextMenuClickedCell.Value is IDictionary<string, string> tags)
             {
-                Clipboard.SetText(string.Join(Environment.NewLine, tags.Select(tag => $"\"{tag.Key}\": \"{tag.Value}\"")));
+                Clipboard.SetText(FormatTags(tags, Environment.NewLine));
             }
             else
             {
@@ -538,10 +557,15 @@ public partial class MainForm : Form
     {
         if (_gvwResults.Columns[e.ColumnIndex].DataPropertyName.EndsWith("Tags") && e.Value is IDictionary<string, string> tags)
         {
-            var sortedTags = tags.OrderBy(tag => tag.Key);
-            e.Value = string.Join(", \n", sortedTags.Select(tag => $"\"{tag.Key}\": \"{tag.Value}\""));
+            e.Value = FormatTags(tags);
             e.FormattingApplied = true;
         }
+    }
+
+    private string FormatTags(IDictionary<string, string> tags, string joinWith = ", \n")
+    {
+        var sortedTags = tags.OrderBy(tag => tag.Key);
+        return string.Join(joinWith, sortedTags.Select(tag => $"\"{tag.Key}\": \"{tag.Value}\""));
     }
 
     private void DataGridView_Results_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
@@ -564,6 +588,70 @@ public partial class MainForm : Form
             if (resource != null)
             {
                 OpenResourceIdInAzurePortal(resource.Id);
+            }
+        }
+    }
+
+    private void DataGridView_Results_CellMouseEnter(object sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+        {
+            var column = _gvwResults.Columns[e.ColumnIndex];
+            if (column != null &&
+                column.DataPropertyName == "ResourceTags" ||
+                column.DataPropertyName == "ResourceGroupTags" ||
+                column.DataPropertyName == "SubscriptionTags")
+            {
+                _currentCellEventArgs = e;
+                _tooltipTimer.Start();
+                _gvwResults.ShowCellToolTips = false;
+            }
+            else
+            {
+                _gvwResults.ShowCellToolTips = true;
+            }
+        }
+    }
+
+    private void DataGridView_Results_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
+    {
+        _tooltipTimer.Stop();
+        _customToolTipForm.Hide();
+        _lastCellWithToolTip = null;
+        _currentCellEventArgs = null;
+        _gvwResults.ShowCellToolTips = true;
+    }
+
+    private void DataGridView_Results_MouseLeave(object sender, EventArgs e)
+    {
+        _gvwResults.ShowCellToolTips = true;
+    }
+
+    private void ToolTipTimer_Tick(object sender, EventArgs e)
+    {
+        _tooltipTimer.Stop();
+
+        if (_currentCellEventArgs == null)
+        {
+            return;
+        }
+
+        var cellEventArgs = _currentCellEventArgs;
+        var cell = _gvwResults[cellEventArgs.ColumnIndex, cellEventArgs.RowIndex];
+        if (_lastCellWithToolTip == cell) return;
+
+        var column = _gvwResults.Columns[cellEventArgs.ColumnIndex];
+        if (column.DataPropertyName == "ResourceTags" ||
+            column.DataPropertyName == "ResourceGroupTags" ||
+            column.DataPropertyName == "SubscriptionTags")
+        {
+            var tags = cell.Value as IDictionary<string, string>;
+            if (tags != null && tags.Count > 0)
+            {
+                string toolTipText = FormatTags(tags, Environment.NewLine);
+                var mousePosition = Cursor.Position;
+                _customToolTipForm.ShowToolTip(toolTipText, mousePosition, _gvwResults.Font);
+                _lastCellWithToolTip = cell;
             }
         }
     }
@@ -624,7 +712,7 @@ public partial class MainForm : Form
         {
             var queryText = $"| where {columnName} =~ ''";
             _txtSearchQuery.Text = queryText;
-            _txtSearchQuery.SelectionStart = queryText.Length-1;
+            _txtSearchQuery.SelectionStart = queryText.Length - 1;
         }
         else
         {
@@ -867,7 +955,7 @@ public partial class MainForm : Form
             return text;
         }
 
-        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var words = text.Split(new[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         StringBuilder wrappedText = new StringBuilder();
         int currentLineLength = 0;
 

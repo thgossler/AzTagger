@@ -180,7 +180,6 @@ namespace AzTagger
             _gvwResults.Size = new System.Drawing.Size(1458, 413);
             _gvwResults.StandardTab = true;
             _gvwResults.TabIndex = 4;
-            _toolTip.SetToolTip(_gvwResults, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
             // 
             // _btnApplyTags
             // 
@@ -207,6 +206,7 @@ namespace AzTagger
             _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             _gvwTags.Size = new System.Drawing.Size(864, 244);
             _gvwTags.TabIndex = 6;
+            _toolTip.SetToolTip(_gvwTags, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
             // 
             // Key
             // 
