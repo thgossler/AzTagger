@@ -1202,6 +1202,8 @@ public partial class MainForm : Form
             UpdateResultsColumnsWidth();
         }
 
+        UpdateDataGridViewsRowHeights();
+
         UpdateResultsCountLabel();
         UpdateFilteredResultsCountLabel();
     }
@@ -1217,6 +1219,12 @@ public partial class MainForm : Form
         {
             column.Width = columnWidth;
         }
+    }
+
+    private void UpdateDataGridViewsRowHeights()
+    {
+        _gvwResults.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
+        _gvwTags.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
     }
 
     private void UpdateResultsCountLabel(bool reset = false)

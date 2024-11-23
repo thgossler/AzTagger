@@ -33,7 +33,7 @@ public partial class CustomToolTipForm : Form
 
         Controls.Add(_label);
 
-        AutoScaleMode = AutoScaleMode.Font;
+        AutoScaleMode = AutoScaleMode.Dpi;
         FormBorderStyle = FormBorderStyle.None;
         BackColor = Color.Magenta;
         DoubleBuffered = true;

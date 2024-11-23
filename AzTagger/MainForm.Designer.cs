@@ -556,6 +556,7 @@ namespace AzTagger
             // 
             // MainForm
             // 
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             ClientSize = new System.Drawing.Size(1482, 953);
             Controls.Add(_lnkResourceGraphDocs);
             Controls.Add(_lblVersion);
