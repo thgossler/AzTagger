@@ -386,7 +386,7 @@ public partial class MainForm : Form
             return;
         }
 
-        using (var inputDialog = new InputDialog("Enter a name for the saved query:"))
+        using (var inputDialog = new InputDialog(this, "Enter a name for the saved query:"))
         {
             if (inputDialog.ShowDialog(this) == DialogResult.OK)
             {
@@ -733,7 +733,7 @@ public partial class MainForm : Form
             {
                 string toolTipText = FormatTags(tags, Environment.NewLine);
                 var mousePosition = Cursor.Position;
-                _customToolTipForm.ShowToolTip(toolTipText, mousePosition, _gvwResults.Font);
+                _customToolTipForm.ShowToolTip(this, toolTipText, mousePosition, _gvwResults.Font);
                 _lastCellWithToolTip = cell;
             }
         }

@@ -44,13 +44,18 @@ public partial class CustomToolTipForm : Form
         ShowInTaskbar = false;
         SizeGripStyle = SizeGripStyle.Hide;
         StartPosition = FormStartPosition.Manual;
-        TopMost = true;
 
         ResumeLayout(false);
     }
 
-    public void ShowToolTip(string text, Point location, Font font = null)
+    public void ShowToolTip(Form owner, string text, Point location, Font font = null)
     {
+        if (owner == null)
+        {
+            throw new ArgumentNullException(nameof(owner));
+        }
+        Owner = owner;
+
         _label.Text = text;
         font = font ?? SystemFonts.DefaultFont;
 
@@ -121,7 +126,7 @@ public partial class CustomToolTipForm : Form
             UpdateLayeredWindow(bitmap, adjustedLocation);
         }
 
-        Show();
+        Show(owner);
     }
 
     private void UpdateLayeredWindow(Bitmap bitmap, Point location)
