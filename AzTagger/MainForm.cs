@@ -266,8 +266,8 @@ public partial class MainForm : Form
     {
         ProcessToolTips(this, _toolTip, MaxToolTipLineLength);
 
-        LoadRecentSearches();
-        LoadSavedQueries();
+        LoadRecentSearchQueries();
+        LoadSavedSearchQueries();
         LoadTagTemplates();
 
         _cboQuickFilter1Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
@@ -369,7 +369,7 @@ public partial class MainForm : Form
                     return;
                 }
 
-                var existingQuery = _settings.SavedQueries.FirstOrDefault(q => q.Name.Equals(queryName, StringComparison.OrdinalIgnoreCase));
+                var existingQuery = _settings.SavedSearches.FirstOrDefault(q => q.Name.Equals(queryName, StringComparison.OrdinalIgnoreCase));
                 if (existingQuery != null)
                 {
                     var result = MessageBox.Show(this, $"A query with the name '{queryName}' already exists. Do you want to overwrite it?",
@@ -378,12 +378,12 @@ public partial class MainForm : Form
                     {
                         return;
                     }
-                    existingQuery.QueryText = queryText;
+                    existingQuery.SearchQuery = queryText;
                 }
                 else
                 {
-                    var savedQuery = new SavedQuery(queryName, queryText);
-                    _settings.SavedQueries.Add(savedQuery);
+                    var savedQuery = new SavedSearchItem(queryName, queryText);
+                    _settings.SavedSearches.Add(savedQuery);
                     _cboSavedQueries.Items.Add(savedQuery);
                 }
 
@@ -833,9 +833,9 @@ public partial class MainForm : Form
 
     private void ComboBox_SavedQueries_SelectedIndexChanged(object sender, EventArgs e)
     {
-        if (_cboSavedQueries.SelectedItem is SavedQuery selectedQuery)
+        if (_cboSavedQueries.SelectedItem is SavedSearchItem selectedQuery)
         {
-            _txtSearchQuery.Text = selectedQuery.QueryText;
+            _txtSearchQuery.Text = selectedQuery.SearchQuery;
             _txtSearchQuery.SelectionStart = _txtSearchQuery.Text.Length;
             _txtSearchQuery.SelectionLength = 0;
             _txtSearchQuery.Focus();
@@ -1154,10 +1154,10 @@ public partial class MainForm : Form
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
-    private void LoadRecentSearches()
+    private void LoadRecentSearchQueries()
     {
         _cboRecentSearches.Items.Clear();
-        _cboRecentSearches.Items.Add("Recent Queries");
+        _cboRecentSearches.Items.Add("Recent Search Queries");
         foreach (var queryText in _settings.RecentSearches)
         {
             _cboRecentSearches.Items.Add(new RecentSearchItem(queryText));
@@ -1165,11 +1165,11 @@ public partial class MainForm : Form
         _cboRecentSearches.SelectedIndex = 0;
     }
 
-    private void LoadSavedQueries()
+    private void LoadSavedSearchQueries()
     {
         _cboSavedQueries.Items.Clear();
-        _cboSavedQueries.Items.Add("Saved Queries");
-        var queries = _settings.SavedQueries;
+        _cboSavedQueries.Items.Add("Saved Search Queries");
+        var queries = _settings.SavedSearches;
         queries.Sort();
         _cboSavedQueries.Items.AddRange(queries.ToArray());
         _cboSavedQueries.SelectedIndex = 0;

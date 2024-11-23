@@ -6,18 +6,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AzTagger;
 
 public class Settings
 {
+    [JsonPropertyName("AzureEnvironment")]
     public string AzureEnvironment { get; set; } = "AzurePublicCloud";
-    public string ClientAppId { get; set; } = "5221c0b8-f9e6-4663-ac3c-5baf539290dc";
-    public string TenantId { get; set; } = string.Empty;
-    public List<string> RecentSearches { get; set; } = new List<string>();
-    public List<SavedQuery> SavedQueries { get; set; } = new List<SavedQuery>();
 
-    public static readonly string SettingsFilePath = 
+    [JsonPropertyName("ClientAppId")]
+    public string ClientAppId { get; set; } = "5221c0b8-f9e6-4663-ac3c-5baf539290dc";
+
+    [JsonPropertyName("TenantId")]
+    public string TenantId { get; set; } = string.Empty;
+
+    [JsonPropertyName("RecentSearches")]
+    public List<string> RecentSearches { get; set; } = new List<string>();
+
+    [JsonPropertyName("SavedSearches")]
+    public List<SavedSearchItem> SavedSearches { get; set; } = new List<SavedSearchItem>();
+
+    [JsonIgnore]
+    public static readonly string SettingsFilePath =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "settings.json");
 
     public static Settings Load()
