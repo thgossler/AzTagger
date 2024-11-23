@@ -154,6 +154,7 @@ public partial class MainForm : Form
         _fullQuery = BuildQuery();
         _resources = new List<Resource>();
 
+        _lblQueryMode.Text = string.Empty;
         InitializeResultsDataGridView();
         InitializeTagsDataGridView();
         InitializeContextMenu();
@@ -204,6 +205,7 @@ public partial class MainForm : Form
     private void InitializeResultsDataGridView()
     {
         _gvwResults.AutoGenerateColumns = true;
+        _gvwResults.RowTemplate.Height = 24;
         _gvwResults.CellFormatting += DataGridView_Results_CellFormatting;
         _gvwResults.CellMouseClick += DataGridView_Results_CellMouseClick;
         _gvwResults.CellDoubleClick += DataGridView_Results_CellDoubleClick;
@@ -265,6 +267,7 @@ public partial class MainForm : Form
         ProcessToolTips(this, _toolTip, MaxToolTipLineLength);
 
         LoadRecentSearches();
+        LoadSavedQueries();
         LoadTagTemplates();
 
         _cboQuickFilter1Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
@@ -286,6 +289,7 @@ public partial class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
+        _settings.Save();
         _customToolTipForm?.Dispose();
         base.OnFormClosing(e);
     }
@@ -336,6 +340,55 @@ public partial class MainForm : Form
             MessageBox.Show(this, "Azure sign-in failed. Please check your credentials and try again.",
                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
+        }
+    }
+
+    private void Button_ClearSearchQuery_Click(object sender, EventArgs e)
+    {
+        _txtSearchQuery.Text = string.Empty;
+        _txtSearchQuery.Focus();
+    }
+
+    private void Button_SaveQuery_Click(object sender, EventArgs e)
+    {
+        string queryText = _txtSearchQuery.Text;
+        if (string.IsNullOrWhiteSpace(queryText))
+        {
+            MessageBox.Show(this, "Cannot save an empty query.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        using (var inputDialog = new InputDialog("Enter a name for the saved query:"))
+        {
+            if (inputDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                string queryName = inputDialog.InputText.Trim();
+                if (string.IsNullOrWhiteSpace(queryName))
+                {
+                    MessageBox.Show(this, "Query name cannot be empty.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var existingQuery = _settings.SavedQueries.FirstOrDefault(q => q.Name.Equals(queryName, StringComparison.OrdinalIgnoreCase));
+                if (existingQuery != null)
+                {
+                    var result = MessageBox.Show(this, $"A query with the name '{queryName}' already exists. Do you want to overwrite it?",
+                        "Confirm Overwrite", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                    existingQuery.QueryText = queryText;
+                }
+                else
+                {
+                    var savedQuery = new SavedQuery(queryName, queryText);
+                    _settings.SavedQueries.Add(savedQuery);
+                    _cboSavedQueries.Items.Add(savedQuery);
+                }
+
+                _settings.Save();
+            }
         }
     }
 
@@ -712,9 +765,20 @@ public partial class MainForm : Form
 
         if (_txtSearchQuery.Text.Length == 0)
         {
-            var queryText = $"| where {columnName} =~ ''";
-            _txtSearchQuery.Text = queryText;
-            _txtSearchQuery.SelectionStart = queryText.Length - 1;
+            if (columnName == "ResourceTags" ||
+                columnName == "ResourceGroupTags" ||
+                columnName == "SubscriptionTags")
+            {
+                var queryText = $"| where {columnName}[''] =~ ''";
+                _txtSearchQuery.Text = queryText;
+                _txtSearchQuery.SelectionStart = queryText.Length - 8;
+            }
+            else
+            {
+                var queryText = $"| where {columnName} =~ ''";
+                _txtSearchQuery.Text = queryText;
+                _txtSearchQuery.SelectionStart = queryText.Length - 1;
+            }
         }
         else
         {
@@ -760,13 +824,28 @@ public partial class MainForm : Form
         if (_cboRecentSearches.SelectedItem is RecentSearchItem item)
         {
             _txtSearchQuery.Text = item.ActualText;
-            _cboRecentSearches.SelectedIndex = -1;
+            _txtSearchQuery.SelectionStart = _txtSearchQuery.Text.Length;
+            _txtSearchQuery.SelectionLength = 0;
+            _txtSearchQuery.Focus();
+            _cboRecentSearches.SelectedIndex = 0;
+        }
+    }
+
+    private void ComboBox_SavedQueries_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (_cboSavedQueries.SelectedItem is SavedQuery selectedQuery)
+        {
+            _txtSearchQuery.Text = selectedQuery.QueryText;
+            _txtSearchQuery.SelectionStart = _txtSearchQuery.Text.Length;
+            _txtSearchQuery.SelectionLength = 0;
+            _txtSearchQuery.Focus();
+            _cboSavedQueries.SelectedIndex = 0;
         }
     }
 
     private void TextBox_SearchQuery_TextChanged(object sender, EventArgs e)
     {
-        var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "");
+        var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "").Trim();
         if (normalizedQuery.StartsWith("resources|") || normalizedQuery.StartsWith("resourcecontainers|"))
         {
             _lblQueryMode.Text = "(KQL full expression) --> not supported";
@@ -777,9 +856,14 @@ public partial class MainForm : Form
             _lblQueryMode.Text = "(KQL filter-only expression)";
             _queryMode = QueryMode.KqlFilter;
         }
-        else
+        else if (normalizedQuery.Length > 0)
         {
             _lblQueryMode.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
+            _queryMode = QueryMode.Regex;
+        }
+        else
+        {
+            _lblQueryMode.Text = string.Empty;
             _queryMode = QueryMode.Regex;
         }
         _fullQuery = BuildQuery();
@@ -825,7 +909,7 @@ public partial class MainForm : Form
 
     private async void ComboBox_TagTemplates_SelectedIndexChanged(object sender, EventArgs e)
     {
-        if (_cboTagTemplates.SelectedIndex < 0)
+        if (_cboTagTemplates.SelectedIndex < 1)
         {
             return;
         }
@@ -833,7 +917,7 @@ public partial class MainForm : Form
         tags = await ResolveTagVariables(tags);
         foreach (var tag in tags)
         {
-            var existingRow = _gvwTags.Rows.Cast<DataGridViewRow>()
+            var existingRow = _gvwTags.Rows.OfType<DataGridViewRow>()
                 .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tag.Key);
             if (existingRow != null)
             {
@@ -847,7 +931,7 @@ public partial class MainForm : Form
                 _gvwTags.Rows.Add(tag.Key, tag.Value);
             }
         }
-        _cboTagTemplates.SelectedIndex = -1;
+        _cboTagTemplates.SelectedIndex = 0;
     }
 
     private void ComboBox_QuickFilter_SelectedIndexChanged(object sender, EventArgs e)
@@ -1073,19 +1157,31 @@ public partial class MainForm : Form
     private void LoadRecentSearches()
     {
         _cboRecentSearches.Items.Clear();
+        _cboRecentSearches.Items.Add("Recent Queries");
         foreach (var queryText in _settings.RecentSearches)
         {
             _cboRecentSearches.Items.Add(new RecentSearchItem(queryText));
         }
-        _cboRecentSearches.SelectedIndex = -1;
+        _cboRecentSearches.SelectedIndex = 0;
+    }
+
+    private void LoadSavedQueries()
+    {
+        _cboSavedQueries.Items.Clear();
+        _cboSavedQueries.Items.Add("Saved Queries");
+        var queries = _settings.SavedQueries;
+        queries.Sort();
+        _cboSavedQueries.Items.AddRange(queries.ToArray());
+        _cboSavedQueries.SelectedIndex = 0;
     }
 
     private void LoadTagTemplates()
     {
         _tagTemplates = TagTemplates.Load();
         _cboTagTemplates.Items.Clear();
+        _cboTagTemplates.Items.Add("Tag Templates");
         _cboTagTemplates.Items.AddRange(_tagTemplates.Select(t => t.TemplateName).ToArray());
-        _cboTagTemplates.SelectedIndex = -1;
+        _cboTagTemplates.SelectedIndex = 0;
     }
 
     private void SaveRecentSearch(string queryText)
@@ -1101,7 +1197,7 @@ public partial class MainForm : Form
             _settings.Save();
 
             var displayText = queryText.Replace("\r\n", " ").Replace("\n", " ");
-            var itemsToRemove = _cboRecentSearches.Items.Cast<RecentSearchItem>().
+            var itemsToRemove = _cboRecentSearches.Items.OfType<RecentSearchItem>().
                 Where(i => i.DisplayText.Equals(displayText, StringComparison.OrdinalIgnoreCase)).ToList();
             foreach (var item in itemsToRemove)
             {
@@ -1202,8 +1298,6 @@ public partial class MainForm : Form
             UpdateResultsColumnsWidth();
         }
 
-        UpdateDataGridViewsRowHeights();
-
         UpdateResultsCountLabel();
         UpdateFilteredResultsCountLabel();
     }
@@ -1219,12 +1313,6 @@ public partial class MainForm : Form
         {
             column.Width = columnWidth;
         }
-    }
-
-    private void UpdateDataGridViewsRowHeights()
-    {
-        _gvwResults.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
-        _gvwTags.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
     }
 
     private void UpdateResultsCountLabel(bool reset = false)

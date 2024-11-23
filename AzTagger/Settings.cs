@@ -15,6 +15,7 @@ public class Settings
     public string ClientAppId { get; set; } = "5221c0b8-f9e6-4663-ac3c-5baf539290dc";
     public string TenantId { get; set; } = string.Empty;
     public List<string> RecentSearches { get; set; } = new List<string>();
+    public List<SavedQuery> SavedQueries { get; set; } = new List<SavedQuery>();
 
     public static readonly string SettingsFilePath = 
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "settings.json");
