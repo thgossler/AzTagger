@@ -5,7 +5,6 @@ namespace AzTagger
 {
     public partial class MainForm
     {
-        private System.Windows.Forms.Button _btnApplyTags;
 
         private System.Windows.Forms.Button _btnCopyQuery;
 
@@ -19,35 +18,15 @@ namespace AzTagger
 
         private System.Windows.Forms.ComboBox _cboRecentSearches;
 
-        private System.Windows.Forms.ComboBox _cboTagTemplates;
-
-        private System.Windows.Forms.DataGridView _gvwResults;
-
-        private System.Windows.Forms.DataGridView _gvwTags;
-
-        private System.Windows.Forms.Label _lblCopyPasteHint;
-
         private System.Windows.Forms.Label _lblQueryMode;
 
         private System.Windows.Forms.Label _lblQuickFiltersLabel;
 
         private System.Windows.Forms.Label _lblResultsCount;
 
-        private System.Windows.Forms.Label _lblResultsFilteredCount;
-
         private System.Windows.Forms.Label _lblSearchQuery;
 
         private System.Windows.Forms.Label _lblSearchResults;
-
-        private System.Windows.Forms.Label _lblTags;
-
-        private System.Windows.Forms.Label _lblVersion;
-
-        private System.Windows.Forms.LinkLabel _lnkDonation;
-
-        private System.Windows.Forms.LinkLabel _lnkEditTagTemplates;
-
-        private System.Windows.Forms.LinkLabel _lnkGitHubLink;
 
         private System.Windows.Forms.LinkLabel _lnkResetQuickFilters;
 
@@ -57,8 +36,6 @@ namespace AzTagger
 
         private System.Windows.Forms.ProgressBar _queryActivityIndicator;
 
-        private System.Windows.Forms.ProgressBar _resultsActivityIndicator;
-
         private System.Windows.Forms.TextBox _txtQuickFilter1Text;
 
         private System.Windows.Forms.TextBox _txtQuickFilter2Text;
@@ -66,10 +43,6 @@ namespace AzTagger
         private System.Windows.Forms.TextBox _txtSearchQuery;
 
         private System.ComponentModel.IContainer components = null;
-
-        private System.Windows.Forms.DataGridViewTextBoxColumn Key;
-
-        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
 
         protected override void Dispose(bool disposing)
         {
@@ -87,16 +60,9 @@ namespace AzTagger
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             _txtSearchQuery = new System.Windows.Forms.TextBox();
             _btnPerformSearch = new System.Windows.Forms.Button();
-            _gvwResults = new System.Windows.Forms.DataGridView();
-            _btnApplyTags = new System.Windows.Forms.Button();
-            _gvwTags = new System.Windows.Forms.DataGridView();
-            Key = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            Value = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            _cboTagTemplates = new System.Windows.Forms.ComboBox();
             _cboRecentSearches = new System.Windows.Forms.ComboBox();
             _lblSearchQuery = new System.Windows.Forms.Label();
             _lblSearchResults = new System.Windows.Forms.Label();
-            _lblTags = new System.Windows.Forms.Label();
             _lblQueryMode = new System.Windows.Forms.Label();
             _queryActivityIndicator = new System.Windows.Forms.ProgressBar();
             _lblResultsCount = new System.Windows.Forms.Label();
@@ -113,20 +79,33 @@ namespace AzTagger
             _txtQuickFilter2Text = new System.Windows.Forms.TextBox();
             _lnkResetQuickFilters = new System.Windows.Forms.LinkLabel();
             _lnkDotNetRegExDocs = new System.Windows.Forms.LinkLabel();
-            _lblResultsFilteredCount = new System.Windows.Forms.Label();
-            _lnkEditTagTemplates = new System.Windows.Forms.LinkLabel();
-            _lnkGitHubLink = new System.Windows.Forms.LinkLabel();
-            _lblCopyPasteHint = new System.Windows.Forms.Label();
-            _resultsActivityIndicator = new System.Windows.Forms.ProgressBar();
-            _lnkDonation = new System.Windows.Forms.LinkLabel();
-            _lblVersion = new System.Windows.Forms.Label();
             _toolTip = new System.Windows.Forms.ToolTip(components);
             _btnClearSearchQuery = new System.Windows.Forms.Button();
+            _lblCopyPasteHint = new System.Windows.Forms.Label();
+            _lblResultsFilteredCount = new System.Windows.Forms.Label();
+            _cboTagTemplates = new System.Windows.Forms.ComboBox();
+            _gvwTags = new System.Windows.Forms.DataGridView();
+            Key = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            Value = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _lnkResourceGraphDocs = new System.Windows.Forms.LinkLabel();
-            ((System.ComponentModel.ISupportInitialize)_gvwResults).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)_gvwTags).BeginInit();
+            _splitContainer = new System.Windows.Forms.SplitContainer();
+            _resultsActivityIndicator = new System.Windows.Forms.ProgressBar();
+            _gvwResults = new System.Windows.Forms.DataGridView();
+            _lnkResetToDefaults = new System.Windows.Forms.LinkLabel();
+            _lblVersion = new System.Windows.Forms.Label();
+            _lnkDonation = new System.Windows.Forms.LinkLabel();
+            _lnkGitHubLink = new System.Windows.Forms.LinkLabel();
+            _lnkEditTagTemplates = new System.Windows.Forms.LinkLabel();
+            _lblTags = new System.Windows.Forms.Label();
+            _btnApplyTags = new System.Windows.Forms.Button();
             _pnlQueryButtons.SuspendLayout();
             _pnlQuickFilters.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)_gvwTags).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)_splitContainer).BeginInit();
+            _splitContainer.Panel1.SuspendLayout();
+            _splitContainer.Panel2.SuspendLayout();
+            _splitContainer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)_gvwResults).BeginInit();
             SuspendLayout();
             // 
             // _txtSearchQuery
@@ -157,83 +136,6 @@ namespace AzTagger
             _btnPerformSearch.UseVisualStyleBackColor = true;
             _btnPerformSearch.Click += Button_PerformSearch_Click;
             // 
-            // _gvwResults
-            // 
-            _gvwResults.AllowUserToAddRows = false;
-            _gvwResults.AllowUserToDeleteRows = false;
-            _gvwResults.AllowUserToResizeRows = false;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(224, 224, 224);
-            _gvwResults.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
-            _gvwResults.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            _gvwResults.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableAlwaysIncludeHeaderText;
-            _gvwResults.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            _gvwResults.Location = new System.Drawing.Point(12, 240);
-            _gvwResults.Name = "_gvwResults";
-            _gvwResults.ReadOnly = true;
-            _gvwResults.RowHeadersWidth = 51;
-            _gvwResults.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            _gvwResults.ShowCellErrors = false;
-            _gvwResults.ShowEditingIcon = false;
-            _gvwResults.ShowRowErrors = false;
-            _gvwResults.Size = new System.Drawing.Size(1458, 413);
-            _gvwResults.StandardTab = true;
-            _gvwResults.TabIndex = 4;
-            // 
-            // _btnApplyTags
-            // 
-            _btnApplyTags.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            _btnApplyTags.AutoSize = true;
-            _btnApplyTags.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnApplyTags.Location = new System.Drawing.Point(907, 806);
-            _btnApplyTags.Name = "_btnApplyTags";
-            _btnApplyTags.Size = new System.Drawing.Size(174, 30);
-            _btnApplyTags.TabIndex = 5;
-            _btnApplyTags.Text = "Apply Tags to Selection";
-            _btnApplyTags.UseVisualStyleBackColor = true;
-            _btnApplyTags.Click += Button_ApplyTags_Click;
-            // 
-            // _gvwTags
-            // 
-            _gvwTags.AllowUserToResizeRows = false;
-            _gvwTags.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            _gvwTags.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            _gvwTags.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { Key, Value });
-            _gvwTags.Location = new System.Drawing.Point(12, 697);
-            _gvwTags.Name = "_gvwTags";
-            _gvwTags.RowHeadersWidth = 51;
-            _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            _gvwTags.Size = new System.Drawing.Size(864, 244);
-            _gvwTags.TabIndex = 6;
-            _toolTip.SetToolTip(_gvwTags, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
-            // 
-            // Key
-            // 
-            Key.HeaderText = "Key";
-            Key.MaxInputLength = 255;
-            Key.MinimumWidth = 6;
-            Key.Name = "Key";
-            Key.Width = 300;
-            // 
-            // Value
-            // 
-            Value.HeaderText = "Value";
-            Value.MaxInputLength = 255;
-            Value.MinimumWidth = 6;
-            Value.Name = "Value";
-            Value.Width = 490;
-            // 
-            // _cboTagTemplates
-            // 
-            _cboTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            _cboTagTemplates.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            _cboTagTemplates.FormattingEnabled = true;
-            _cboTagTemplates.Location = new System.Drawing.Point(907, 697);
-            _cboTagTemplates.Name = "_cboTagTemplates";
-            _cboTagTemplates.Size = new System.Drawing.Size(335, 28);
-            _cboTagTemplates.TabIndex = 7;
-            _toolTip.SetToolTip(_cboTagTemplates, "When you select a template, its tags will be added to your current list, and any existing tags will be updated.");
-            _cboTagTemplates.SelectedIndexChanged += ComboBox_TagTemplates_SelectedIndexChanged;
-            // 
             // _cboRecentSearches
             // 
             _cboRecentSearches.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
@@ -263,16 +165,6 @@ namespace AzTagger
             _lblSearchResults.Size = new System.Drawing.Size(106, 20);
             _lblSearchResults.TabIndex = 11;
             _lblSearchResults.Text = "Search Results:";
-            // 
-            // _lblTags
-            // 
-            _lblTags.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            _lblTags.AutoSize = true;
-            _lblTags.Location = new System.Drawing.Point(12, 674);
-            _lblTags.Name = "_lblTags";
-            _lblTags.Size = new System.Drawing.Size(41, 20);
-            _lblTags.TabIndex = 12;
-            _lblTags.Text = "Tags:";
             // 
             // _lblQueryMode
             // 
@@ -462,89 +354,6 @@ namespace AzTagger
             _lnkDotNetRegExDocs.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkDotNetRegExDocs.LinkClicked += LinkLabel_DotNetRegExDocs_LinkClicked;
             // 
-            // _lblResultsFilteredCount
-            // 
-            _lblResultsFilteredCount.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lblResultsFilteredCount.Location = new System.Drawing.Point(998, 658);
-            _lblResultsFilteredCount.Name = "_lblResultsFilteredCount";
-            _lblResultsFilteredCount.Size = new System.Drawing.Size(472, 26);
-            _lblResultsFilteredCount.TabIndex = 20;
-            _lblResultsFilteredCount.Text = "(0 items)";
-            _lblResultsFilteredCount.TextAlign = System.Drawing.ContentAlignment.TopRight;
-            _toolTip.SetToolTip(_lblResultsFilteredCount, "These values represent only the items after the quick filters have been applied.");
-            // 
-            // _lnkEditTagTemplates
-            // 
-            _lnkEditTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            _lnkEditTagTemplates.Location = new System.Drawing.Point(1109, 728);
-            _lnkEditTagTemplates.Name = "_lnkEditTagTemplates";
-            _lnkEditTagTemplates.Size = new System.Drawing.Size(133, 25);
-            _lnkEditTagTemplates.TabIndex = 21;
-            _lnkEditTagTemplates.TabStop = true;
-            _lnkEditTagTemplates.Text = "Edit Templates";
-            _lnkEditTagTemplates.TextAlign = System.Drawing.ContentAlignment.TopRight;
-            _lnkEditTagTemplates.VisitedLinkColor = System.Drawing.Color.Blue;
-            _lnkEditTagTemplates.LinkClicked += LinkLabel_EditTagTemplates_LinkClicked;
-            // 
-            // _lnkGitHubLink
-            // 
-            _lnkGitHubLink.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkGitHubLink.Location = new System.Drawing.Point(1270, 893);
-            _lnkGitHubLink.Name = "_lnkGitHubLink";
-            _lnkGitHubLink.Size = new System.Drawing.Size(202, 24);
-            _lnkGitHubLink.TabIndex = 22;
-            _lnkGitHubLink.TabStop = true;
-            _lnkGitHubLink.Text = "Open Source on GitHub";
-            _lnkGitHubLink.TextAlign = System.Drawing.ContentAlignment.BottomRight;
-            _lnkGitHubLink.VisitedLinkColor = System.Drawing.Color.Blue;
-            _lnkGitHubLink.LinkClicked += LinkLabel_GitHubLink_LinkClicked;
-            // 
-            // _lblCopyPasteHint
-            // 
-            _lblCopyPasteHint.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            _lblCopyPasteHint.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0);
-            _lblCopyPasteHint.Location = new System.Drawing.Point(498, 658);
-            _lblCopyPasteHint.Name = "_lblCopyPasteHint";
-            _lblCopyPasteHint.Size = new System.Drawing.Size(487, 20);
-            _lblCopyPasteHint.TabIndex = 23;
-            _lblCopyPasteHint.Text = "(Use Ctrl+C to copy data into clipboard)";
-            _lblCopyPasteHint.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            _toolTip.SetToolTip(_lblCopyPasteHint, "Copies the selected rows, including column headers, as tab-separated plain text (TSV) that can be directly pasted into an Excel spreadsheet.");
-            // 
-            // _resultsActivityIndicator
-            // 
-            _resultsActivityIndicator.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            _resultsActivityIndicator.Location = new System.Drawing.Point(12, 652);
-            _resultsActivityIndicator.MarqueeAnimationSpeed = 20;
-            _resultsActivityIndicator.Name = "_resultsActivityIndicator";
-            _resultsActivityIndicator.Size = new System.Drawing.Size(1459, 2);
-            _resultsActivityIndicator.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            _resultsActivityIndicator.TabIndex = 24;
-            _resultsActivityIndicator.Visible = false;
-            // 
-            // _lnkDonation
-            // 
-            _lnkDonation.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkDonation.Location = new System.Drawing.Point(1224, 917);
-            _lnkDonation.Name = "_lnkDonation";
-            _lnkDonation.Size = new System.Drawing.Size(248, 24);
-            _lnkDonation.TabIndex = 25;
-            _lnkDonation.TabStop = true;
-            _lnkDonation.Text = "👍 Thumbs-up with a Donation";
-            _lnkDonation.TextAlign = System.Drawing.ContentAlignment.BottomRight;
-            _lnkDonation.VisitedLinkColor = System.Drawing.Color.Blue;
-            _lnkDonation.LinkClicked += LinkLabel_Donation_LinkClicked;
-            // 
-            // _lblVersion
-            // 
-            _lblVersion.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lblVersion.AutoSize = true;
-            _lblVersion.Location = new System.Drawing.Point(1130, 921);
-            _lblVersion.Name = "_lblVersion";
-            _lblVersion.Size = new System.Drawing.Size(91, 20);
-            _lblVersion.TabIndex = 26;
-            _lblVersion.Text = "Version: x.x.x";
-            // 
             // _toolTip
             // 
             _toolTip.AutomaticDelay = 400;
@@ -555,15 +364,78 @@ namespace AzTagger
             // _btnClearSearchQuery
             // 
             _btnClearSearchQuery.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnClearSearchQuery.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             _btnClearSearchQuery.Location = new System.Drawing.Point(15, 79);
             _btnClearSearchQuery.Name = "_btnClearSearchQuery";
-            _btnClearSearchQuery.Size = new System.Drawing.Size(27, 69);
+            _btnClearSearchQuery.Size = new System.Drawing.Size(27, 71);
             _btnClearSearchQuery.TabIndex = 28;
             _btnClearSearchQuery.Text = "X";
             _toolTip.SetToolTip(_btnClearSearchQuery, "Clear Search Query");
             _btnClearSearchQuery.UseVisualStyleBackColor = true;
             _btnClearSearchQuery.Click += Button_ClearSearchQuery_Click;
+            // 
+            // _lblCopyPasteHint
+            // 
+            _lblCopyPasteHint.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblCopyPasteHint.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0);
+            _lblCopyPasteHint.Location = new System.Drawing.Point(498, 394);
+            _lblCopyPasteHint.Name = "_lblCopyPasteHint";
+            _lblCopyPasteHint.Size = new System.Drawing.Size(487, 20);
+            _lblCopyPasteHint.TabIndex = 27;
+            _lblCopyPasteHint.Text = "(Use Ctrl+C to copy data into clipboard)";
+            _lblCopyPasteHint.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            _toolTip.SetToolTip(_lblCopyPasteHint, "Copies the selected rows, including column headers, as tab-separated plain text (TSV) that can be directly pasted into an Excel spreadsheet.");
+            // 
+            // _lblResultsFilteredCount
+            // 
+            _lblResultsFilteredCount.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            _lblResultsFilteredCount.Location = new System.Drawing.Point(998, 394);
+            _lblResultsFilteredCount.Name = "_lblResultsFilteredCount";
+            _lblResultsFilteredCount.Size = new System.Drawing.Size(472, 26);
+            _lblResultsFilteredCount.TabIndex = 26;
+            _lblResultsFilteredCount.Text = "(0 items)";
+            _lblResultsFilteredCount.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _toolTip.SetToolTip(_lblResultsFilteredCount, "These values represent only the items after the quick filters have been applied.");
+            // 
+            // _cboTagTemplates
+            // 
+            _cboTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            _cboTagTemplates.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            _cboTagTemplates.FormattingEnabled = true;
+            _cboTagTemplates.Location = new System.Drawing.Point(906, 32);
+            _cboTagTemplates.Name = "_cboTagTemplates";
+            _cboTagTemplates.Size = new System.Drawing.Size(335, 28);
+            _cboTagTemplates.TabIndex = 29;
+            _toolTip.SetToolTip(_cboTagTemplates, "When you select a template, its tags will be added to your current list, and any existing tags will be updated.");
+            // 
+            // _gvwTags
+            // 
+            _gvwTags.AllowUserToResizeRows = false;
+            _gvwTags.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _gvwTags.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            _gvwTags.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { Key, Value });
+            _gvwTags.Location = new System.Drawing.Point(11, 32);
+            _gvwTags.Name = "_gvwTags";
+            _gvwTags.RowHeadersWidth = 51;
+            _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            _gvwTags.Size = new System.Drawing.Size(864, 234);
+            _gvwTags.TabIndex = 28;
+            _toolTip.SetToolTip(_gvwTags, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
+            // 
+            // Key
+            // 
+            Key.HeaderText = "Key";
+            Key.MaxInputLength = 255;
+            Key.MinimumWidth = 6;
+            Key.Name = "Key";
+            Key.Width = 250;
+            // 
+            // Value
+            // 
+            Value.HeaderText = "Value";
+            Value.MaxInputLength = 255;
+            Value.MinimumWidth = 6;
+            Value.Name = "Value";
+            Value.Width = 540;
             // 
             // _lnkResourceGraphDocs
             // 
@@ -577,6 +449,150 @@ namespace AzTagger
             _lnkResourceGraphDocs.TextAlign = System.Drawing.ContentAlignment.TopRight;
             _lnkResourceGraphDocs.LinkClicked += LinkLabel_ResourceGraphDocs_LinkClicked;
             // 
+            // _splitContainer
+            // 
+            _splitContainer.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _splitContainer.Location = new System.Drawing.Point(1, 240);
+            _splitContainer.Name = "_splitContainer";
+            _splitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // _splitContainer.Panel1
+            // 
+            _splitContainer.Panel1.Controls.Add(_resultsActivityIndicator);
+            _splitContainer.Panel1.Controls.Add(_lblCopyPasteHint);
+            _splitContainer.Panel1.Controls.Add(_lblResultsFilteredCount);
+            _splitContainer.Panel1.Controls.Add(_gvwResults);
+            _splitContainer.Panel1MinSize = 200;
+            // 
+            // _splitContainer.Panel2
+            // 
+            _splitContainer.Panel2.Controls.Add(_lnkResetToDefaults);
+            _splitContainer.Panel2.Controls.Add(_lblVersion);
+            _splitContainer.Panel2.Controls.Add(_lnkDonation);
+            _splitContainer.Panel2.Controls.Add(_lnkGitHubLink);
+            _splitContainer.Panel2.Controls.Add(_lnkEditTagTemplates);
+            _splitContainer.Panel2.Controls.Add(_lblTags);
+            _splitContainer.Panel2.Controls.Add(_cboTagTemplates);
+            _splitContainer.Panel2.Controls.Add(_gvwTags);
+            _splitContainer.Panel2.Controls.Add(_btnApplyTags);
+            _splitContainer.Panel2MinSize = 200;
+            _splitContainer.Size = new System.Drawing.Size(1482, 713);
+            _splitContainer.SplitterDistance = 425;
+            _splitContainer.SplitterWidth = 10;
+            _splitContainer.TabIndex = 29;
+            // 
+            // _resultsActivityIndicator
+            // 
+            _resultsActivityIndicator.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _resultsActivityIndicator.Location = new System.Drawing.Point(12, 389);
+            _resultsActivityIndicator.MarqueeAnimationSpeed = 20;
+            _resultsActivityIndicator.Name = "_resultsActivityIndicator";
+            _resultsActivityIndicator.Size = new System.Drawing.Size(1459, 2);
+            _resultsActivityIndicator.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            _resultsActivityIndicator.TabIndex = 28;
+            _resultsActivityIndicator.Visible = false;
+            // 
+            // _gvwResults
+            // 
+            _gvwResults.AllowUserToAddRows = false;
+            _gvwResults.AllowUserToDeleteRows = false;
+            _gvwResults.AllowUserToResizeRows = false;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(224, 224, 224);
+            _gvwResults.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
+            _gvwResults.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _gvwResults.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableAlwaysIncludeHeaderText;
+            _gvwResults.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            _gvwResults.Location = new System.Drawing.Point(12, 5);
+            _gvwResults.Name = "_gvwResults";
+            _gvwResults.ReadOnly = true;
+            _gvwResults.RowHeadersWidth = 51;
+            _gvwResults.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            _gvwResults.ShowCellErrors = false;
+            _gvwResults.ShowEditingIcon = false;
+            _gvwResults.ShowRowErrors = false;
+            _gvwResults.Size = new System.Drawing.Size(1458, 385);
+            _gvwResults.StandardTab = true;
+            _gvwResults.TabIndex = 25;
+            // 
+            // _lnkResetToDefaults
+            // 
+            _lnkResetToDefaults.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            _lnkResetToDefaults.Location = new System.Drawing.Point(1269, 198);
+            _lnkResetToDefaults.Name = "_lnkResetToDefaults";
+            _lnkResetToDefaults.Size = new System.Drawing.Size(201, 23);
+            _lnkResetToDefaults.TabIndex = 35;
+            _lnkResetToDefaults.TabStop = true;
+            _lnkResetToDefaults.Text = "Reset Window to Defaults";
+            _lnkResetToDefaults.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _lnkResetToDefaults.LinkClicked += LinkLabel_ResetToDefaults_LinkClicked;
+            // 
+            // _lblVersion
+            // 
+            _lblVersion.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            _lblVersion.AutoSize = true;
+            _lblVersion.Location = new System.Drawing.Point(1129, 246);
+            _lblVersion.Name = "_lblVersion";
+            _lblVersion.Size = new System.Drawing.Size(91, 20);
+            _lblVersion.TabIndex = 34;
+            _lblVersion.Text = "Version: x.x.x";
+            // 
+            // _lnkDonation
+            // 
+            _lnkDonation.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            _lnkDonation.Location = new System.Drawing.Point(1223, 242);
+            _lnkDonation.Name = "_lnkDonation";
+            _lnkDonation.Size = new System.Drawing.Size(248, 24);
+            _lnkDonation.TabIndex = 33;
+            _lnkDonation.TabStop = true;
+            _lnkDonation.Text = "👍 Thumbs-up with a Donation";
+            _lnkDonation.TextAlign = System.Drawing.ContentAlignment.BottomRight;
+            _lnkDonation.VisitedLinkColor = System.Drawing.Color.Blue;
+            // 
+            // _lnkGitHubLink
+            // 
+            _lnkGitHubLink.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            _lnkGitHubLink.Location = new System.Drawing.Point(1269, 218);
+            _lnkGitHubLink.Name = "_lnkGitHubLink";
+            _lnkGitHubLink.Size = new System.Drawing.Size(202, 24);
+            _lnkGitHubLink.TabIndex = 32;
+            _lnkGitHubLink.TabStop = true;
+            _lnkGitHubLink.Text = "Open Source on GitHub";
+            _lnkGitHubLink.TextAlign = System.Drawing.ContentAlignment.BottomRight;
+            _lnkGitHubLink.VisitedLinkColor = System.Drawing.Color.Blue;
+            // 
+            // _lnkEditTagTemplates
+            // 
+            _lnkEditTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            _lnkEditTagTemplates.Location = new System.Drawing.Point(1108, 63);
+            _lnkEditTagTemplates.Name = "_lnkEditTagTemplates";
+            _lnkEditTagTemplates.Size = new System.Drawing.Size(133, 25);
+            _lnkEditTagTemplates.TabIndex = 31;
+            _lnkEditTagTemplates.TabStop = true;
+            _lnkEditTagTemplates.Text = "Edit Templates";
+            _lnkEditTagTemplates.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _lnkEditTagTemplates.VisitedLinkColor = System.Drawing.Color.Blue;
+            // 
+            // _lblTags
+            // 
+            _lblTags.AutoSize = true;
+            _lblTags.Location = new System.Drawing.Point(11, 9);
+            _lblTags.Name = "_lblTags";
+            _lblTags.Size = new System.Drawing.Size(41, 20);
+            _lblTags.TabIndex = 30;
+            _lblTags.Text = "Tags:";
+            // 
+            // _btnApplyTags
+            // 
+            _btnApplyTags.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            _btnApplyTags.AutoSize = true;
+            _btnApplyTags.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            _btnApplyTags.Location = new System.Drawing.Point(906, 141);
+            _btnApplyTags.Name = "_btnApplyTags";
+            _btnApplyTags.Size = new System.Drawing.Size(174, 30);
+            _btnApplyTags.TabIndex = 27;
+            _btnApplyTags.Text = "Apply Tags to Selection";
+            _btnApplyTags.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
@@ -584,27 +600,16 @@ namespace AzTagger
             ClientSize = new System.Drawing.Size(1482, 953);
             Controls.Add(_btnClearSearchQuery);
             Controls.Add(_lnkResourceGraphDocs);
-            Controls.Add(_lblVersion);
-            Controls.Add(_lnkDonation);
-            Controls.Add(_resultsActivityIndicator);
-            Controls.Add(_lblCopyPasteHint);
-            Controls.Add(_lnkGitHubLink);
-            Controls.Add(_lnkEditTagTemplates);
-            Controls.Add(_lblResultsFilteredCount);
             Controls.Add(_pnlQuickFilters);
             Controls.Add(_pnlQueryButtons);
             Controls.Add(_lblResultsCount);
             Controls.Add(_queryActivityIndicator);
             Controls.Add(_lblQueryMode);
-            Controls.Add(_lblTags);
             Controls.Add(_lblSearchResults);
             Controls.Add(_lblSearchQuery);
             Controls.Add(_cboRecentSearches);
-            Controls.Add(_cboTagTemplates);
-            Controls.Add(_gvwTags);
-            Controls.Add(_btnApplyTags);
-            Controls.Add(_gvwResults);
             Controls.Add(_txtSearchQuery);
+            Controls.Add(_splitContainer);
             DoubleBuffered = true;
             Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
             MinimumSize = new System.Drawing.Size(1290, 930);
@@ -614,12 +619,17 @@ namespace AzTagger
             Load += Form_Load;
             ResizeEnd += Form_ResizeEnd;
             SizeChanged += Form_SizeChanged;
-            ((System.ComponentModel.ISupportInitialize)_gvwResults).EndInit();
-            ((System.ComponentModel.ISupportInitialize)_gvwTags).EndInit();
             _pnlQueryButtons.ResumeLayout(false);
             _pnlQueryButtons.PerformLayout();
             _pnlQuickFilters.ResumeLayout(false);
             _pnlQuickFilters.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)_gvwTags).EndInit();
+            _splitContainer.Panel1.ResumeLayout(false);
+            _splitContainer.Panel2.ResumeLayout(false);
+            _splitContainer.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)_splitContainer).EndInit();
+            _splitContainer.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)_gvwResults).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -630,5 +640,21 @@ namespace AzTagger
         private System.Windows.Forms.Button _btnSaveQuery;
         private System.Windows.Forms.ComboBox _cboSavedQueries;
         private System.Windows.Forms.Button _btnClearSearchQuery;
+        private System.Windows.Forms.SplitContainer _splitContainer;
+        private System.Windows.Forms.ProgressBar _resultsActivityIndicator;
+        private System.Windows.Forms.Label _lblCopyPasteHint;
+        private System.Windows.Forms.Label _lblResultsFilteredCount;
+        private System.Windows.Forms.DataGridView _gvwResults;
+        private System.Windows.Forms.Label _lblVersion;
+        private System.Windows.Forms.LinkLabel _lnkDonation;
+        private System.Windows.Forms.LinkLabel _lnkGitHubLink;
+        private System.Windows.Forms.LinkLabel _lnkEditTagTemplates;
+        private System.Windows.Forms.Label _lblTags;
+        private System.Windows.Forms.ComboBox _cboTagTemplates;
+        private System.Windows.Forms.DataGridView _gvwTags;
+        private System.Windows.Forms.Button _btnApplyTags;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Key;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
+        private System.Windows.Forms.LinkLabel _lnkResetToDefaults;
     }
 }

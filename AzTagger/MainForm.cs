@@ -264,6 +264,8 @@ public partial class MainForm : Form
 
     private void Form_Load(object sender, EventArgs e)
     {
+        RestoreLastWindowState();
+
         ProcessToolTips(this, _toolTip, MaxToolTipLineLength);
 
         LoadRecentSearchQueries();
@@ -277,6 +279,24 @@ public partial class MainForm : Form
         _txtQuickFilter2Text.TextChanged += TextBox_QuickFilter2_TextChanged;
     }
 
+    private void RestoreLastWindowState()
+    {
+        Size = _settings.WindowSize;
+        StartPosition = FormStartPosition.Manual;
+        if (_settings.WindowLocation != Point.Empty)
+        {
+            Location = _settings.WindowLocation;
+        }
+        else
+        {
+            CenterToScreen();
+        }
+        _splitContainer.SplitterDistance = _settings.SplitterPosition;
+        _txtSearchQuery.Text = _settings.LastSearchQuery;
+        _txtQuickFilter1Text.Text = _settings.LastQuickFilter1Text;
+        _txtQuickFilter2Text.Text = _settings.LastQuickFilter2Text;
+    }
+
     private void Form_SizeChanged(object sender, EventArgs e)
     {
         _lastResizeTime = DateTime.Now;
@@ -285,10 +305,18 @@ public partial class MainForm : Form
     private void Form_ResizeEnd(object sender, EventArgs e)
     {
         UpdateResultsColumnsWidth();
+        UpdateTagsColumnsWidth();
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
+        WindowState = FormWindowState.Normal;
+        _settings.WindowSize = Size;
+        _settings.WindowLocation = Location;
+        _settings.SplitterPosition = _splitContainer.SplitterDistance;
+        _settings.LastSearchQuery = _txtSearchQuery.Text;
+        _settings.LastQuickFilter1Text = _txtQuickFilter1Text.Text;
+        _settings.LastQuickFilter2Text = _txtQuickFilter2Text.Text;
         _settings.Save();
         _customToolTipForm?.Dispose();
         base.OnFormClosing(e);
@@ -1014,6 +1042,12 @@ public partial class MainForm : Form
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
+    private void LinkLabel_ResetToDefaults_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        _settings.ResetToWindowDefaults();
+        RestoreLastWindowState();
+    }
+
     private void ProcessToolTips(Control parent, System.Windows.Forms.ToolTip toolTip, int maxLineLength)
     {
         foreach (Control ctrl in parent.Controls)
@@ -1308,10 +1342,31 @@ public partial class MainForm : Form
         {
             return;
         }
-        var columnWidth = (_gvwResults.Width - _gvwResults.RowHeadersWidth - 18) / _gvwResults.Columns.Count;
+        var currentWidthAllColumns = 0;
         foreach (DataGridViewColumn column in _gvwResults.Columns)
         {
-            column.Width = columnWidth;
+            currentWidthAllColumns += column.Width;
+        }
+        var newWidthAllColumns = _gvwResults.Width - _gvwResults.RowHeadersWidth - 18;
+        foreach (DataGridViewColumn column in _gvwResults.Columns)
+        {
+            var factor = column.Width / (double)currentWidthAllColumns;
+            column.Width = (int)(factor * newWidthAllColumns);
+        }
+    }
+
+    private void UpdateTagsColumnsWidth()
+    {
+        var currentWidthAllColumns = 0;
+        foreach (DataGridViewColumn column in _gvwTags.Columns)
+        {
+            currentWidthAllColumns += column.Width;
+        }
+        var newWidthAllColumns = _gvwTags.Width - _gvwTags.RowHeadersWidth - 18;
+        foreach (DataGridViewColumn column in _gvwTags.Columns)
+        {
+            var factor = column.Width / (double)currentWidthAllColumns;
+            column.Width = (int)(factor * newWidthAllColumns);
         }
     }
 

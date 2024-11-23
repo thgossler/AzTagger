@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -27,9 +28,37 @@ public class Settings
     [JsonPropertyName("SavedSearches")]
     public List<SavedSearchItem> SavedSearches { get; set; } = new List<SavedSearchItem>();
 
+    [JsonPropertyName("WindowSize")]
+    public WinSize WindowSize { get; set; } = new WinSize(1500, 1000);
+
+    [JsonPropertyName("WindowLocation")]
+    public WinLocation WindowLocation { get; set; } = WinLocation.Empty;
+
+    [JsonPropertyName("SplitterPosition")]
+    public int SplitterPosition { get; set; } = 425;
+
+    [JsonPropertyName("LastSearchQuery")]
+    public string LastSearchQuery { get; set; } = string.Empty;
+
+    [JsonPropertyName("LastQuickFilter1Text")]
+    public string LastQuickFilter1Text { get; set; } = string.Empty;
+
+    [JsonPropertyName("LastQuickFilter2Text")]
+    public string LastQuickFilter2Text { get; set; } = string.Empty;
+
     [JsonIgnore]
     public static readonly string SettingsFilePath =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "settings.json");
+
+    public void ResetToWindowDefaults()
+    {
+        WindowSize = new WinSize(1500, 1000);
+        WindowLocation = WinLocation.Empty;
+        SplitterPosition = 425;
+        LastSearchQuery = string.Empty;
+        LastQuickFilter1Text = string.Empty;
+        LastQuickFilter2Text = string.Empty;
+    }
 
     public static Settings Load()
     {
@@ -111,5 +140,52 @@ public class Settings
                 WriteIndented = true
             });
         File.WriteAllText(SettingsFilePath, settingsJson);
+    }
+
+    public class WinSize
+    {
+        public int Width { get; set; }
+        public int Height { get; set; }
+
+        public WinSize(int width, int height) {
+            Width = width;
+            Height = height;
+        }
+
+        public static readonly WinSize Empty = new WinSize(0, 0);
+
+        public static implicit operator Size(WinSize winSize)
+        {
+            return new Size(winSize.Width, winSize.Height);
+        }
+
+        public static implicit operator WinSize(Size size)
+        {
+            return new WinSize(size.Width, size.Height);
+        }
+    }
+
+    public class WinLocation
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+
+        public WinLocation(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public static readonly WinLocation Empty = new WinLocation(0, 0);
+
+        public static implicit operator Point(WinLocation winLocation)
+        {
+            return new Point(winLocation.X, winLocation.Y);
+        }
+
+        public static implicit operator WinLocation(Point point)
+        {
+            return new WinLocation(point.X, point.Y);
+        }
     }
 }
