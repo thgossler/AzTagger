@@ -7,6 +7,7 @@ using Microsoft.Graph;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -33,7 +34,7 @@ public partial class MainForm : Form
     private AzureService _azureService;
 
     private List<Resource> _resources;
-    private ContextMenuStrip _contextMenu;
+    private ContextMenuStrip _resultsDataGridViewContextMenu;
     private DataGridViewCell _contextMenuClickedCell;
     private string _fullQuery = string.Empty;
     private CancellationTokenSource _queryCancellationTokenSource;
@@ -48,6 +49,10 @@ public partial class MainForm : Form
     private DataGridViewCell _lastCellWithToolTip;
     private Timer _tooltipTimer;
     private DataGridViewCellEventArgs _currentCellEventArgs;
+
+    private ContextMenuStrip _quickFilterContextMenu;
+    private ToolStripMenuItem _quickFilterExcludeCurrentTextMenuItem;
+    private ToolStripMenuItem _quickFilterExcludeTextRegExMenuItem;
 
     private List<TagTemplate> _tagTemplates;
     private List<string> _tagsToRemove = new List<string>();
@@ -157,7 +162,8 @@ public partial class MainForm : Form
         _lblQueryMode.Text = string.Empty;
         InitializeResultsDataGridView();
         InitializeTagsDataGridView();
-        InitializeContextMenu();
+        InitializeResultsDataGridViewContextMenu();
+        InitializeQuickFilterTextBoxContextMenus();
         InitializeResizeTimer();
         InitializeQuickFilterComboBoxes();
         InitializeDebounceTimers();
@@ -171,35 +177,53 @@ public partial class MainForm : Form
         _tooltipTimer.Tick += ToolTipTimer_Tick;
     }
 
-    private void InitializeContextMenu()
+    private void InitializeResultsDataGridViewContextMenu()
     {
-        _contextMenu = new ContextMenuStrip();
+        _resultsDataGridViewContextMenu = new ContextMenuStrip();
 
         var openInAzurePortalMenuItem = new ToolStripMenuItem("Open in Azure Portal");
         openInAzurePortalMenuItem.Click += MenuItem_OpenInAzurePortal_Click;
-        _contextMenu.Items.Add(openInAzurePortalMenuItem);
+        _resultsDataGridViewContextMenu.Items.Add(openInAzurePortalMenuItem);
 
         var openUrlsInTagValuesMenuItem = new ToolStripMenuItem("Open URLs in tags");
         openUrlsInTagValuesMenuItem.Click += MenuItem_OpenUrlsInTagValues_Click;
-        _contextMenu.Items.Add(openUrlsInTagValuesMenuItem);
+        _resultsDataGridViewContextMenu.Items.Add(openUrlsInTagValuesMenuItem);
 
         var copyCellValueMenuItem = new ToolStripMenuItem("Copy cell value");
         copyCellValueMenuItem.Click += MenuItem_CopyCellValue_Click;
-        _contextMenu.Items.Add(copyCellValueMenuItem);
+        _resultsDataGridViewContextMenu.Items.Add(copyCellValueMenuItem);
 
         var addToFilterQueryMenuItem = new ToolStripMenuItem("Add to filter query");
         addToFilterQueryMenuItem.Name = "AddToFilterQueryMenuItem";
         addToFilterQueryMenuItem.Click += MenuItem_AddToFilterQuery_Click;
-        _contextMenu.Items.Add(addToFilterQueryMenuItem);
+        _resultsDataGridViewContextMenu.Items.Add(addToFilterQueryMenuItem);
 
         var excludeInFilterQueryMenuItem = new ToolStripMenuItem("Exclude in filter query");
         excludeInFilterQueryMenuItem.Name = "ExcludeInFilterQueryMenuItem";
         excludeInFilterQueryMenuItem.Click += MenuItem_AddToFilterQuery_Click;
-        _contextMenu.Items.Add(excludeInFilterQueryMenuItem);
+        _resultsDataGridViewContextMenu.Items.Add(excludeInFilterQueryMenuItem);
 
         var refreshTagsMenuItem = new ToolStripMenuItem("Refresh tags from Azure");
         refreshTagsMenuItem.Click += MenuItem_RefreshTags_Click;
-        _contextMenu.Items.Add(refreshTagsMenuItem);
+        _resultsDataGridViewContextMenu.Items.Add(refreshTagsMenuItem);
+    }
+
+    private void InitializeQuickFilterTextBoxContextMenus()
+    {
+        _quickFilterContextMenu = new ContextMenuStrip();
+
+        _quickFilterExcludeTextRegExMenuItem = new ToolStripMenuItem("Replace with RegEx to exclude text");
+        _quickFilterExcludeTextRegExMenuItem.Click += MenuItem_QuickFilterExcludeTextRegEx_Click;
+        _quickFilterContextMenu.Items.Add(_quickFilterExcludeTextRegExMenuItem);
+
+        _quickFilterExcludeCurrentTextMenuItem = new ToolStripMenuItem("Convert to RegEx excluding the current search text");
+        _quickFilterExcludeCurrentTextMenuItem.Click += MenuItem_QuickFilterExcludeCurrentText_Click;
+        _quickFilterContextMenu.Items.Add(_quickFilterExcludeCurrentTextMenuItem);
+
+        _quickFilterContextMenu.Opening += ContextMenu_QuickFilter_Opening;
+
+        _txtQuickFilter1Text.ContextMenuStrip = _quickFilterContextMenu;
+        _txtQuickFilter2Text.ContextMenuStrip = _quickFilterContextMenu;
     }
 
     private void InitializeResultsDataGridView()
@@ -590,6 +614,47 @@ public partial class MainForm : Form
         }
     }
 
+    private void ContextMenu_QuickFilter_Opening(object sender, CancelEventArgs e)
+    {
+        if (sender is ContextMenuStrip cms && cms.SourceControl is TextBox tb)
+        {
+            string text = tb.Text;
+            
+            char[] forbiddenChars = ['!', '?', '.', ':', '+', '*', '(', ')', '[', ']', '{', '}', '\\', '^', '<', '>'];
+            _quickFilterExcludeCurrentTextMenuItem.Enabled = !text.Any(c => forbiddenChars.Contains(c)) && text.Trim().Length > 0;
+            
+            _quickFilterExcludeTextRegExMenuItem.Enabled = text.Trim().Length == 0;
+        }
+    }
+
+    private void MenuItem_QuickFilterExcludeCurrentText_Click(object sender, EventArgs e)
+    {
+        if (sender is ToolStripMenuItem)
+        {
+            var cms = ((ToolStripMenuItem)sender).Owner as ContextMenuStrip;
+            if (cms?.SourceControl is TextBox tb)
+            {
+                string searchText = tb.Text;
+                string newRegex = $"^(?!.*{searchText}).+$";
+                tb.Text = newRegex;
+            }
+        }
+    }
+
+    private void MenuItem_QuickFilterExcludeTextRegEx_Click(object sender, EventArgs e)
+    {
+        if (sender is ToolStripMenuItem)
+        {
+            var cms = ((ToolStripMenuItem)sender).Owner as ContextMenuStrip;
+            if (cms?.SourceControl is TextBox tb)
+            {
+                string searchText = "TEXT";
+                string newRegex = $"^(?!.*{searchText}).+$";
+                tb.Text = newRegex;
+            }
+        }
+    }
+
     private void DataGridView_Results_SelectionChanged(object sender, EventArgs e)
     {
         _gvwTags.Rows.Clear();
@@ -658,7 +723,7 @@ public partial class MainForm : Form
             _gvwResults.ClearSelection();
             _gvwResults.Rows[e.RowIndex].Selected = true;
             _contextMenuClickedCell = _gvwResults.Rows[e.RowIndex].Cells[e.ColumnIndex];
-            _contextMenu.Show(Cursor.Position);
+            _resultsDataGridViewContextMenu.Show(Cursor.Position);
         }
     }
 
@@ -1237,9 +1302,9 @@ public partial class MainForm : Form
             {
                 _cboRecentSearches.Items.Remove(item);
             }
-            _cboRecentSearches.Items.Insert(0, new RecentSearchItem(queryText));
+            _cboRecentSearches.Items.Insert(1, new RecentSearchItem(queryText));
 
-            if (_cboRecentSearches.Items.Count > 10)
+            if (_cboRecentSearches.Items.Count > 11)
             {
                 _cboRecentSearches.Items.RemoveAt(_cboRecentSearches.Items.Count - 1);
             }
@@ -1284,12 +1349,17 @@ public partial class MainForm : Form
                     var isMatch = regex1.IsMatch(value);
                     return isMatch;
                 }).ToList();
+                errorProvider1.SetError(_txtQuickFilter1Text, string.Empty);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Invalid regex pattern in Quick Filter 1.");
-                MessageBox.Show(this, "Invalid regex pattern in Quick Filter 1.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                errorProvider1.SetError(_txtQuickFilter1Text, "Invalid regex pattern");
             }
+        }
+        else
+        {
+            errorProvider1.SetError(_txtQuickFilter1Text, string.Empty);
         }
 
         if (_cboQuickFilter2Column.SelectedItem != null &&
@@ -1308,12 +1378,17 @@ public partial class MainForm : Form
                     var value = GetPropertyValue(r, column2)?.ToString() ?? string.Empty;
                     return regex2.IsMatch(value);
                 }).ToList();
+                errorProvider2.SetError(_txtQuickFilter2Text, string.Empty);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Invalid regex pattern in Quick Filter 2.");
-                MessageBox.Show(this, "Invalid regex pattern in Quick Filter 2.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                errorProvider2.SetError(_txtQuickFilter2Text, "Invalid regex pattern");
             }
+        }
+        else
+        {
+            errorProvider2.SetError(_txtQuickFilter2Text, string.Empty);
         }
 
         return filtered;
