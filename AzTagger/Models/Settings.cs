@@ -32,6 +32,9 @@ public class Settings
     [JsonPropertyName("SplitterPosition")]
     public int SplitterPosition { get; set; } = 425;
 
+    [JsonPropertyName("ColorMode")]
+    public string ColorMode { get; set; } = "System";
+
     [JsonPropertyName("LastSearchQuery")]
     public string LastSearchQuery { get; set; } = string.Empty;
 
@@ -124,6 +127,7 @@ public class Settings
         LastSearchQuery = string.Empty;
         LastQuickFilter1Text = string.Empty;
         LastQuickFilter2Text = string.Empty;
+        ColorMode = "System";
     }
 
     public void RemoveDuplicatesFromRecentSearches()

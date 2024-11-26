@@ -27,13 +27,32 @@ static class Program
         {
             var initSettingsRequired = !File.Exists(SettingsService.SettingsFilePath);
             var settings = SettingsService.Load();
+
+            SystemColorMode colorMode;
+            if (settings.ColorMode.Contains("ight", StringComparison.OrdinalIgnoreCase) ||
+                settings.ColorMode.Contains("classic", StringComparison.OrdinalIgnoreCase))
+            {
+                colorMode = SystemColorMode.Classic;
+                settings.ColorMode = "Classic";
+            }
+            else if (settings.ColorMode.Contains("dark", StringComparison.OrdinalIgnoreCase))
+            {
+                colorMode = SystemColorMode.Dark;
+                settings.ColorMode = "Dark";
+            }
+            else
+            {
+                colorMode = SystemColorMode.System;
+                settings.ColorMode = "System";
+            }
+            Application.SetColorMode(colorMode);
+
             if (initSettingsRequired)
             {
                 SettingsService.Save(settings);
             }
 
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
-            Application.SetColorMode(SystemColorMode.System);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm(settings));
