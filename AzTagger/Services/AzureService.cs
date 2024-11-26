@@ -20,81 +20,105 @@ namespace AzTagger.Services;
 public class AzureService
 {
     private Settings _settings;
-    private InteractiveBrowserCredential _credential;
-    private ArmClient _armClient;
-    private TenantResource _tenantResource;
+    private AzureContext _azContext;
 
-    public InteractiveBrowserCredential CurrentCredential => _credential;
+    private class SigninContext
+    {
+        public string AzureContextName;
+        public InteractiveBrowserCredential Credential;
+        public ArmClient ArmClient;
+        public TenantResource TenantResource;
+    }
+    List<SigninContext> _signinContexts = new List<SigninContext>();
+
+    private SigninContext CurrentSigninContext {
+        get { 
+            return _signinContexts.FirstOrDefault(sc => sc.AzureContextName.Equals(_azContext.Name));
+        } 
+    }
+
+    public InteractiveBrowserCredential CurrentCredential
+    {
+        get
+        {
+            return CurrentSigninContext?.Credential;
+        }
+    }
 
     public AzureService(Settings settings)
     {
         _settings = settings;
+        _azContext = _settings.GetAzureContext();
     }
 
     public async Task SignInAsync(bool refresh = false)
     {
-        if (string.IsNullOrWhiteSpace(_settings.TenantId))
+        _azContext = _settings.GetAzureContext();
+
+        if (string.IsNullOrWhiteSpace(_azContext.TenantId))
         {
             throw new Exception("TenantId is not set in the settings.");
         }
 
-        if (_credential != null && _armClient != null && _tenantResource != null)
+        var signinContext = CurrentSigninContext;
+
+        if (signinContext != null && signinContext.Credential != null && signinContext.ArmClient != null && signinContext.TenantResource != null)
         {
-            if (!refresh && await IsSessionValidAsync())
+            if (!refresh && await IsSessionValidAsync(signinContext))
             {
                 return;
             }
         }
 
+        signinContext = new SigninContext { AzureContextName = _azContext.Name };
+        _signinContexts.Add(signinContext);
+
         await Task.Run(async () =>
         {
-            _credential = new InteractiveBrowserCredential(new InteractiveBrowserCredentialOptions
+            var authorityHost = AzureAuthorityHosts.AzurePublicCloud;
+            if (_azContext.ArmEnvironment == ArmEnvironment.AzureChina)
             {
-                TenantId = _settings.TenantId,
-                ClientId = _settings.ClientAppId,
+                authorityHost = AzureAuthorityHosts.AzureChina;
+            }
+            else if (_azContext.ArmEnvironment == ArmEnvironment.AzureGovernment)
+            {
+                authorityHost = AzureAuthorityHosts.AzureGovernment;
+            }
+            var options = new InteractiveBrowserCredentialOptions
+            {
+                AuthorityHost = authorityHost,
+                TenantId = _azContext.TenantId,
+                ClientId = _azContext.ClientAppId,
                 TokenCachePersistenceOptions = new TokenCachePersistenceOptions
                 {
-                    Name = $"AzTaggerTokenCache_{_settings.TenantId}"
+                    Name = $"AzTaggerTokenCache_{_azContext.AzureEnvironmentName}_{_azContext.TenantId}"
                 },
                 RedirectUri = new Uri("http://localhost")
-            });
+            };
+            signinContext.Credential = new InteractiveBrowserCredential(options);
 
-            ArmEnvironment azEnvironment = ArmEnvironment.AzurePublicCloud;
-            if (_settings.AzureEnvironment.Contains("China", System.StringComparison.OrdinalIgnoreCase))
-            {
-                azEnvironment = ArmEnvironment.AzureChina;
-            }
-            else if (_settings.AzureEnvironment.Contains("German", System.StringComparison.OrdinalIgnoreCase))
-            {
-                azEnvironment = ArmEnvironment.AzureGermany;
-            }
-            else if (_settings.AzureEnvironment.Contains("Government", System.StringComparison.OrdinalIgnoreCase))
-            {
-                azEnvironment = ArmEnvironment.AzureGovernment;
-            }
-
-            var armClientOptions = new ArmClientOptions { Environment = azEnvironment };
-            _armClient = new ArmClient(_credential, _settings.TenantId, armClientOptions);
+            var armClientOptions = new ArmClientOptions { Environment = _azContext.ArmEnvironment };
+            signinContext.ArmClient = new ArmClient(signinContext.Credential, _azContext.TenantId, armClientOptions);
             var tenants = new List<TenantResource>();
-            await foreach (var tenant in _armClient.GetTenants().GetAllAsync())
+            await foreach (var tenant in signinContext.ArmClient.GetTenants().GetAllAsync())
             {
                 tenants.Add(tenant);
             }
-            _tenantResource = tenants.FirstOrDefault(t => t.Data.Id.EndsWith(_settings.TenantId, StringComparison.OrdinalIgnoreCase));
+            signinContext.TenantResource = tenants.FirstOrDefault(t => t.Data.Id.EndsWith(_azContext.TenantId, StringComparison.OrdinalIgnoreCase));
         });
 
-        if (_tenantResource == null)
+        if (signinContext.TenantResource == null)
         {
             throw new Exception("Failed to sign in to Azure.");
         }
     }
 
-    private async Task<bool> IsSessionValidAsync()
+    private async Task<bool> IsSessionValidAsync(SigninContext signinContext)
     {
         try
         {
-            var requestContext = new TokenRequestContext(new[] { "https://management.azure.com/.default" });
-            var token = await _credential.GetTokenAsync(requestContext, default);
+            var requestContext = new TokenRequestContext([_azContext.ArmEnvironment.DefaultScope]);
+            var token = await signinContext.Credential.GetTokenAsync(requestContext, default);
             return true;
         }
         catch
@@ -103,18 +127,20 @@ public class AzureService
         }
     }
 
+    public string[] GetAzureEnvironmentNames()
+    {
+        var azEnvNames = typeof(ArmEnvironment).GetFields().Select(f => f.Name).Where(n => n.StartsWith("Azure") && !n.Contains("Germany")).ToArray();
+        return azEnvNames;
+    }
+
     public string GetAzurePortalUrl()
     {
         var url = "https://portal.azure.com";
-        if (_settings.AzureEnvironment.Contains("China", System.StringComparison.OrdinalIgnoreCase))
+        if (_azContext.ArmEnvironment == ArmEnvironment.AzureChina)
         {
             url = "https://portal.azure.cn";
         }
-        else if (_settings.AzureEnvironment.Contains("German", System.StringComparison.OrdinalIgnoreCase))
-        {
-            url = "https://portal.microsoftazure.de";
-        }
-        else if (_settings.AzureEnvironment.Contains("Government", System.StringComparison.OrdinalIgnoreCase))
+        else if (_azContext.ArmEnvironment == ArmEnvironment.AzureGovernment)
         {
             url = "https://portal.azure.us";
         }
@@ -129,6 +155,8 @@ public class AzureService
             return result;
         }
 
+        var signinContext = CurrentSigninContext;
+
         string skipToken = null;
         do
         {
@@ -140,7 +168,7 @@ public class AzureService
                     SkipToken = skipToken
                 }
             };
-            var azureResult = await _tenantResource.GetResourcesAsync(resourceQuery, cancellationToken);
+            var azureResult = await signinContext.TenantResource.GetResourcesAsync(resourceQuery, cancellationToken);
             var response = azureResult.GetRawResponse();
             if (response.Status != 200)
             {
@@ -171,6 +199,8 @@ public class AzureService
 
     public async Task<string[]> UpdateTagsAsync(List<Resource> resources, Dictionary<string, string> tagsToUpdate, Dictionary<string, string> tagsToRemove)
     {
+        var signinContext = CurrentSigninContext;
+        
         var maxDegreeOfParallelism = 10;
         var semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
 
@@ -182,7 +212,7 @@ public class AzureService
             try
             {
                 var resourceIdentifier = new ResourceIdentifier(resource.Id);
-                var genericResource = _armClient.GetGenericResource(resourceIdentifier);
+                var genericResource = signinContext.ArmClient.GetGenericResource(resourceIdentifier);
 
                 var resourceResponse = await genericResource.GetAsync();
                 var currentTags = resourceResponse.Value.Data.Tags;

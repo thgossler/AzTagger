@@ -146,6 +146,7 @@ public partial class MainForm : Form
     public MainForm(Settings settings)
     {
         _settings = settings;
+        _azureService = new AzureService(_settings);
 
         InitializeComponent();
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -286,7 +287,7 @@ public partial class MainForm : Form
         _resizeTimer.Start();
     }
 
-    private void Form_Load(object sender, EventArgs e)
+    private async void Form_Load(object sender, EventArgs e)
     {
         RestoreLastWindowState();
 
@@ -301,6 +302,35 @@ public partial class MainForm : Form
 
         _cboQuickFilter2Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
         _txtQuickFilter2Text.TextChanged += TextBox_QuickFilter2_TextChanged;
+
+        _cboAzureContext.Items.Clear();
+        _cboAzureContext.Items.AddRange(_settings.AzureContexts.Select(c => c.Name).ToArray());
+        _cboAzureContext.Items.Add("Edit...");
+
+        var selectedAzureContext = _settings.GetAzureContext();
+        if (string.IsNullOrWhiteSpace(selectedAzureContext.TenantId))
+        {
+            var dialog = new AzureContextConfigDialog(_settings);
+            var result = await dialog.ShowDialogAsync(this);
+            if (result == DialogResult.OK)
+            {
+                selectedAzureContext = _settings.GetAzureContext();
+                if (string.IsNullOrWhiteSpace(selectedAzureContext.TenantId) || string.IsNullOrWhiteSpace(selectedAzureContext.ClientAppId))
+                {
+                    MessageBox.Show(this, "No valid Azure Context is configured. The application will now close.", "AzTagger", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Close();
+                    return;
+                }
+                SettingsService.Save(_settings);
+            }
+            else
+            {
+                Close();
+                return;
+            }
+        }
+
+        _cboAzureContext.SelectedItem = _settings.GetAzureContext().Name;
     }
 
     private void RestoreLastWindowState()
@@ -341,7 +371,7 @@ public partial class MainForm : Form
         _settings.LastSearchQuery = _txtSearchQuery.Text;
         _settings.LastQuickFilter1Text = _txtQuickFilter1Text.Text;
         _settings.LastQuickFilter2Text = _txtQuickFilter2Text.Text;
-        _settings.Save();
+        SettingsService.Save(_settings);
         _customToolTipForm?.Dispose();
         base.OnFormClosing(e);
     }
@@ -439,7 +469,7 @@ public partial class MainForm : Form
                     _cboSavedQueries.Items.Add(savedQuery);
                 }
 
-                _settings.Save();
+                SettingsService.Save(_settings);
             }
         }
     }
@@ -619,10 +649,10 @@ public partial class MainForm : Form
         if (sender is ContextMenuStrip cms && cms.SourceControl is TextBox tb)
         {
             string text = tb.Text;
-            
+
             char[] forbiddenChars = ['!', '?', '.', ':', '+', '*', '(', ')', '[', ']', '{', '}', '\\', '^', '<', '>'];
             _quickFilterExcludeCurrentTextMenuItem.Enabled = !text.Any(c => forbiddenChars.Contains(c)) && text.Trim().Length > 0;
-            
+
             _quickFilterExcludeTextRegExMenuItem.Enabled = text.Trim().Length == 0;
         }
     }
@@ -1000,6 +1030,22 @@ public partial class MainForm : Form
         _txtSearchQuery.SelectionLength = end - start;
     }
 
+    private void ComboBox_AzureContext_SelectedValueChanged(object sender, EventArgs e)
+    {
+        var selectedItem = _cboAzureContext.SelectedItem?.ToString();
+        if (selectedItem.StartsWith("Edit"))
+        {
+            var dialog = new AzureContextConfigDialog(_settings);
+            dialog.ShowDialog(this);
+        }
+        else if (!string.IsNullOrWhiteSpace(selectedItem))
+        {
+            _settings.SelectAzureContext(selectedItem);
+            SettingsService.Save(_settings);
+        }
+        _cboAzureContext.SelectedItem = _settings.GetAzureContext().Name;
+    }
+
     private async void ComboBox_TagTemplates_SelectedIndexChanged(object sender, EventArgs e)
     {
         if (_cboTagTemplates.SelectedIndex < 1)
@@ -1081,7 +1127,7 @@ public partial class MainForm : Form
     private void LinkLabel_EditTagTemplates_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
     {
         var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
-        Process.Start(editor, TagTemplates.TagTemplatesFilePath);
+        Process.Start(editor, TagTemplatesService.TagTemplatesFilePath);
     }
 
     private void LinkLabel_Donation_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -1249,7 +1295,7 @@ public partial class MainForm : Form
     private void OpenResourceIdInAzurePortal(string resourceId)
     {
         var portalUrl = _azureService != null ? _azureService.GetAzurePortalUrl() : "https://portal.azure.com";
-        var url = $"{portalUrl}/#@{_settings.TenantId}/resource{resourceId}";
+        var url = $"{portalUrl}/#@{_settings.GetAzureContext().TenantId}/resource{resourceId}";
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
@@ -1276,7 +1322,7 @@ public partial class MainForm : Form
 
     private void LoadTagTemplates()
     {
-        _tagTemplates = TagTemplates.Load();
+        _tagTemplates = TagTemplatesService.Load();
         _cboTagTemplates.Items.Clear();
         _cboTagTemplates.Items.Add("Tag Templates");
         _cboTagTemplates.Items.AddRange(_tagTemplates.Select(t => t.TemplateName).ToArray());
@@ -1293,7 +1339,7 @@ public partial class MainForm : Form
             {
                 _settings.RecentSearches.RemoveAt(10);
             }
-            _settings.Save();
+            SettingsService.Save(_settings);
 
             var displayText = queryText.Replace("\r\n", " ").Replace("\n", " ");
             var itemsToRemove = _cboRecentSearches.Items.OfType<RecentSearchItem>().

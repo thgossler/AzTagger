@@ -100,6 +100,8 @@ namespace AzTagger
             _btnApplyTags = new System.Windows.Forms.Button();
             errorProvider1 = new System.Windows.Forms.ErrorProvider(components);
             errorProvider2 = new System.Windows.Forms.ErrorProvider(components);
+            _cboAzureContext = new System.Windows.Forms.ComboBox();
+            _lblAzureContext = new System.Windows.Forms.Label();
             _pnlQueryButtons.SuspendLayout();
             _pnlQuickFilters.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)_gvwTags).BeginInit();
@@ -148,7 +150,7 @@ namespace AzTagger
             _cboRecentSearches.Location = new System.Drawing.Point(15, 12);
             _cboRecentSearches.MaxDropDownItems = 10;
             _cboRecentSearches.Name = "_cboRecentSearches";
-            _cboRecentSearches.Size = new System.Drawing.Size(1455, 28);
+            _cboRecentSearches.Size = new System.Drawing.Size(1098, 28);
             _cboRecentSearches.TabIndex = 8;
             _cboRecentSearches.SelectedIndexChanged += ComboBox_RecentSearches_SelectedIndexChanged;
             // 
@@ -421,7 +423,7 @@ namespace AzTagger
             _gvwTags.Name = "_gvwTags";
             _gvwTags.RowHeadersWidth = 51;
             _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            _gvwTags.Size = new System.Drawing.Size(864, 228);
+            _gvwTags.Size = new System.Drawing.Size(864, 210);
             _gvwTags.TabIndex = 28;
             _toolTip.SetToolTip(_gvwTags, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
             // 
@@ -521,7 +523,7 @@ namespace AzTagger
             // _lnkResetToDefaults
             // 
             _lnkResetToDefaults.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkResetToDefaults.Location = new System.Drawing.Point(1269, 192);
+            _lnkResetToDefaults.Location = new System.Drawing.Point(1269, 174);
             _lnkResetToDefaults.Name = "_lnkResetToDefaults";
             _lnkResetToDefaults.Size = new System.Drawing.Size(201, 23);
             _lnkResetToDefaults.TabIndex = 35;
@@ -534,7 +536,7 @@ namespace AzTagger
             // 
             _lblVersion.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
             _lblVersion.AutoSize = true;
-            _lblVersion.Location = new System.Drawing.Point(1129, 240);
+            _lblVersion.Location = new System.Drawing.Point(1129, 222);
             _lblVersion.Name = "_lblVersion";
             _lblVersion.Size = new System.Drawing.Size(91, 20);
             _lblVersion.TabIndex = 34;
@@ -543,7 +545,7 @@ namespace AzTagger
             // _lnkDonation
             // 
             _lnkDonation.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkDonation.Location = new System.Drawing.Point(1223, 236);
+            _lnkDonation.Location = new System.Drawing.Point(1223, 218);
             _lnkDonation.Name = "_lnkDonation";
             _lnkDonation.Size = new System.Drawing.Size(248, 24);
             _lnkDonation.TabIndex = 33;
@@ -555,7 +557,7 @@ namespace AzTagger
             // _lnkGitHubLink
             // 
             _lnkGitHubLink.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkGitHubLink.Location = new System.Drawing.Point(1269, 212);
+            _lnkGitHubLink.Location = new System.Drawing.Point(1269, 194);
             _lnkGitHubLink.Name = "_lnkGitHubLink";
             _lnkGitHubLink.Size = new System.Drawing.Size(202, 24);
             _lnkGitHubLink.TabIndex = 32;
@@ -605,11 +607,34 @@ namespace AzTagger
             // 
             errorProvider2.ContainerControl = this;
             // 
+            // _cboAzureContext
+            // 
+            _cboAzureContext.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            _cboAzureContext.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            _cboAzureContext.FormattingEnabled = true;
+            _cboAzureContext.Location = new System.Drawing.Point(1270, 12);
+            _cboAzureContext.Name = "_cboAzureContext";
+            _cboAzureContext.Size = new System.Drawing.Size(198, 28);
+            _cboAzureContext.TabIndex = 30;
+            _cboAzureContext.SelectedValueChanged += ComboBox_AzureContext_SelectedValueChanged;
+            // 
+            // _lblAzureContext
+            // 
+            _lblAzureContext.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            _lblAzureContext.AutoSize = true;
+            _lblAzureContext.Location = new System.Drawing.Point(1162, 16);
+            _lblAzureContext.Name = "_lblAzureContext";
+            _lblAzureContext.Size = new System.Drawing.Size(105, 20);
+            _lblAzureContext.TabIndex = 31;
+            _lblAzureContext.Text = "Azure Context:";
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             ClientSize = new System.Drawing.Size(1482, 953);
+            Controls.Add(_lblAzureContext);
+            Controls.Add(_cboAzureContext);
             Controls.Add(_btnClearSearchQuery);
             Controls.Add(_lnkResourceGraphDocs);
             Controls.Add(_pnlQuickFilters);
@@ -672,5 +697,7 @@ namespace AzTagger
         private System.Windows.Forms.LinkLabel _lnkResetToDefaults;
         private System.Windows.Forms.ErrorProvider errorProvider1;
         private System.Windows.Forms.ErrorProvider errorProvider2;
+        private System.Windows.Forms.ComboBox _cboAzureContext;
+        private System.Windows.Forms.Label _lblAzureContext;
     }
 }

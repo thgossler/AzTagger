@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace AzTagger;
+namespace AzTagger.Models;
 
 public class SavedSearchItem
 {

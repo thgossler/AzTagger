@@ -1,22 +1,18 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
+using AzTagger.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace AzTagger;
+namespace AzTagger.Services;
 
-public class TagTemplate
+public class TagTemplatesService
 {
-    public string TemplateName { get; set; }
-    public Dictionary<string, string> Tags { get; set; }
-}
-
-public class TagTemplates
-{
-    public static readonly string TagTemplatesFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "tagtemplates.json");
+    public static readonly string TagTemplatesFilePath = 
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "tagtemplates.json");
 
     public static List<TagTemplate> Load()
     {

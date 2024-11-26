@@ -1,6 +1,8 @@
 // Copyright (c) Thomas Gossler, 2024. All rights reserved.
 // Licensed under the MIT license.
 
+using AzTagger.Models;
+using AzTagger.Services;
 using Serilog;
 using System;
 using System.IO;
@@ -24,29 +26,11 @@ static class Program
 
         try
         {
-            var initSettingsRequired = !File.Exists(Settings.SettingsFilePath);
-            var settings = Settings.Load();
+            var initSettingsRequired = !File.Exists(SettingsService.SettingsFilePath);
+            var settings = SettingsService.Load();
             if (initSettingsRequired)
             {
-                settings.Save();
-            }
-
-            if (string.IsNullOrWhiteSpace(settings.TenantId))
-            {
-                MessageBox.Show(
-@"Please configure your Microsoft Entra ID TenantId in the settings file and restart the application.
-
-The application may also need to be registered in Entra ID if not done yet with the following permissions and its ClientAppId configured:
-- Azure Service Management / Delegated / user_impersonation
-- Microsoft Graph / Delegated / User.Read
-
-The settings file will now be opened automatically.",
-                    "AzTagger", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
-                System.Diagnostics.Process.Start(editor, Settings.SettingsFilePath);
-
-                return;
+                SettingsService.Save(settings);
             }
 
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
