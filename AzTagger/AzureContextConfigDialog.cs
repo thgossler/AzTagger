@@ -4,6 +4,7 @@
 using AzTagger.Models;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace AzTagger;
@@ -23,6 +24,22 @@ public partial class AzureContextConfigDialog : Form
 
         _dataGridView.AutoGenerateColumns = false;
         _dataGridView.DataSource = _tempAzureContexts;
+
+        if (Application.IsDarkModeEnabled)
+        {
+            _dataGridView.BackgroundColor = Color.FromArgb(30, 30, 30);
+            _dataGridView.ForeColor = Color.White;
+            _dataGridView.GridColor = Color.FromArgb(45, 45, 45);
+            _dataGridView.DefaultCellStyle.BackColor = Color.FromArgb(30, 30, 30);
+            _dataGridView.DefaultCellStyle.ForeColor = Color.White;
+            _dataGridView.DefaultCellStyle.SelectionBackColor = Color.FromArgb(51, 153, 255);
+            _dataGridView.DefaultCellStyle.SelectionForeColor = Color.Black;
+            _dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 45);
+            _dataGridView.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            _dataGridView.EnableHeadersVisualStyles = false;
+            _dataGridView.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 45);
+            _dataGridView.AlternatingRowsDefaultCellStyle.ForeColor = Color.White;
+        }
     }
 
     private void Form_Load(object sender, EventArgs e)

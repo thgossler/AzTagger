@@ -1,7 +1,6 @@
 // Copyright (c) Thomas Gossler, 2024. All rights reserved.
 // Licensed under the MIT license.
 
-using AzTagger.Models;
 using AzTagger.Services;
 using Serilog;
 using System;
@@ -34,6 +33,7 @@ static class Program
             }
 
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            Application.SetColorMode(SystemColorMode.System);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm(settings));

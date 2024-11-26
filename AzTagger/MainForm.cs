@@ -176,6 +176,11 @@ public partial class MainForm : Form
         _tooltipTimer = new Timer();
         _tooltipTimer.Interval = _toolTip.AutomaticDelay;
         _tooltipTimer.Tick += ToolTipTimer_Tick;
+
+        if (Application.IsDarkModeEnabled)
+        {
+            SetLinkLabelColors(this, Color.LightBlue, Color.DeepSkyBlue);
+        }
     }
 
     private void InitializeResultsDataGridViewContextMenu()
@@ -242,7 +247,22 @@ public partial class MainForm : Form
         _gvwResults.MouseLeave += DataGridView_Results_MouseLeave;
         _gvwResults.DataSource = new List<Resource>();
 
-        // Prevent automatic sorting when a column header is double-clicked
+        if (Application.IsDarkModeEnabled)
+        {
+            _gvwResults.BackgroundColor = Color.FromArgb(30, 30, 30);
+            _gvwResults.ForeColor = Color.White;
+            _gvwResults.GridColor = Color.FromArgb(45, 45, 45);
+            _gvwResults.DefaultCellStyle.BackColor = Color.FromArgb(30, 30, 30);
+            _gvwResults.DefaultCellStyle.ForeColor = Color.White;
+            _gvwResults.DefaultCellStyle.SelectionBackColor = Color.FromArgb(51, 153, 255);
+            _gvwResults.DefaultCellStyle.SelectionForeColor = Color.Black;
+            _gvwResults.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 45);
+            _gvwResults.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            _gvwResults.EnableHeadersVisualStyles = false;
+            _gvwResults.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 45);
+            _gvwResults.AlternatingRowsDefaultCellStyle.ForeColor = Color.White;
+        }
+
         foreach (DataGridViewColumn column in _gvwResults.Columns)
         {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
@@ -266,6 +286,22 @@ public partial class MainForm : Form
         _gvwTags.AutoGenerateColumns = true;
         _gvwTags.CellFormatting += DataGridView_Results_CellFormatting;
         _gvwTags.KeyDown += DataGridView_Tags_KeyDown;
+
+        if (Application.IsDarkModeEnabled)
+        {
+            _gvwTags.BackgroundColor = Color.FromArgb(30, 30, 30);
+            _gvwTags.ForeColor = Color.White;
+            _gvwTags.GridColor = Color.FromArgb(45, 45, 45);
+            _gvwTags.DefaultCellStyle.BackColor = Color.FromArgb(30, 30, 30);
+            _gvwTags.DefaultCellStyle.ForeColor = Color.White;
+            _gvwTags.DefaultCellStyle.SelectionBackColor = Color.FromArgb(51, 153, 255);
+            _gvwTags.DefaultCellStyle.SelectionForeColor = Color.Black;
+            _gvwTags.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 45);
+            _gvwTags.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            _gvwTags.EnableHeadersVisualStyles = false;
+            _gvwTags.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 45);
+            _gvwTags.AlternatingRowsDefaultCellStyle.ForeColor = Color.White;
+        }
     }
 
     private void InitializeDebounceTimers()
@@ -285,6 +321,23 @@ public partial class MainForm : Form
         _resizeTimer.Interval = 500;
         _resizeTimer.Tick += ResizeTimer_Tick;
         _resizeTimer.Start();
+    }
+
+    private void SetLinkLabelColors(Control parent, Color linkColor, Color activeLinkColor)
+    {
+        foreach (Control ctrl in parent.Controls)
+        {
+            if (ctrl is LinkLabel linkLabel)
+            {
+                linkLabel.LinkColor = linkColor;
+                linkLabel.ActiveLinkColor = activeLinkColor;
+            }
+
+            if (ctrl.HasChildren)
+            {
+                SetLinkLabelColors(ctrl, linkColor, activeLinkColor);
+            }
+        }
     }
 
     private async void Form_Load(object sender, EventArgs e)

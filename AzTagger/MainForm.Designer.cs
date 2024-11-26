@@ -423,7 +423,7 @@ namespace AzTagger
             _gvwTags.Name = "_gvwTags";
             _gvwTags.RowHeadersWidth = 51;
             _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            _gvwTags.Size = new System.Drawing.Size(864, 210);
+            _gvwTags.Size = new System.Drawing.Size(864, 234);
             _gvwTags.TabIndex = 28;
             _toolTip.SetToolTip(_gvwTags, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
             // 
@@ -446,9 +446,10 @@ namespace AzTagger
             // _lnkResourceGraphDocs
             // 
             _lnkResourceGraphDocs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            _lnkResourceGraphDocs.AutoSize = true;
             _lnkResourceGraphDocs.Location = new System.Drawing.Point(1171, 56);
             _lnkResourceGraphDocs.Name = "_lnkResourceGraphDocs";
-            _lnkResourceGraphDocs.Size = new System.Drawing.Size(299, 25);
+            _lnkResourceGraphDocs.Size = new System.Drawing.Size(297, 20);
             _lnkResourceGraphDocs.TabIndex = 27;
             _lnkResourceGraphDocs.TabStop = true;
             _lnkResourceGraphDocs.Text = "Azure Resource Graph query language docs";
@@ -523,7 +524,7 @@ namespace AzTagger
             // _lnkResetToDefaults
             // 
             _lnkResetToDefaults.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkResetToDefaults.Location = new System.Drawing.Point(1269, 174);
+            _lnkResetToDefaults.Location = new System.Drawing.Point(1270, 198);
             _lnkResetToDefaults.Name = "_lnkResetToDefaults";
             _lnkResetToDefaults.Size = new System.Drawing.Size(201, 23);
             _lnkResetToDefaults.TabIndex = 35;
@@ -536,7 +537,7 @@ namespace AzTagger
             // 
             _lblVersion.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
             _lblVersion.AutoSize = true;
-            _lblVersion.Location = new System.Drawing.Point(1129, 222);
+            _lblVersion.Location = new System.Drawing.Point(1130, 246);
             _lblVersion.Name = "_lblVersion";
             _lblVersion.Size = new System.Drawing.Size(91, 20);
             _lblVersion.TabIndex = 34;
@@ -545,7 +546,7 @@ namespace AzTagger
             // _lnkDonation
             // 
             _lnkDonation.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkDonation.Location = new System.Drawing.Point(1223, 218);
+            _lnkDonation.Location = new System.Drawing.Point(1224, 242);
             _lnkDonation.Name = "_lnkDonation";
             _lnkDonation.Size = new System.Drawing.Size(248, 24);
             _lnkDonation.TabIndex = 33;
@@ -557,7 +558,7 @@ namespace AzTagger
             // _lnkGitHubLink
             // 
             _lnkGitHubLink.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkGitHubLink.Location = new System.Drawing.Point(1269, 194);
+            _lnkGitHubLink.Location = new System.Drawing.Point(1270, 218);
             _lnkGitHubLink.Name = "_lnkGitHubLink";
             _lnkGitHubLink.Size = new System.Drawing.Size(202, 24);
             _lnkGitHubLink.TabIndex = 32;
