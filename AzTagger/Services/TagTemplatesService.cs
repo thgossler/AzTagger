@@ -72,6 +72,39 @@ public class TagTemplatesService
                         { "ReviewRequiredBy", "{User}" },
                         { "ReviewRequiredTime", "{DateTime}" }
                     }
+                },
+                new TagTemplate
+                {
+                    TemplateName = "SubjectForDeletion-suspected",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "SubjectForDeletion", "suspected" },
+                        { "SubjectForDeletion-FindingDate", "{Date}" },
+                        { "SubjectForDeletion-Reason", "Manually tagged" },
+                        { "SubjectForDeletion-Hint", "See docs under https://github.com/thgossler/AzSaveMoney" }
+                    }
+                },
+                new TagTemplate
+                {
+                    TemplateName = "SubjectForDeletion-rejected",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "SubjectForDeletion", "rejected" },
+                        { "SubjectForDeletion-Hint", "See docs under https://github.com/thgossler/AzSaveMoney" },
+                        { "-SubjectForDeletion-FindingDate", "" },
+                        { "-SubjectForDeletion-Reason", "" }
+                    }
+                },
+                new TagTemplate
+                {
+                    TemplateName = "Remove SubjectForDeletion tags",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "-SubjectForDeletion", "" },
+                        { "-SubjectForDeletion-FindingDate", "" },
+                        { "-SubjectForDeletion-Reason", "" },
+                        { "-SubjectForDeletion-Hint", "" }
+                    }
                 }
             };
             Save(result);

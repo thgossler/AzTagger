@@ -56,6 +56,7 @@ partial class AzureContextConfigDialog
         _dataGridView.Size = new System.Drawing.Size(840, 148);
         _dataGridView.TabIndex = 0;
         _dataGridView.CellMouseDoubleClick += DataGridView_CellMouse_DoubleClick;
+        _dataGridView.RowsRemoved += DataGridView_RowsRemoved;
         _dataGridView.SelectionChanged += DataGridView_SelectionChanged;
         // 
         // _colName
@@ -66,6 +67,7 @@ partial class AzureContextConfigDialog
         _colName.MinimumWidth = 6;
         _colName.Name = "_colName";
         _colName.Width = 140;
+        _colName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
         // 
         // _colAzureEnvironment
         // 
@@ -75,6 +77,7 @@ partial class AzureContextConfigDialog
         _colAzureEnvironment.MinimumWidth = 6;
         _colAzureEnvironment.Name = "_colAzureEnvironment";
         _colAzureEnvironment.Width = 220;
+        _colAzureEnvironment.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
         // 
         // _colTenantId
         // 
@@ -84,6 +87,7 @@ partial class AzureContextConfigDialog
         _colTenantId.MinimumWidth = 6;
         _colTenantId.Name = "_colTenantId";
         _colTenantId.Width = 200;
+        _colTenantId.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
         // 
         // _colClientAppId
         // 
@@ -93,6 +97,7 @@ partial class AzureContextConfigDialog
         _colClientAppId.MinimumWidth = 6;
         _colClientAppId.Name = "_colClientAppId";
         _colClientAppId.Width = 200;
+        _colClientAppId.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
         // 
         // _btnOk
         // 

@@ -91,6 +91,7 @@ namespace AzTagger
             _splitContainer = new System.Windows.Forms.SplitContainer();
             _resultsActivityIndicator = new System.Windows.Forms.ProgressBar();
             _gvwResults = new System.Windows.Forms.DataGridView();
+            _lnkEditSettingsFile = new System.Windows.Forms.LinkLabel();
             _lnkResetToDefaults = new System.Windows.Forms.LinkLabel();
             _lblVersion = new System.Windows.Forms.Label();
             _lnkDonation = new System.Windows.Forms.LinkLabel();
@@ -187,7 +188,7 @@ namespace AzTagger
             _queryActivityIndicator.Location = new System.Drawing.Point(45, 148);
             _queryActivityIndicator.MarqueeAnimationSpeed = 20;
             _queryActivityIndicator.Name = "_queryActivityIndicator";
-            _queryActivityIndicator.Size = new System.Drawing.Size(1423, 2);
+            _queryActivityIndicator.Size = new System.Drawing.Size(1423, 5);
             _queryActivityIndicator.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             _queryActivityIndicator.TabIndex = 15;
             _queryActivityIndicator.Visible = false;
@@ -412,6 +413,7 @@ namespace AzTagger
             _cboTagTemplates.Size = new System.Drawing.Size(335, 28);
             _cboTagTemplates.TabIndex = 29;
             _toolTip.SetToolTip(_cboTagTemplates, "When you select a template, its tags will be added to your current list, and any existing tags will be updated.");
+            _cboTagTemplates.SelectedIndexChanged += ComboBox_TagTemplates_SelectedIndexChanged;
             // 
             // _gvwTags
             // 
@@ -423,7 +425,7 @@ namespace AzTagger
             _gvwTags.Name = "_gvwTags";
             _gvwTags.RowHeadersWidth = 51;
             _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            _gvwTags.Size = new System.Drawing.Size(864, 234);
+            _gvwTags.Size = new System.Drawing.Size(864, 222);
             _gvwTags.TabIndex = 28;
             _toolTip.SetToolTip(_gvwTags, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
             // 
@@ -473,6 +475,7 @@ namespace AzTagger
             // 
             // _splitContainer.Panel2
             // 
+            _splitContainer.Panel2.Controls.Add(_lnkEditSettingsFile);
             _splitContainer.Panel2.Controls.Add(_lnkResetToDefaults);
             _splitContainer.Panel2.Controls.Add(_lblVersion);
             _splitContainer.Panel2.Controls.Add(_lnkDonation);
@@ -494,7 +497,7 @@ namespace AzTagger
             _resultsActivityIndicator.Location = new System.Drawing.Point(12, 389);
             _resultsActivityIndicator.MarqueeAnimationSpeed = 20;
             _resultsActivityIndicator.Name = "_resultsActivityIndicator";
-            _resultsActivityIndicator.Size = new System.Drawing.Size(1459, 2);
+            _resultsActivityIndicator.Size = new System.Drawing.Size(1459, 5);
             _resultsActivityIndicator.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             _resultsActivityIndicator.TabIndex = 28;
             _resultsActivityIndicator.Visible = false;
@@ -521,23 +524,39 @@ namespace AzTagger
             _gvwResults.StandardTab = true;
             _gvwResults.TabIndex = 25;
             // 
+            // _lnkEditSettingsFile
+            // 
+            _lnkEditSettingsFile.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            _lnkEditSettingsFile.AutoSize = true;
+            _lnkEditSettingsFile.Location = new System.Drawing.Point(1351, 163);
+            _lnkEditSettingsFile.Name = "_lnkEditSettingsFile";
+            _lnkEditSettingsFile.Size = new System.Drawing.Size(119, 20);
+            _lnkEditSettingsFile.TabIndex = 36;
+            _lnkEditSettingsFile.TabStop = true;
+            _lnkEditSettingsFile.Text = "Edit Settings File";
+            _lnkEditSettingsFile.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _lnkEditSettingsFile.VisitedLinkColor = System.Drawing.Color.Blue;
+            _lnkEditSettingsFile.LinkClicked += LinkLabel_EditSettingsFile_LinkClicked;
+            // 
             // _lnkResetToDefaults
             // 
             _lnkResetToDefaults.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkResetToDefaults.Location = new System.Drawing.Point(1269, 198);
+            _lnkResetToDefaults.AutoSize = true;
+            _lnkResetToDefaults.Location = new System.Drawing.Point(1289, 186);
             _lnkResetToDefaults.Name = "_lnkResetToDefaults";
-            _lnkResetToDefaults.Size = new System.Drawing.Size(201, 23);
+            _lnkResetToDefaults.Size = new System.Drawing.Size(181, 20);
             _lnkResetToDefaults.TabIndex = 35;
             _lnkResetToDefaults.TabStop = true;
             _lnkResetToDefaults.Text = "Reset Window to Defaults";
             _lnkResetToDefaults.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            _lnkResetToDefaults.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkResetToDefaults.LinkClicked += LinkLabel_ResetToDefaults_LinkClicked;
             // 
             // _lblVersion
             // 
             _lblVersion.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
             _lblVersion.AutoSize = true;
-            _lblVersion.Location = new System.Drawing.Point(1129, 246);
+            _lblVersion.Location = new System.Drawing.Point(1134, 232);
             _lblVersion.Name = "_lblVersion";
             _lblVersion.Size = new System.Drawing.Size(91, 20);
             _lblVersion.TabIndex = 34;
@@ -546,25 +565,27 @@ namespace AzTagger
             // _lnkDonation
             // 
             _lnkDonation.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkDonation.Location = new System.Drawing.Point(1223, 242);
+            _lnkDonation.AutoSize = true;
+            _lnkDonation.Location = new System.Drawing.Point(1251, 232);
             _lnkDonation.Name = "_lnkDonation";
-            _lnkDonation.Size = new System.Drawing.Size(248, 24);
+            _lnkDonation.Size = new System.Drawing.Size(219, 20);
             _lnkDonation.TabIndex = 33;
             _lnkDonation.TabStop = true;
             _lnkDonation.Text = "👍 Thumbs-up with a Donation";
-            _lnkDonation.TextAlign = System.Drawing.ContentAlignment.BottomRight;
+            _lnkDonation.TextAlign = System.Drawing.ContentAlignment.TopRight;
             _lnkDonation.VisitedLinkColor = System.Drawing.Color.Blue;
             // 
             // _lnkGitHubLink
             // 
             _lnkGitHubLink.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkGitHubLink.Location = new System.Drawing.Point(1269, 218);
+            _lnkGitHubLink.AutoSize = true;
+            _lnkGitHubLink.Location = new System.Drawing.Point(1304, 209);
             _lnkGitHubLink.Name = "_lnkGitHubLink";
-            _lnkGitHubLink.Size = new System.Drawing.Size(202, 24);
+            _lnkGitHubLink.Size = new System.Drawing.Size(166, 20);
             _lnkGitHubLink.TabIndex = 32;
             _lnkGitHubLink.TabStop = true;
             _lnkGitHubLink.Text = "Open Source on GitHub";
-            _lnkGitHubLink.TextAlign = System.Drawing.ContentAlignment.BottomRight;
+            _lnkGitHubLink.TextAlign = System.Drawing.ContentAlignment.TopRight;
             _lnkGitHubLink.VisitedLinkColor = System.Drawing.Color.Blue;
             // 
             // _lnkEditTagTemplates
@@ -634,6 +655,7 @@ namespace AzTagger
             AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             ClientSize = new System.Drawing.Size(1482, 953);
+            Controls.Add(_queryActivityIndicator);
             Controls.Add(_lblAzureContext);
             Controls.Add(_cboAzureContext);
             Controls.Add(_btnClearSearchQuery);
@@ -641,7 +663,6 @@ namespace AzTagger
             Controls.Add(_pnlQuickFilters);
             Controls.Add(_pnlQueryButtons);
             Controls.Add(_lblResultsCount);
-            Controls.Add(_queryActivityIndicator);
             Controls.Add(_lblQueryMode);
             Controls.Add(_lblSearchResults);
             Controls.Add(_lblSearchQuery);
@@ -700,5 +721,6 @@ namespace AzTagger
         private System.Windows.Forms.ErrorProvider errorProvider2;
         private System.Windows.Forms.ComboBox _cboAzureContext;
         private System.Windows.Forms.Label _lblAzureContext;
+        private System.Windows.Forms.LinkLabel _lnkEditSettingsFile;
     }
 }

@@ -179,7 +179,7 @@ public partial class MainForm : Form
 
         if (Application.IsDarkModeEnabled)
         {
-            SetLinkLabelColors(this, Color.LightBlue, Color.DeepSkyBlue);
+            HandleDarkModeExceptions(this);
         }
     }
 
@@ -323,19 +323,32 @@ public partial class MainForm : Form
         _resizeTimer.Start();
     }
 
-    private void SetLinkLabelColors(Control parent, Color linkColor, Color activeLinkColor)
+    private void HandleDarkModeExceptions(Control parent)
     {
         foreach (Control ctrl in parent.Controls)
         {
             if (ctrl is LinkLabel linkLabel)
             {
-                linkLabel.LinkColor = linkColor;
-                linkLabel.ActiveLinkColor = activeLinkColor;
+                linkLabel.LinkColor = Color.LightBlue;
+                linkLabel.ActiveLinkColor = Color.LightBlue;
+            }
+
+            if (ctrl is Button button)
+            {
+                button.BackColor = Color.FromArgb(45, 45, 48);
+                button.ForeColor = Color.White;
+            }
+
+            if (ctrl is ProgressBar progressBar)
+            {
+                progressBar.BringToFront();
+                progressBar.BackColor = Color.FromArgb(45, 45, 48);
+                progressBar.ForeColor = Color.GreenYellow;
             }
 
             if (ctrl.HasChildren)
             {
-                SetLinkLabelColors(ctrl, linkColor, activeLinkColor);
+                HandleDarkModeExceptions(ctrl);
             }
         }
     }
@@ -356,9 +369,7 @@ public partial class MainForm : Form
         _cboQuickFilter2Column.SelectedIndexChanged += ComboBox_QuickFilter_SelectedIndexChanged;
         _txtQuickFilter2Text.TextChanged += TextBox_QuickFilter2_TextChanged;
 
-        _cboAzureContext.Items.Clear();
-        _cboAzureContext.Items.AddRange(_settings.AzureContexts.Select(c => c.Name).ToArray());
-        _cboAzureContext.Items.Add("Edit...");
+        UpdateAzureContextDropDownList();
 
         var selectedAzureContext = _settings.GetAzureContext();
         if (string.IsNullOrWhiteSpace(selectedAzureContext.TenantId))
@@ -370,6 +381,7 @@ public partial class MainForm : Form
                 selectedAzureContext = _settings.GetAzureContext();
                 if (string.IsNullOrWhiteSpace(selectedAzureContext.TenantId) || string.IsNullOrWhiteSpace(selectedAzureContext.ClientAppId))
                 {
+                    Log.Error("No valid Azure Context is configured. The application will now close.");
                     MessageBox.Show(this, "No valid Azure Context is configured. The application will now close.", "AzTagger", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     Close();
                     return;
@@ -384,24 +396,6 @@ public partial class MainForm : Form
         }
 
         _cboAzureContext.SelectedItem = _settings.GetAzureContext().Name;
-    }
-
-    private void RestoreLastWindowState()
-    {
-        Size = _settings.WindowSize;
-        StartPosition = FormStartPosition.Manual;
-        if (_settings.WindowLocation != Point.Empty)
-        {
-            Location = _settings.WindowLocation;
-        }
-        else
-        {
-            CenterToScreen();
-        }
-        _splitContainer.SplitterDistance = _settings.SplitterPosition;
-        _txtSearchQuery.Text = _settings.LastSearchQuery;
-        _txtQuickFilter1Text.Text = _settings.LastQuickFilter1Text;
-        _txtQuickFilter2Text.Text = _settings.LastQuickFilter2Text;
     }
 
     private void Form_SizeChanged(object sender, EventArgs e)
@@ -793,6 +787,31 @@ public partial class MainForm : Form
         }
     }
 
+    private void UpdateAzureContextDropDownList()
+    {
+        _cboAzureContext.Items.Clear();
+        _cboAzureContext.Items.AddRange(_settings.AzureContexts.Select(c => c.Name).ToArray());
+        _cboAzureContext.Items.Add("Edit...");
+    }
+
+    private void RestoreLastWindowState()
+    {
+        Size = _settings.WindowSize;
+        StartPosition = FormStartPosition.Manual;
+        if (_settings.WindowLocation != Point.Empty)
+        {
+            Location = _settings.WindowLocation;
+        }
+        else
+        {
+            CenterToScreen();
+        }
+        _splitContainer.SplitterDistance = _settings.SplitterPosition;
+        _txtSearchQuery.Text = _settings.LastSearchQuery;
+        _txtQuickFilter1Text.Text = _settings.LastQuickFilter1Text;
+        _txtQuickFilter2Text.Text = _settings.LastQuickFilter2Text;
+    }
+
     private string FormatTags(IDictionary<string, string> tags, string joinWith = ", \n")
     {
         var sortedTags = tags.OrderBy(tag => tag.Key);
@@ -981,15 +1000,7 @@ public partial class MainForm : Form
         {
             foreach (DataGridViewRow row in _gvwTags.SelectedRows)
             {
-                var tagKey = row.Cells["Key"].Value?.ToString();
-                if (!string.IsNullOrEmpty(tagKey) && !_tagsToRemove.Contains(tagKey))
-                {
-                    _tagsToRemove.Add(tagKey);
-
-                    var deletedFont = new Font(row.InheritedStyle.Font, FontStyle.Strikeout);
-                    row.DefaultCellStyle.Font = deletedFont;
-                    row.InheritedStyle.Font = deletedFont;
-                }
+                MarkTagForDeletion(row);
             }
             e.Handled = true;
         }
@@ -1083,13 +1094,14 @@ public partial class MainForm : Form
         _txtSearchQuery.SelectionLength = end - start;
     }
 
-    private void ComboBox_AzureContext_SelectedValueChanged(object sender, EventArgs e)
+    private async void ComboBox_AzureContext_SelectedValueChanged(object sender, EventArgs e)
     {
         var selectedItem = _cboAzureContext.SelectedItem?.ToString();
         if (selectedItem.StartsWith("Edit"))
         {
             var dialog = new AzureContextConfigDialog(_settings);
-            dialog.ShowDialog(this);
+            await dialog.ShowDialogAsync(this);
+            UpdateAzureContextDropDownList();
         }
         else if (!string.IsNullOrWhiteSpace(selectedItem))
         {
@@ -1101,26 +1113,38 @@ public partial class MainForm : Form
 
     private async void ComboBox_TagTemplates_SelectedIndexChanged(object sender, EventArgs e)
     {
-        if (_cboTagTemplates.SelectedIndex < 1)
+        var selectedIndex = _cboTagTemplates.SelectedIndex - 1;
+        if (selectedIndex < 0)
         {
             return;
         }
-        var tags = _tagTemplates[_cboTagTemplates.SelectedIndex].Tags;
+        var tags = _tagTemplates[selectedIndex].Tags;
         tags = await ResolveTagVariables(tags);
         foreach (var tag in tags)
         {
-            var existingRow = _gvwTags.Rows.OfType<DataGridViewRow>()
-                .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tag.Key);
-            if (existingRow != null)
+            if (tag.Key.StartsWith("-"))
             {
-                if (!string.IsNullOrEmpty(tag.Value))
-                {
-                    existingRow.Cells["Value"].Value = tag.Value;
-                }
+                var tagKey = tag.Key.Substring(1);
+                var row = _gvwTags.Rows.OfType<DataGridViewRow>()
+                    .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tagKey);
+                MarkTagForDeletion(row);
             }
             else
             {
-                _gvwTags.Rows.Add(tag.Key, tag.Value);
+                var row = _gvwTags.Rows.OfType<DataGridViewRow>()
+                    .FirstOrDefault(r => r.Cells["Key"].Value?.ToString() == tag.Key);
+                if (row != null)
+                {
+                    if (!string.IsNullOrEmpty(tag.Value))
+                    {
+                        row.Cells["Value"].Value = tag.Value;
+                        MarkTagForDeletion(row, false);
+                    }
+                }
+                else
+                {
+                    _gvwTags.Rows.Add(tag.Key, tag.Value);
+                }
             }
         }
         _cboTagTemplates.SelectedIndex = 0;
@@ -1206,6 +1230,12 @@ public partial class MainForm : Form
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
+    private void LinkLabel_EditSettingsFile_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
+        Process.Start(editor, SettingsService.SettingsFilePath);
+    }
+
     private void LinkLabel_ResetToDefaults_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
     {
         _settings.ResetToWindowDefaults();
@@ -1228,6 +1258,34 @@ public partial class MainForm : Form
             if (ctrl.HasChildren)
             {
                 ProcessToolTips(ctrl, toolTip, maxLineLength);
+            }
+        }
+    }
+
+    private void MarkTagForDeletion(DataGridViewRow row, bool markForDeletion = true)
+    {
+        if (row == null)
+        {
+            return;
+        }
+        var tagKey = row.Cells["Key"]?.Value?.ToString().Trim();
+        if (!string.IsNullOrEmpty(tagKey))
+        {
+            if (markForDeletion)
+            {
+                if (!_tagsToRemove.Contains(tagKey))
+                {
+                    _tagsToRemove.Add(tagKey);
+                }
+                var deletedFont = new Font(row.InheritedStyle.Font, FontStyle.Strikeout);
+                row.DefaultCellStyle.Font = deletedFont;
+                row.InheritedStyle.Font = deletedFont;
+            }
+            else
+            {
+                _tagsToRemove.Remove(tagKey);
+                row.DefaultCellStyle.Font = null;
+                row.InheritedStyle.Font = null;
             }
         }
     }
@@ -1265,6 +1323,7 @@ public partial class MainForm : Form
             _queryActivityIndicator.Style = ProgressBarStyle.Continuous;
             _queryActivityIndicator.Value = 0;
             _queryActivityIndicator.Style = ProgressBarStyle.Marquee;
+            _queryActivityIndicator.MarqueeAnimationSpeed = 15;
             _queryActivityIndicator.Visible = visible;
         }
         if (type == ActivityIndicatorType.Results || type == ActivityIndicatorType.All)
@@ -1272,9 +1331,9 @@ public partial class MainForm : Form
             _resultsActivityIndicator.Style = ProgressBarStyle.Continuous;
             _resultsActivityIndicator.Value = 0;
             _resultsActivityIndicator.Style = ProgressBarStyle.Marquee;
+            _resultsActivityIndicator.MarqueeAnimationSpeed = 15;
             _resultsActivityIndicator.Visible = visible;
         }
-        Cursor.Current = visible ? Cursors.WaitCursor : Cursors.Default;
     }
 
     private string BuildQuery()
@@ -1613,6 +1672,7 @@ public partial class MainForm : Form
                 ShowActivityIndicator(ActivityIndicatorType.All, false);
 
                 MessageBox.Show(this, message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Log.Error(message);
             }
         }
         catch (Exception ex)

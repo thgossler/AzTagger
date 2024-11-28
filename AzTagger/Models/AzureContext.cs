@@ -3,6 +3,7 @@
 
 using Azure.ResourceManager;
 using System;
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace AzTagger.Models;
@@ -10,11 +11,18 @@ namespace AzTagger.Models;
 public class AzureContext
 {
     public string Name { get; set; }
+    
     public string AzureEnvironmentName { get; set; }
+    
     public string TenantId { get; set; }
+    
     public string ClientAppId { get; set; }
 
-    public AzureContext(string name = "Default", string azureEnvironmentName = null, string tenantId = "", string clientAppId = "5221c0b8-f9e6-4663-ac3c-5baf539290dc")
+    public AzureContext() : this("Default")
+    {
+    }
+
+    public AzureContext(string name, string azureEnvironmentName = null, string tenantId = "", string clientAppId = "5221c0b8-f9e6-4663-ac3c-5baf539290dc")
     {
         Name = name;
         AzureEnvironmentName = azureEnvironmentName;
@@ -39,6 +47,7 @@ public class AzureContext
     }
 
     [JsonIgnore]
+    [Browsable(false)]
     public ArmEnvironment ArmEnvironment { 
         get {
             var field = typeof(ArmEnvironment).GetField(AzureEnvironmentName);
@@ -55,3 +64,4 @@ public class AzureContext
         return Name;
     }
 }
+

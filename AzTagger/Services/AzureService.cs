@@ -51,6 +51,28 @@ public class AzureService
         _azContext = _settings.GetAzureContext();
     }
 
+    public async Task<List<TenantData>> GetAvailableTenantsAsync()
+    {
+        var options = new InteractiveBrowserCredentialOptions
+        {
+            TenantId = "organizations",
+            RedirectUri = new Uri("http://localhost"),
+            TokenCachePersistenceOptions = new TokenCachePersistenceOptions
+            {
+                Name = $"AzTaggerTokenCache_{_azContext.AzureEnvironmentName}"
+            }
+        };
+        var credential = new InteractiveBrowserCredential(options);
+        var armClient = new ArmClient(credential);
+
+        var tenants = new List<TenantData>();
+        await foreach (var tenant in armClient.GetTenants().GetAllAsync())
+        {
+            tenants.Add(tenant.Data);
+        }
+        return tenants;
+    }
+
     public async Task SignInAsync(bool refresh = false)
     {
         _azContext = _settings.GetAzureContext();
@@ -87,13 +109,13 @@ public class AzureService
             var options = new InteractiveBrowserCredentialOptions
             {
                 AuthorityHost = authorityHost,
+                RedirectUri = new Uri("http://localhost"),
                 TenantId = _azContext.TenantId,
                 ClientId = _azContext.ClientAppId,
                 TokenCachePersistenceOptions = new TokenCachePersistenceOptions
                 {
-                    Name = $"AzTaggerTokenCache_{_azContext.AzureEnvironmentName}_{_azContext.TenantId}"
-                },
-                RedirectUri = new Uri("http://localhost")
+                    Name = $"AzTaggerTokenCache_{_azContext.AzureEnvironmentName}"
+                }
             };
             signinContext.Credential = new InteractiveBrowserCredential(options);
 
