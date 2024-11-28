@@ -39,7 +39,7 @@ AzTagger is a Windows Desktop GUI application for fast and flexible querying of 
 and tag management. It is a helper tool that allows fast search and filtering of all resources, 
 resource groups, and subscriptions using Azure Resource Graph for your Entra ID tenant.
 
-<img src="AzTagger/images/screenshot.png" alt="Screenshot" width="2049">
+<img src="AzTagger/images/screenshot.jpg" alt="Screenshot" width="2049">
 
 ## Features
 
