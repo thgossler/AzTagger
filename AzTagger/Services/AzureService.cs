@@ -51,19 +51,36 @@ public class AzureService
         _azContext = _settings.GetAzureContext();
     }
 
-    public async Task<List<TenantData>> GetAvailableTenantsAsync()
+    public async Task<List<TenantData>> GetAvailableTenantsAsync(string environmentName = null)
     {
+        var armEnvironment = GetAzureEnvironmentByName(environmentName) ?? _azContext.ArmEnvironment;
+
+        var authorityHost = AzureAuthorityHosts.AzurePublicCloud;
+        if (armEnvironment == ArmEnvironment.AzureChina)
+        {
+            authorityHost = AzureAuthorityHosts.AzureChina;
+        }
+        else if (armEnvironment == ArmEnvironment.AzureGovernment)
+        {
+            authorityHost = AzureAuthorityHosts.AzureGovernment;
+        }
+
         var options = new InteractiveBrowserCredentialOptions
         {
+            AuthorityHost = authorityHost,
             TenantId = "organizations",
             RedirectUri = new Uri("http://localhost"),
             TokenCachePersistenceOptions = new TokenCachePersistenceOptions
             {
-                Name = $"AzTaggerTokenCache_{_azContext.AzureEnvironmentName}"
-            }
+                Name = $"AzTaggerTokenCache_{environmentName ?? _azContext.AzureEnvironmentName}"
+            },
         };
+
         var credential = new InteractiveBrowserCredential(options);
-        var armClient = new ArmClient(credential);
+        var armClient = new ArmClient(credential, null, new ArmClientOptions
+        {
+            Environment = armEnvironment
+        });
 
         var tenants = new List<TenantData>();
         await foreach (var tenant in armClient.GetTenants().GetAllAsync())
@@ -153,6 +170,16 @@ public class AzureService
     {
         var azEnvNames = typeof(ArmEnvironment).GetFields().Select(f => f.Name).Where(n => n.StartsWith("Azure") && !n.Contains("Germany")).ToArray();
         return azEnvNames;
+    }
+
+    public ArmEnvironment? GetAzureEnvironmentByName(string environmentName)
+    {
+        var field = typeof(ArmEnvironment).GetField(environmentName);
+        if (field == null)
+        {
+            return null;
+        }
+        return (ArmEnvironment)field.GetValue(null);
     }
 
     public string GetAzurePortalUrl()
