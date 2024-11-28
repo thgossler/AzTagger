@@ -167,12 +167,9 @@ public partial class AzureContextConfigDialog : Form
                     {
                         _tenantIdsForSelectedEnvironment.Add(tenant);
 
-                        foreach (var tenantInfo in _tenantIdsForSelectedEnvironment)
-                        {
-                            var tenantMenuItem = new ToolStripMenuItem($"Tenant: {tenantInfo.ToString()}");
-                            tenantMenuItem.Click += MenuItem_SelectTenant_Click;
-                            _dataGridViewContextMenu.Items.Add(tenantMenuItem);
-                        }
+                        var tenantMenuItem = new ToolStripMenuItem($"Tenant: {tenant.ToString()}");
+                        tenantMenuItem.Click += MenuItem_SelectTenant_Click;
+                        _dataGridViewContextMenu.Items.Add(tenantMenuItem);
                     }
                 }
                 else
@@ -201,6 +198,35 @@ public partial class AzureContextConfigDialog : Form
             selectedRow.Cells[2].Selected = true;
             _dataGridView.NotifyCurrentCellDirty(true);
             _dataGridView.Refresh();
+        }
+    }
+
+    private void DataGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+    {
+        if (e.ColumnIndex == 0)
+        {
+            if (string.IsNullOrEmpty(_dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString()))
+            {
+                _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Default";
+            }
+            else
+            {
+                var azureContextNames = _tempAzureContexts.Select(x => x.Name).ToList();
+                var azureContextName = _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value.ToString();
+                var i = 1;
+                while (azureContextNames.Count(x => x == azureContextName) > 1)
+                {
+                    azureContextName = $"{_dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value} ({i})";
+                    i++;
+                }
+                _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = azureContextName;
+
+                if (_dataGridView.SelectedRows.Count > 0)
+                {
+                    var selectedAzureContextName = GetSelectedAzureContextName();
+                    UpdateSelectionLabel(selectedAzureContextName);
+                }
+            }
         }
     }
 
@@ -264,7 +290,7 @@ public partial class AzureContextConfigDialog : Form
         try
         {
             var tenantDataList = await _azureService.GetAvailableTenantsAsync(environment);
-            return tenantDataList.Select(t => new TenantInfo { TenantId = t.TenantId.ToString(), DisplayName = t.DisplayName }).ToArray();
+            result = tenantDataList.Select(t => new TenantInfo { TenantId = t.TenantId.ToString(), DisplayName = t.DisplayName }).ToArray();
         }
         catch (Exception ex)
         {

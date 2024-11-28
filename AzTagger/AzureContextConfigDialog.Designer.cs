@@ -60,6 +60,7 @@ partial class AzureContextConfigDialog
         _dataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         _dataGridView.Size = new System.Drawing.Size(840, 148);
         _dataGridView.TabIndex = 0;
+        _dataGridView.CellEndEdit += DataGridView_CellEndEdit;
         _dataGridView.CellMouseDoubleClick += DataGridView_CellMouse_DoubleClick;
         _dataGridView.RowsRemoved += DataGridView_RowsRemoved;
         _dataGridView.SelectionChanged += DataGridView_SelectionChanged;
