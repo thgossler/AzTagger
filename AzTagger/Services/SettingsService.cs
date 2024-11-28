@@ -34,7 +34,7 @@ public class SettingsService
             settings.RecentSearches.Add("| where SubscriptionName =~ 'Prototypes'\r\n| where ResourceGroup =~ 'WebApp'\r\n| where ResourceName =~ 'webappstore'");
         }
 
-        settings.SanitizeAzureContexts();
+        settings.SanitizeAzureContextsSetting();
         var selectedAzureContext = settings.AzureContexts.FirstOrDefault(x => x.Name == settings.SelectedAzureContext);
         if (selectedAzureContext == null)
         {

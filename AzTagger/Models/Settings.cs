@@ -44,7 +44,7 @@ public class Settings
     [JsonPropertyName("LastQuickFilter2Text")]
     public string LastQuickFilter2Text { get; set; } = string.Empty;
 
-    public void SanitizeAzureContexts()
+    public void SanitizeAzureContextsSetting()
     {
         if (AzureContexts == null || AzureContexts.Count == 0)
         {
@@ -53,18 +53,23 @@ public class Settings
         }
         else
         {
-            var azureContextNames = AzureContexts.Select(x => x.Name).ToList();
-            foreach (var azureContext in AzureContexts)
+            SanitizeAzureContexts(AzureContexts);
+        }
+    }
+
+    public static void SanitizeAzureContexts(IList<AzureContext> azureContexts)
+    {
+        foreach (var azureContext in azureContexts.Reverse())
+        {
+            var azureContextNames = azureContexts.Select(x => x.Name).ToList();
+            var azureContextName = azureContext.Name;
+            var i = 1;
+            while (azureContextNames.Count(x => x == azureContextName) > 1)
             {
-                var azureContextName = azureContext.Name;
-                var i = 1;
-                while (azureContextNames.Count(x => x == azureContextName) > 1)
-                {
-                    azureContextName = $"{azureContext.Name} ({i})";
-                    i++;
-                }
-                azureContext.Name = azureContextName;
+                azureContextName = $"{azureContext.Name} ({i})";
+                i++;
             }
+            azureContext.Name = azureContextName;
         }
     }
 

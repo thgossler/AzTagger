@@ -35,7 +35,9 @@ public partial class AzureContextConfigDialog : Form
 
         InitializeComponent();
 
+        _tempAzureContexts.AddingNew += TempAzureContexts_AddingNew;
         _dataGridView.DataSource = _tempAzureContexts;
+
         _dataGridView.CellToolTipTextNeeded += DataGridView_CellToolTipTextNeeded;
 
         _azureService = new AzureService(_inputSettings);
@@ -44,7 +46,7 @@ public partial class AzureContextConfigDialog : Form
         _dataGridViewContextMenu = new ContextMenuStrip();
 
         _deleteContextMenuItem = new ToolStripMenuItem($"Remove Context");
-        _deleteContextMenuItem.Click += MenuItem_RemoveAzureContextIrem_Click;
+        _deleteContextMenuItem.Click += MenuItem_RemoveAzureContextItem_Click;
         _dataGridViewContextMenu.Items.Add(_deleteContextMenuItem);
         _dataGridViewContextMenu.Items.Add(new ToolStripSeparator());
 
@@ -136,7 +138,20 @@ public partial class AzureContextConfigDialog : Form
         }
     }
 
-    private void MenuItem_RemoveAzureContextIrem_Click(object sender, EventArgs e)
+    private void TempAzureContexts_AddingNew(object sender, AddingNewEventArgs e)
+    {
+        var newRowIndex = _dataGridView.Rows.Count - 1;
+        if (newRowIndex < 0 || _dataGridView.Rows.Count <= newRowIndex || !_dataGridView.Rows[newRowIndex].IsNewRow)
+        {
+            return;
+        }
+        var newRow = _dataGridView.Rows[newRowIndex];
+        var newAzureContext = new AzureContext();
+        newAzureContext.Name = MakeAzureContextNameUnique(newAzureContext.Name);
+        e.NewObject = newAzureContext;
+    }
+
+    private void MenuItem_RemoveAzureContextItem_Click(object sender, EventArgs e)
     {
         if (_dataGridView.SelectedRows.Count > 0)
         {
@@ -174,8 +189,17 @@ public partial class AzureContextConfigDialog : Form
         {
             selectedRow.Cells[1].Value = envName;
             selectedRow.Cells[1].Selected = true;
-            _dataGridView.NotifyCurrentCellDirty(true);
-            _dataGridView.Refresh();
+
+            if (selectedRow.DataBoundItem is AzureContext azureContext)
+            {
+                azureContext.AzureEnvironmentName = envName;
+                _dataGridView.Refresh();
+            }
+            else
+            {
+                _dataGridView.NotifyCurrentCellDirty(true);
+                _dataGridView.EndEdit();
+            }
 
             ResetTenantMenuItems();
 
@@ -240,8 +264,17 @@ public partial class AzureContextConfigDialog : Form
         {
             selectedRow.Cells[2].Value = tenantId;
             selectedRow.Cells[2].Selected = true;
-            _dataGridView.NotifyCurrentCellDirty(true);
-            _dataGridView.Refresh();
+
+            if (selectedRow.DataBoundItem is AzureContext azureContext)
+            {
+                azureContext.TenantId = tenantId;
+                _dataGridView.Refresh();
+            }
+            else
+            {
+                _dataGridView.NotifyCurrentCellDirty(true);
+                _dataGridView.EndEdit();
+            }
 
             HideContextMenu(sender, e);
             UpdateSelectionLabel();
@@ -252,38 +285,34 @@ public partial class AzureContextConfigDialog : Form
     {
         if (e.ColumnIndex == 0)
         {
-            if (string.IsNullOrEmpty(_dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString()))
+            var azureContextName = _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString();
+            if (string.IsNullOrEmpty(azureContextName))
             {
-                _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Default";
+                azureContextName = "Default";
             }
-            else
-            {
-                var azureContextNames = _tempAzureContexts.Select(x => x.Name).ToList();
-                var azureContextName = _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value.ToString();
-                var i = 1;
-                while (azureContextNames.Count(x => x == azureContextName) > 1)
-                {
-                    azureContextName = $"{_dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value} ({i})";
-                    i++;
-                }
-                _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = azureContextName;
+            azureContextName = MakeAzureContextNameUnique(azureContextName);
+            _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = azureContextName;
 
-                if (_dataGridView.SelectedRows.Count > 0)
-                {
-                    UpdateSelectionLabel();
-                }
+            if (_dataGridView.SelectedRows.Count > 0)
+            {
+                UpdateSelectionLabel();
             }
         }
     }
 
     private void DataGridView_RowsRemoved(object sender, DataGridViewRowsRemovedEventArgs e)
     {
+        _dataGridView.CancelEdit();
         var deletedRowIndex = e.RowIndex;
         if (_dataGridView.SelectedRows.Count == 0 && _dataGridView.Rows.Count > 0)
         {
-            _dataGridView.Rows[deletedRowIndex - 1].Selected = true;
+            var newRowIndex = deletedRowIndex > 0 ? deletedRowIndex - 1 : 0;
+            _dataGridView.Rows[newRowIndex].Selected = true;
         }
-
+        if (_tempAzureContexts.Count == 0)
+        {
+            _tempAzureContexts.AddNew();
+        }
     }
 
     private void DataGridView_SelectionChanged(object sender, EventArgs e)
@@ -313,7 +342,7 @@ public partial class AzureContextConfigDialog : Form
         _inputSettings.AzureContexts = _tempAzureContexts.AsList();
         var selectedAzureContextName = GetSelectedAzureContextName();
         _inputSettings.SelectAzureContext(selectedAzureContextName);
-        _inputSettings.SanitizeAzureContexts();
+        _inputSettings.SanitizeAzureContextsSetting();
         Close();
     }
 
@@ -408,6 +437,19 @@ public partial class AzureContextConfigDialog : Form
         }
         catch (Exception) { }
         return selectedAzureContextName ?? string.Empty;
+    }
+
+    private string MakeAzureContextNameUnique(string azureContextName)
+    {
+        var newAzureContextName = azureContextName;
+        var azureContextNames = _tempAzureContexts.Select(x => x.Name).ToList();
+        var i = 1;
+        while (azureContextNames.Count(x => x == newAzureContextName) > 0)
+        {
+            newAzureContextName = $"{azureContextName} ({i})";
+            i++;
+        }
+        return newAzureContextName;
     }
 
     private void UpdateSelectionLabel(string selectedAzureContextName = null)
