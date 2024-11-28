@@ -46,35 +46,34 @@ resource groups, and subscriptions using Azure Resource Graph for your Entra ID 
 ### User Authentication and Tenant Selection
 
 - Interactive sign-in to Entra ID via web browser, support for multi-factor authentication
-- Azure Environment (e.g., AzureCloud, AzureChinaCloud) and Entra ID tenant configured in settings file in the user's AppData Local folder
+- Support for multiple contexts including Azure environment (e.g., AzurePublicCloud, AzureChina), Entra ID tenant and app ID
 
 ### Search Functionality
 
 - Fast search and filtering of all Azure resources, resource groups, and subscriptions based on in-memory result data from Azure Resource Graph
 - A single input field for easy and flexible querying of resources
 - Multiple input fields for easy and flexible local quick-filtering of resources
+- Comprehensive support of KQL and .NET regular expressions
 
 ### Search Results Display
 
 - Support for large numbers of search results
 - Column sorting
 - Double-click on item to open it in the Azure Portal
+- Context menu items to add result values to the search query for filtering
+- Full display of all tags in tooltips
 
 ### Tag Management
 
 - Easy inline editing and deletion of tags in a table
 - Add new tags by clicking into the last empty line's key or value cells and start typing
-- Maintain tag templates in a `tagtemplates.json` file in the user's AppData Local folder
-- Use variables in tag template values such as {Date}, {Time}, {DateTime}, {User} 
-- Create and update all specified tags on the selected subscriptions, resource groups, and resources
+- Use default and maintain custom tag templates in a `tagtemplates.json` file in the user's AppData Local folder
+- Support of variables in tag template values such as {Date}, {Time}, {DateTime}, {User} 
+- Create and update all specified tags on all selected subscriptions, resource groups, and resources at once
 
 ### Error Handling and Logging
 
 - All errors logged to an `errorlog.txt` file in the user's AppData Local folder.
-
-## Ideas for Improvements
-
-- Support placeholder variable in tag templates (e.g. for dynamic values like the current date)
 
 ## Used Technologies
 
