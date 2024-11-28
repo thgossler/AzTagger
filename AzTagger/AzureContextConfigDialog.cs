@@ -39,6 +39,7 @@ public partial class AzureContextConfigDialog : Form
         _dataGridView.DataSource = _tempAzureContexts;
 
         _dataGridView.CellToolTipTextNeeded += DataGridView_CellToolTipTextNeeded;
+        _dataGridView.MouseDown += DataGridView_MouseDown; // Attach the MouseDown event handler
 
         _azureService = new AzureService(_inputSettings);
         var azureEnvironments = _azureService.GetAzureEnvironmentNames();
@@ -281,22 +282,41 @@ public partial class AzureContextConfigDialog : Form
         }
     }
 
-    private void DataGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+    private void DataGridView_MouseDown(object sender, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Right)
+        {
+            var hitTestInfo = _dataGridView.HitTest(e.X, e.Y);
+            if (hitTestInfo.Type == DataGridViewHitTestType.Cell)
+            {
+                _dataGridView.ClearSelection();
+                _dataGridView.Rows[hitTestInfo.RowIndex].Selected = true;
+                _dataGridView.CurrentCell = _dataGridView.Rows[hitTestInfo.RowIndex].Cells[hitTestInfo.ColumnIndex];
+                UpdateSelectionLabel();
+            }
+        }
+    }
+
+    private void DataGridView_CellParsing(object sender, DataGridViewCellParsingEventArgs e)
     {
         if (e.ColumnIndex == 0)
         {
-            var azureContextName = _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString();
+            var azureContextName = e.Value?.ToString();
             if (string.IsNullOrEmpty(azureContextName))
             {
                 azureContextName = "Default";
             }
             azureContextName = MakeAzureContextNameUnique(azureContextName);
-            _dataGridView.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = azureContextName;
+            e.Value = azureContextName;
+            e.ParsingApplied = true;
+        }
+    }
 
-            if (_dataGridView.SelectedRows.Count > 0)
-            {
-                UpdateSelectionLabel();
-            }
+    private void DataGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+    {
+        if (_dataGridView.SelectedRows.Count > 0)
+        {
+            UpdateSelectionLabel();
         }
     }
 
@@ -360,7 +380,7 @@ public partial class AzureContextConfigDialog : Form
         }
         else
         {
-            Task.Delay(3000).ContinueWith(_ =>
+            Task.Delay(2000).ContinueWith(_ =>
             {
                 _contextMenuShallBeKeptOpen = false;
                 if (_isFormActive)
