@@ -178,6 +178,9 @@ public partial class AzureContextConfigDialog : Form
             _dataGridView.Refresh();
 
             ResetTenantMenuItems();
+
+            HideContextMenu(sender, e);
+            UpdateSelectionLabel();
         }
     }
 
@@ -239,6 +242,9 @@ public partial class AzureContextConfigDialog : Form
             selectedRow.Cells[2].Selected = true;
             _dataGridView.NotifyCurrentCellDirty(true);
             _dataGridView.Refresh();
+
+            HideContextMenu(sender, e);
+            UpdateSelectionLabel();
         }
     }
 
@@ -264,8 +270,7 @@ public partial class AzureContextConfigDialog : Form
 
                 if (_dataGridView.SelectedRows.Count > 0)
                 {
-                    var selectedAzureContextName = GetSelectedAzureContextName();
-                    UpdateSelectionLabel(selectedAzureContextName);
+                    UpdateSelectionLabel();
                 }
             }
         }
@@ -288,12 +293,7 @@ public partial class AzureContextConfigDialog : Form
             return;
         }
 
-        var selectedAzureContextName = GetSelectedAzureContextName();
-        if (string.IsNullOrEmpty(selectedAzureContextName))
-        {
-            selectedAzureContextName = "None";
-        }
-        UpdateSelectionLabel(selectedAzureContextName);
+        UpdateSelectionLabel();
     }
 
     private void DataGridView_CellMouse_DoubleClick(object sender, DataGridViewCellMouseEventArgs e)
@@ -410,8 +410,16 @@ public partial class AzureContextConfigDialog : Form
         return selectedAzureContextName ?? string.Empty;
     }
 
-    private void UpdateSelectionLabel(string selectedAzureContextName)
+    private void UpdateSelectionLabel(string selectedAzureContextName = null)
     {
+        if (string.IsNullOrEmpty(selectedAzureContextName))
+        {
+            selectedAzureContextName = GetSelectedAzureContextName();
+        }
+        if (string.IsNullOrEmpty(selectedAzureContextName))
+        {
+            selectedAzureContextName = "None";
+        }
         _lblSelectedAzureContextName.Text = $"Selected Azure Context: {selectedAzureContextName}";
     }
 
