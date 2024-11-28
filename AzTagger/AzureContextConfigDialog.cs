@@ -21,10 +21,12 @@ public partial class AzureContextConfigDialog : Form
     private BindingList<AzureContext> _tempAzureContexts;
     private List<TenantInfo> _tenantIdsForSelectedEnvironment = new List<TenantInfo>();
     private ContextMenuStrip _dataGridViewContextMenu;
+    private ToolStripMenuItem _deleteContextMenuItem;
     private AzureService _azureService;
     private bool _initialized = false;
     private Point _contextMenuLocation;
-    private bool _contextMenuShallBeKeptOpen;
+    private volatile bool _contextMenuShallBeKeptOpen;
+    private bool _isFormActive;
 
     public AzureContextConfigDialog(Settings settings)
     {
@@ -40,6 +42,12 @@ public partial class AzureContextConfigDialog : Form
         var azureEnvironments = _azureService.GetAzureEnvironmentNames();
 
         _dataGridViewContextMenu = new ContextMenuStrip();
+
+        _deleteContextMenuItem = new ToolStripMenuItem($"Remove Context");
+        _deleteContextMenuItem.Click += MenuItem_RemoveAzureContextIrem_Click;
+        _dataGridViewContextMenu.Items.Add(_deleteContextMenuItem);
+        _dataGridViewContextMenu.Items.Add(new ToolStripSeparator());
+
         foreach (var envName in azureEnvironments)
         {
             var envMenuItem = new ToolStripMenuItem($"Environment: {envName}");
@@ -55,6 +63,7 @@ public partial class AzureContextConfigDialog : Form
 
         _dataGridViewContextMenu.Opened += DataGridView_ContextMenu_Opened;
         _dataGridView.ContextMenuStrip = _dataGridViewContextMenu;
+        AttachClickEventHandler(this);
 
         if (Application.IsDarkModeEnabled)
         {
@@ -91,10 +100,19 @@ public partial class AzureContextConfigDialog : Form
 
     private void Form_Activated(object sender, EventArgs e)
     {
+        _isFormActive = true;
         if (_contextMenuShallBeKeptOpen)
         {
+            _dataGridView.Focus();
+            _dataGridViewContextMenu.AutoClose = false;
             _dataGridViewContextMenu.Show(_dataGridView, _contextMenuLocation);
         }
+    }
+
+    private void Form_Deactivate(object sender, EventArgs e)
+    {
+        _isFormActive = false;
+        _dataGridViewContextMenu.AutoClose = true;
     }
 
     private void DataGridView_CellToolTipTextNeeded(object sender, DataGridViewCellToolTipTextNeededEventArgs e)
@@ -115,6 +133,31 @@ public partial class AzureContextConfigDialog : Form
         if (!_contextMenuShallBeKeptOpen)
         {
             _contextMenuLocation = _dataGridView.PointToClient(Cursor.Position);
+        }
+    }
+
+    private void MenuItem_RemoveAzureContextIrem_Click(object sender, EventArgs e)
+    {
+        if (_dataGridView.SelectedRows.Count > 0)
+        {
+            var selectedRow = _dataGridView.SelectedRows[0];
+            if (selectedRow != null)
+            {
+                if (selectedRow.IsNewRow)
+                {
+                    var newSelectedRowIndex = selectedRow.Index - 1;
+                    _dataGridView.CancelEdit();
+                    if (_dataGridView.Rows.Count > 0 && newSelectedRowIndex >= 0)
+                    {
+                        _dataGridView.Rows[newSelectedRowIndex].Selected = true;
+                    }
+                }
+                else
+                {
+                    _tempAzureContexts.RemoveAt(selectedRow.Index);
+                }
+                _dataGridView.Refresh();
+            }
         }
     }
 
@@ -145,9 +188,8 @@ public partial class AzureContextConfigDialog : Form
         {
             return;
         }
+        KeepContextMenuOpen(true);
         ResetTenantMenuItems("Loading tenant infos...");
-        _contextMenuShallBeKeptOpen = true;
-        _dataGridViewContextMenu.Show(_dataGridView, _contextMenuLocation);
         var selectedEnvironment = selectedRow.Cells[1].Value?.ToString() ?? string.Empty;
         if (string.IsNullOrEmpty(selectedEnvironment))
         {
@@ -176,8 +218,7 @@ public partial class AzureContextConfigDialog : Form
                 {
                     ResetTenantMenuItems("No tenants found");
                 }
-                _dataGridViewContextMenu.Refresh();
-                _contextMenuShallBeKeptOpen = false;
+                KeepContextMenuOpen(false);
             });
         });
     }
@@ -237,6 +278,7 @@ public partial class AzureContextConfigDialog : Form
         {
             _dataGridView.Rows[deletedRowIndex - 1].Selected = true;
         }
+
     }
 
     private void DataGridView_SelectionChanged(object sender, EventArgs e)
@@ -280,6 +322,47 @@ public partial class AzureContextConfigDialog : Form
         Close();
     }
 
+    private void KeepContextMenuOpen(bool keepOpen)
+    {
+        if (keepOpen)
+        {
+            _contextMenuShallBeKeptOpen = true;
+            _dataGridViewContextMenu.Show(_dataGridView, _contextMenuLocation);
+        }
+        else
+        {
+            Task.Delay(3000).ContinueWith(_ =>
+            {
+                _contextMenuShallBeKeptOpen = false;
+                if (_isFormActive)
+                {
+                    Invoke((MethodInvoker)delegate
+                    {
+                        _dataGridViewContextMenu.AutoClose = true;
+                        _dataGridViewContextMenu.Show(_dataGridView, _contextMenuLocation);
+                    });
+                }
+            });
+        }
+    }
+
+    private void AttachClickEventHandler(Control control)
+    {
+        control.Click += HideContextMenu;
+        foreach (Control childControl in control.Controls)
+        {
+            AttachClickEventHandler(childControl);
+        }
+    }
+
+    private void HideContextMenu(object sender, EventArgs e)
+    {
+        if (_dataGridViewContextMenu.Visible)
+        {
+            _dataGridViewContextMenu.Close();
+        }
+    }
+
     private async Task<TenantInfo[]> GetTenants(string environment)
     {
         var result = Array.Empty<TenantInfo>();
@@ -309,10 +392,11 @@ public partial class AzureContextConfigDialog : Form
         }
         if (!string.IsNullOrWhiteSpace(message))
         {
-            var tenantMenuItem = new ToolStripMenuItem(message);
-            tenantMenuItem.Enabled = false;
-            _dataGridViewContextMenu.Items.Add(tenantMenuItem);
+            var progressMenuItem = new ToolStripMenuItem(message);
+            progressMenuItem.Enabled = false;
+            _dataGridViewContextMenu.Items.Add(progressMenuItem);
         }
+        _dataGridViewContextMenu.Refresh();
     }
 
     private string GetSelectedAzureContextName()
@@ -347,7 +431,12 @@ public partial class AzureContextConfigDialog : Form
             }
             else if (keyData == Keys.Escape)
             {
-                if (_dataGridView.IsCurrentCellInEditMode || (_dataGridView.CurrentRow != null && _dataGridView.CurrentRow.IsNewRow))
+                if (_dataGridViewContextMenu.Visible)
+                {
+                    _dataGridViewContextMenu.Close();
+                    return true;
+                }
+                else if (_dataGridView.IsCurrentCellInEditMode || (_dataGridView.CurrentRow != null && _dataGridView.CurrentRow.IsNewRow))
                 {
                     _dataGridView.CancelEdit();
                     return true;

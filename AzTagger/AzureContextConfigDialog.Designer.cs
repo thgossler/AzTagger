@@ -171,6 +171,7 @@ partial class AzureContextConfigDialog
         StartPosition = FormStartPosition.CenterParent;
         Text = "Environments";
         Activated += Form_Activated;
+        Deactivate += Form_Deactivate;
         Load += Form_Load;
         ((System.ComponentModel.ISupportInitialize)_dataGridView).EndInit();
         ResumeLayout(false);
