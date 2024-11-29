@@ -1386,7 +1386,28 @@ public partial class MainForm : Form
 
             var query = BuildQuery();
             _fullQuery = query;
-            _resources = await _azureService.QueryResourcesAsync(query, cancellationToken);
+
+            int retryCount = 0;
+            const int maxRetries = 3;
+            const int delayBetweenRetries = 2000;
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    _resources = await _azureService.QueryResourcesAsync(query, cancellationToken);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    retryCount++;
+                    if (retryCount >= maxRetries)
+                    {
+                        throw;
+                    }
+                    Log.Error(ex, $"Search failed. Retrying {retryCount}/{maxRetries}...");
+                    await Task.Delay(delayBetweenRetries, cancellationToken);
+                }
+            }
 
             if (!cancellationToken.IsCancellationRequested)
             {

@@ -206,6 +206,11 @@ public class AzureService
 
         var signinContext = CurrentSigninContext;
 
+        if (signinContext == null || signinContext.TenantResource == null)
+        {
+            throw new InvalidOperationException("Signin context or tenant resource is not initialized.");
+        }
+
         string skipToken = null;
         do
         {
