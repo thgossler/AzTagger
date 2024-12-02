@@ -4,7 +4,7 @@
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net9.0-windows7.0</TargetFramework>
 		<UseWindowsForms>true</UseWindowsForms>
-		<Version>1.0.12.0</Version>
+		<Version>1.0.13.0</Version>
 		<Authors>Thomas Gossler</Authors>
 		<Description>
 			A Windows Desktop GUI application for fast and flexible querying of Azure resources
@@ -18,8 +18,8 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<ApplicationIcon>images\icon.ico</ApplicationIcon>
-		<AssemblyVersion>1.0.12.0</AssemblyVersion>
-		<FileVersion>1.0.12.0</FileVersion>
+		<AssemblyVersion>1.0.13.0</AssemblyVersion>
+		<FileVersion>1.0.13.0</FileVersion>
 	</PropertyGroup>
 
 
