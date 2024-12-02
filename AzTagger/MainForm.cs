@@ -480,7 +480,7 @@ public partial class MainForm : Form
 
     private void Button_SaveQuery_Click(object sender, EventArgs e)
     {
-        string queryText = _txtSearchQuery.Text;
+        string queryText = _txtSearchQuery.Text.Trim();
         if (string.IsNullOrWhiteSpace(queryText))
         {
             MessageBox.Show(this, "Cannot save an empty query.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1464,29 +1464,31 @@ public partial class MainForm : Form
 
     private void SaveRecentSearch(string queryText)
     {
-        if (!string.IsNullOrEmpty(queryText))
+        queryText = queryText.Trim();
+        if (string.IsNullOrEmpty(queryText))
         {
-            _settings.RecentSearches.Insert(0, queryText);
-            _settings.RemoveDuplicatesFromRecentSearches();
-            if (_settings.RecentSearches.Count > 10)
-            {
-                _settings.RecentSearches.RemoveAt(10);
-            }
-            SettingsService.Save(_settings);
+            return;
+        }
+        _settings.RecentSearches.Insert(0, queryText);
+        _settings.RemoveDuplicatesFromRecentSearches();
+        if (_settings.RecentSearches.Count > 10)
+        {
+            _settings.RecentSearches.RemoveAt(10);
+        }
+        SettingsService.Save(_settings);
 
-            var displayText = queryText.Replace("\r\n", " ").Replace("\n", " ");
-            var itemsToRemove = _cboRecentSearches.Items.OfType<RecentSearchItem>().
-                Where(i => i.DisplayText.Equals(displayText, StringComparison.OrdinalIgnoreCase)).ToList();
-            foreach (var item in itemsToRemove)
-            {
-                _cboRecentSearches.Items.Remove(item);
-            }
-            _cboRecentSearches.Items.Insert(1, new RecentSearchItem(queryText));
+        var displayText = queryText.Replace("\r\n", " ").Replace("\n", " ");
+        var itemsToRemove = _cboRecentSearches.Items.OfType<RecentSearchItem>().
+            Where(i => i.DisplayText.Equals(displayText, StringComparison.OrdinalIgnoreCase)).ToList();
+        foreach (var item in itemsToRemove)
+        {
+            _cboRecentSearches.Items.Remove(item);
+        }
+        _cboRecentSearches.Items.Insert(1, new RecentSearchItem(queryText));
 
-            if (_cboRecentSearches.Items.Count > 11)
-            {
-                _cboRecentSearches.Items.RemoveAt(_cboRecentSearches.Items.Count - 1);
-            }
+        if (_cboRecentSearches.Items.Count > 11)
+        {
+            _cboRecentSearches.Items.RemoveAt(_cboRecentSearches.Items.Count - 1);
         }
     }
 
