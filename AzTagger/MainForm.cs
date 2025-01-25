@@ -11,7 +11,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +30,9 @@ public partial class MainForm : Form
 
     private readonly Settings _settings;
 
+    public double DisplayScaleFactor = 1;
+    public Font NarrowFont = new Font("Arial Narrow", 9F);
+
     private Timer _resizeTimer;
     private DateTime _lastResizeTime;
 
@@ -35,7 +40,9 @@ public partial class MainForm : Form
 
     private List<Resource> _resources;
     private ContextMenuStrip _resultsDataGridViewContextMenu;
+    private ContextMenuStrip _tagsDataGridViewContextMenu;
     private DataGridViewCell _contextMenuClickedCell;
+    private DataGridViewCell _tagsContextMenuClickedCell;
     private string _fullQuery = string.Empty;
     private CancellationTokenSource _queryCancellationTokenSource;
     private string _currentSortColumn = string.Empty;
@@ -151,6 +158,12 @@ public partial class MainForm : Form
         InitializeComponent();
         AutoScaleMode = AutoScaleMode.Dpi;
 
+        _cboRecentSearches.Font = NarrowFont;
+        _gvwResults.Font = NarrowFont;
+        _gvwTags.Font = NarrowFont;
+        _txtQuickFilter1Text.Font = NarrowFont;
+        _txtQuickFilter2Text.Font = NarrowFont;
+
         _customToolTipForm = new CustomToolTipForm();
 
         var version = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
@@ -164,6 +177,7 @@ public partial class MainForm : Form
         InitializeResultsDataGridView();
         InitializeTagsDataGridView();
         InitializeResultsDataGridViewContextMenu();
+        InitializeTagsDataGridViewContextMenu();
         InitializeQuickFilterTextBoxContextMenus();
         InitializeResizeTimer();
         InitializeQuickFilterComboBoxes();
@@ -214,6 +228,21 @@ public partial class MainForm : Form
         _resultsDataGridViewContextMenu.Items.Add(refreshTagsMenuItem);
     }
 
+    private void InitializeTagsDataGridViewContextMenu()
+    {
+        _tagsDataGridViewContextMenu = new ContextMenuStrip();
+
+        var addTagToFilterQueryMenuItem = new ToolStripMenuItem("Add to filter query");
+        addTagToFilterQueryMenuItem.Name = "AddTagToFilterQueryMenuItem";
+        addTagToFilterQueryMenuItem.Click += MenuItem_AddTagToFilterQuery_Click;
+        _tagsDataGridViewContextMenu.Items.Add(addTagToFilterQueryMenuItem);
+
+        var excludeTagInFilterQueryMenuItem = new ToolStripMenuItem("Exclude in filter query");
+        excludeTagInFilterQueryMenuItem.Name = "ExcludeTagInFilterQueryMenuItem";
+        excludeTagInFilterQueryMenuItem.Click += MenuItem_AddTagToFilterQuery_Click;
+        _tagsDataGridViewContextMenu.Items.Add(excludeTagInFilterQueryMenuItem);
+    }
+
     private void InitializeQuickFilterTextBoxContextMenus()
     {
         _quickFilterContextMenu = new ContextMenuStrip();
@@ -235,7 +264,7 @@ public partial class MainForm : Form
     private void InitializeResultsDataGridView()
     {
         _gvwResults.AutoGenerateColumns = true;
-        _gvwResults.RowTemplate.Height = 24;
+        //_gvwResults.RowTemplate.Height = 24;
         _gvwResults.CellFormatting += DataGridView_Results_CellFormatting;
         _gvwResults.CellMouseClick += DataGridView_Results_CellMouseClick;
         _gvwResults.CellDoubleClick += DataGridView_Results_CellDoubleClick;
@@ -286,6 +315,7 @@ public partial class MainForm : Form
         _gvwTags.AutoGenerateColumns = true;
         _gvwTags.CellFormatting += DataGridView_Results_CellFormatting;
         _gvwTags.KeyDown += DataGridView_Tags_KeyDown;
+        _gvwTags.CellMouseClick += DataGridView_Tags_CellMouseClick;
 
         if (Application.IsDarkModeEnabled)
         {
@@ -396,6 +426,53 @@ public partial class MainForm : Form
         }
 
         _cboAzureContext.SelectedItem = _settings.GetAzureContext().Name;
+
+        try
+        {
+            var gitHubProjectUrl = "https://github.com/thgossler/AzTagger";
+            var latestVersion = await CheckForLatestVersionAsync(gitHubProjectUrl);
+            if (latestVersion != null)
+            {
+                if (latestVersion.CompareTo(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version) > 0)
+                {
+                    // Show a message box that a new version is available, ask whether to cancel or Ok to go to releases page
+                    var result = MessageBox.Show(this, $"A new version of AzTagger is available ({latestVersion}). Do you want to go to the releases page to download it?",
+                        "New Version Available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                    if (result == DialogResult.Yes) // Open the releases page in the default browser
+                    {
+                        Process.Start(new ProcessStartInfo($"{gitHubProjectUrl}/releases/latest") { UseShellExecute = true });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to check for the latest version of AzTagger.");
+        }
+    }
+
+    private async Task<Version> CheckForLatestVersionAsync(string githubProjectUrl)
+    {
+        try
+        {
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "AzTagger");
+                var response = await client.GetAsync($"{githubProjectUrl}/releases/latest");
+                if (response.IsSuccessStatusCode)
+                {
+                    var latestReleaseUrl = response.RequestMessage.RequestUri.ToString();
+                    var latestVersion = latestReleaseUrl.Substring(latestReleaseUrl.LastIndexOf('/') + 1);
+                    latestVersion = Regex.Replace(latestVersion, @"^[^\d]+", "");
+                    return new Version(latestVersion);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to check for the latest version of AzTagger.");
+        }
+        return null;
     }
 
     private void Form_SizeChanged(object sender, EventArgs e)
@@ -405,6 +482,10 @@ public partial class MainForm : Form
 
     private void Form_ResizeEnd(object sender, EventArgs e)
     {
+        var graphics = this.CreateGraphics();
+        DisplayScaleFactor = graphics.DpiX / 96.0f;
+        graphics.Dispose();
+        
         UpdateResultsColumnsWidth();
         UpdateTagsColumnsWidth();
     }
@@ -638,6 +719,71 @@ public partial class MainForm : Form
             else
             {
                 queryText += Environment.NewLine + $"| where {columnName} =~ '{cellValue}'";
+            }
+        }
+
+        _txtSearchQuery.Text = queryText;
+    }
+
+    private void MenuItem_AddTagToFilterQuery_Click(object sender, EventArgs e)
+    {
+        if (_tagsContextMenuClickedCell?.Value == null)
+        {
+            return;
+        }
+
+        var menuItem = sender as ToolStripMenuItem;
+        if (menuItem == null)
+        {
+            return;
+        }
+
+        var queryText = _txtSearchQuery.Text;
+        var selectedRows = _gvwResults.SelectedRows.Cast<DataGridViewRow>().ToList();
+
+        if (selectedRows.Count == 1)
+        {
+            var entityType = selectedRows[0].Cells["EntityType"].Value.ToString();
+            string columnName;
+            if (entityType.Equals("ResourceGroup"))
+            {
+                columnName = "ResourceGroupTags";
+            }
+            else if (entityType.Equals("Subscription"))
+            {
+                columnName = "SubscriptionTags";
+            }
+            else
+            {
+                columnName = "ResourceTags";
+            }
+
+            var row = _gvwTags.Rows[_tagsContextMenuClickedCell.RowIndex];
+            var tagName = row.Cells[0].Value.ToString();
+            var tagValue = row.Cells[1].Value.ToString();
+            queryText = queryText.TrimEnd();
+            if (menuItem.Name.Equals("ExcludeTagInFilterQueryMenuItem"))
+            {
+                queryText += Environment.NewLine + $"| where not({columnName}[\"{tagName}\"] =~ '{tagValue}')";
+            }
+            else
+            {
+                queryText += Environment.NewLine + $"| where {columnName}[\"{tagName}\"] =~ '{tagValue}'";
+            }
+        }
+        else
+        {
+            var row = _gvwTags.Rows[_tagsContextMenuClickedCell.RowIndex];
+            var tagName = row.Cells[0].Value.ToString();
+            var tagValue = row.Cells[1].Value.ToString();
+            queryText = queryText.TrimEnd();
+            if (menuItem.Name.Equals("ExcludeTagInFilterQueryMenuItem"))
+            {
+                queryText += Environment.NewLine + $"| where not(SubscriptionTags[\"{tagName}\"] =~ '{tagValue}' or ResourceGroupTags[\"{tagName}\"] =~ '{tagValue}' or ResourceTags[\"{tagName}\"] =~ '{tagValue}')";
+            }
+            else
+            {
+                queryText += Environment.NewLine + $"| where (SubscriptionTags[\"{tagName}\"] =~ '{tagValue}' or ResourceGroupTags[\"{tagName}\"] =~ '{tagValue}' or ResourceTags[\"{tagName}\"] =~ '{tagValue}')";
             }
         }
 
@@ -900,7 +1046,7 @@ public partial class MainForm : Form
             {
                 string toolTipText = FormatTags(tags, Environment.NewLine);
                 var mousePosition = Cursor.Position;
-                _customToolTipForm.ShowToolTip(this, toolTipText, mousePosition, _gvwResults.Font);
+                _customToolTipForm.ShowToolTip(this, toolTipText, mousePosition, NarrowFont);
                 _lastCellWithToolTip = cell;
             }
         }
@@ -1003,6 +1149,17 @@ public partial class MainForm : Form
                 MarkTagForDeletion(row);
             }
             e.Handled = true;
+        }
+    }
+
+    private void DataGridView_Tags_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
+        {
+            _gvwTags.ClearSelection();
+            _gvwTags.Rows[e.RowIndex].Selected = true;
+            _tagsContextMenuClickedCell = _gvwTags.Rows[e.RowIndex].Cells[e.ColumnIndex];
+            _tagsDataGridViewContextMenu.Show(Cursor.Position);
         }
     }
 
@@ -1603,7 +1760,7 @@ public partial class MainForm : Form
         {
             currentWidthAllColumns += column.Width;
         }
-        var newWidthAllColumns = _gvwResults.Width - _gvwResults.RowHeadersWidth - 18;
+        var newWidthAllColumns = _gvwResults.Width - _gvwResults.RowHeadersWidth - (int)(18 * DisplayScaleFactor);
         foreach (DataGridViewColumn column in _gvwResults.Columns)
         {
             var factor = column.Width / (double)currentWidthAllColumns;
@@ -1618,7 +1775,7 @@ public partial class MainForm : Form
         {
             currentWidthAllColumns += column.Width;
         }
-        var newWidthAllColumns = _gvwTags.Width - _gvwTags.RowHeadersWidth - 18;
+        var newWidthAllColumns = _gvwTags.Width - _gvwTags.RowHeadersWidth - (int)(18 * DisplayScaleFactor);
         foreach (DataGridViewColumn column in _gvwTags.Columns)
         {
             var factor = column.Width / (double)currentWidthAllColumns;

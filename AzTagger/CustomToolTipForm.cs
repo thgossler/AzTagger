@@ -61,6 +61,7 @@ public partial class CustomToolTipForm : Form
 
         Size toolTipLabelSize = GetPreferredLabelSize(text, font);
         _label.Size = toolTipLabelSize;
+        _label.Font = font;
 
         Rectangle tooltipLabelRect = new Rectangle(0, 0, toolTipLabelSize.Width, toolTipLabelSize.Height);
         Size bitmapSize = new Size(

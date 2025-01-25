@@ -119,12 +119,12 @@ namespace AzTagger
             // 
             _txtSearchQuery.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             _txtSearchQuery.HideSelection = false;
-            _txtSearchQuery.Location = new System.Drawing.Point(61, 110);
-            _txtSearchQuery.Margin = new System.Windows.Forms.Padding(4);
+            _txtSearchQuery.Location = new System.Drawing.Point(70, 126);
+            _txtSearchQuery.Margin = new System.Windows.Forms.Padding(5);
             _txtSearchQuery.Multiline = true;
             _txtSearchQuery.Name = "_txtSearchQuery";
             _txtSearchQuery.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            _txtSearchQuery.Size = new System.Drawing.Size(1996, 95);
+            _txtSearchQuery.Size = new System.Drawing.Size(2281, 108);
             _txtSearchQuery.TabIndex = 2;
             _toolTip.SetToolTip(_txtSearchQuery, resources.GetString("_txtSearchQuery.ToolTip"));
             _txtSearchQuery.TextChanged += TextBox_SearchQuery_TextChanged;
@@ -135,10 +135,10 @@ namespace AzTagger
             // 
             _btnPerformSearch.AutoSize = true;
             _btnPerformSearch.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnPerformSearch.Location = new System.Drawing.Point(4, 4);
-            _btnPerformSearch.Margin = new System.Windows.Forms.Padding(4);
+            _btnPerformSearch.Location = new System.Drawing.Point(5, 5);
+            _btnPerformSearch.Margin = new System.Windows.Forms.Padding(5);
             _btnPerformSearch.Name = "_btnPerformSearch";
-            _btnPerformSearch.Size = new System.Drawing.Size(164, 40);
+            _btnPerformSearch.Size = new System.Drawing.Size(186, 42);
             _btnPerformSearch.TabIndex = 3;
             _btnPerformSearch.Text = "Perform Search";
             _toolTip.SetToolTip(_btnPerformSearch, "Search the Azure Resource Graph using your query to find matching resources, resource groups, and subscriptions.");
@@ -150,52 +150,52 @@ namespace AzTagger
             _cboRecentSearches.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             _cboRecentSearches.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboRecentSearches.FormattingEnabled = true;
-            _cboRecentSearches.Location = new System.Drawing.Point(21, 18);
-            _cboRecentSearches.Margin = new System.Windows.Forms.Padding(4);
+            _cboRecentSearches.Location = new System.Drawing.Point(24, 21);
+            _cboRecentSearches.Margin = new System.Windows.Forms.Padding(5);
             _cboRecentSearches.MaxDropDownItems = 10;
             _cboRecentSearches.Name = "_cboRecentSearches";
-            _cboRecentSearches.Size = new System.Drawing.Size(1535, 38);
+            _cboRecentSearches.Size = new System.Drawing.Size(1754, 40);
             _cboRecentSearches.TabIndex = 8;
             _cboRecentSearches.SelectedIndexChanged += ComboBox_RecentSearches_SelectedIndexChanged;
             // 
             // _lblSearchQuery
             // 
             _lblSearchQuery.AutoSize = true;
-            _lblSearchQuery.Location = new System.Drawing.Point(18, 79);
-            _lblSearchQuery.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblSearchQuery.Location = new System.Drawing.Point(21, 90);
+            _lblSearchQuery.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblSearchQuery.Name = "_lblSearchQuery";
-            _lblSearchQuery.Size = new System.Drawing.Size(142, 30);
+            _lblSearchQuery.Size = new System.Drawing.Size(162, 32);
             _lblSearchQuery.TabIndex = 10;
             _lblSearchQuery.Text = "Search Query:";
             // 
             // _lblSearchResults
             // 
             _lblSearchResults.AutoSize = true;
-            _lblSearchResults.Location = new System.Drawing.Point(18, 294);
-            _lblSearchResults.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblSearchResults.Location = new System.Drawing.Point(21, 336);
+            _lblSearchResults.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblSearchResults.Name = "_lblSearchResults";
-            _lblSearchResults.Size = new System.Drawing.Size(151, 30);
+            _lblSearchResults.Size = new System.Drawing.Size(171, 32);
             _lblSearchResults.TabIndex = 11;
             _lblSearchResults.Text = "Search Results:";
             // 
             // _lblQueryMode
             // 
             _lblQueryMode.AutoSize = true;
-            _lblQueryMode.Location = new System.Drawing.Point(192, 79);
-            _lblQueryMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblQueryMode.Location = new System.Drawing.Point(219, 90);
+            _lblQueryMode.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblQueryMode.Name = "_lblQueryMode";
-            _lblQueryMode.Size = new System.Drawing.Size(813, 30);
+            _lblQueryMode.Size = new System.Drawing.Size(934, 32);
             _lblQueryMode.TabIndex = 14;
             _lblQueryMode.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
             // 
             // _queryActivityIndicator
             // 
             _queryActivityIndicator.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            _queryActivityIndicator.Location = new System.Drawing.Point(63, 206);
-            _queryActivityIndicator.Margin = new System.Windows.Forms.Padding(4);
+            _queryActivityIndicator.Location = new System.Drawing.Point(72, 235);
+            _queryActivityIndicator.Margin = new System.Windows.Forms.Padding(5);
             _queryActivityIndicator.MarqueeAnimationSpeed = 20;
             _queryActivityIndicator.Name = "_queryActivityIndicator";
-            _queryActivityIndicator.Size = new System.Drawing.Size(1992, 7);
+            _queryActivityIndicator.Size = new System.Drawing.Size(2277, 8);
             _queryActivityIndicator.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             _queryActivityIndicator.TabIndex = 15;
             _queryActivityIndicator.Visible = false;
@@ -203,10 +203,10 @@ namespace AzTagger
             // _lblResultsCount
             // 
             _lblResultsCount.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            _lblResultsCount.Location = new System.Drawing.Point(1197, 212);
-            _lblResultsCount.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblResultsCount.Location = new System.Drawing.Point(1368, 242);
+            _lblResultsCount.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblResultsCount.Name = "_lblResultsCount";
-            _lblResultsCount.Size = new System.Drawing.Size(863, 33);
+            _lblResultsCount.Size = new System.Drawing.Size(986, 38);
             _lblResultsCount.TabIndex = 16;
             _lblResultsCount.Text = "(0 items)";
             _lblResultsCount.TextAlign = System.Drawing.ContentAlignment.TopRight;
@@ -216,10 +216,10 @@ namespace AzTagger
             // 
             _btnCopyQuery.AutoSize = true;
             _btnCopyQuery.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnCopyQuery.Location = new System.Drawing.Point(347, 4);
-            _btnCopyQuery.Margin = new System.Windows.Forms.Padding(4);
+            _btnCopyQuery.Location = new System.Drawing.Point(398, 5);
+            _btnCopyQuery.Margin = new System.Windows.Forms.Padding(5);
             _btnCopyQuery.Name = "_btnCopyQuery";
-            _btnCopyQuery.Size = new System.Drawing.Size(132, 40);
+            _btnCopyQuery.Size = new System.Drawing.Size(151, 42);
             _btnCopyQuery.TabIndex = 17;
             _btnCopyQuery.Text = "Copy Query";
             _toolTip.SetToolTip(_btnCopyQuery, "Copy the complete KQL query to your clipboard for use in Azure Resource Graph Explorer.");
@@ -233,20 +233,20 @@ namespace AzTagger
             _pnlQueryButtons.Controls.Add(_btnCopyQuery);
             _pnlQueryButtons.Controls.Add(_btnSaveQuery);
             _pnlQueryButtons.Controls.Add(_cboSavedQueries);
-            _pnlQueryButtons.Location = new System.Drawing.Point(18, 215);
-            _pnlQueryButtons.Margin = new System.Windows.Forms.Padding(4);
+            _pnlQueryButtons.Location = new System.Drawing.Point(21, 246);
+            _pnlQueryButtons.Margin = new System.Windows.Forms.Padding(5);
             _pnlQueryButtons.Name = "_pnlQueryButtons";
-            _pnlQueryButtons.Size = new System.Drawing.Size(1066, 63);
+            _pnlQueryButtons.Size = new System.Drawing.Size(1218, 72);
             _pnlQueryButtons.TabIndex = 18;
             // 
             // _btnRefreshSignin
             // 
             _btnRefreshSignin.AutoSize = true;
             _btnRefreshSignin.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnRefreshSignin.Location = new System.Drawing.Point(176, 4);
-            _btnRefreshSignin.Margin = new System.Windows.Forms.Padding(4);
+            _btnRefreshSignin.Location = new System.Drawing.Point(201, 5);
+            _btnRefreshSignin.Margin = new System.Windows.Forms.Padding(5);
             _btnRefreshSignin.Name = "_btnRefreshSignin";
-            _btnRefreshSignin.Size = new System.Drawing.Size(163, 40);
+            _btnRefreshSignin.Size = new System.Drawing.Size(187, 42);
             _btnRefreshSignin.TabIndex = 18;
             _btnRefreshSignin.Text = "Refresh Sign-in";
             _toolTip.SetToolTip(_btnRefreshSignin, "Refresh your sign-in if your Azure role-based permissions have been updated, such as when requesting elevated RBAC permissions through Privileged Identity Management.");
@@ -257,10 +257,10 @@ namespace AzTagger
             // 
             _btnSaveQuery.AutoSize = true;
             _btnSaveQuery.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnSaveQuery.Location = new System.Drawing.Point(487, 4);
-            _btnSaveQuery.Margin = new System.Windows.Forms.Padding(4);
+            _btnSaveQuery.Location = new System.Drawing.Point(559, 5);
+            _btnSaveQuery.Margin = new System.Windows.Forms.Padding(5);
             _btnSaveQuery.Name = "_btnSaveQuery";
-            _btnSaveQuery.Size = new System.Drawing.Size(169, 40);
+            _btnSaveQuery.Size = new System.Drawing.Size(190, 42);
             _btnSaveQuery.TabIndex = 19;
             _btnSaveQuery.Text = "Save Query as...";
             _toolTip.SetToolTip(_btnSaveQuery, "Save the current query under a custom name.");
@@ -272,11 +272,11 @@ namespace AzTagger
             _cboSavedQueries.CausesValidation = false;
             _cboSavedQueries.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboSavedQueries.FormattingEnabled = true;
-            _cboSavedQueries.Location = new System.Drawing.Point(664, 5);
-            _cboSavedQueries.Margin = new System.Windows.Forms.Padding(4, 5, 4, 4);
+            _cboSavedQueries.Location = new System.Drawing.Point(759, 6);
+            _cboSavedQueries.Margin = new System.Windows.Forms.Padding(5, 6, 5, 5);
             _cboSavedQueries.MaxDropDownItems = 20;
             _cboSavedQueries.Name = "_cboSavedQueries";
-            _cboSavedQueries.Size = new System.Drawing.Size(330, 38);
+            _cboSavedQueries.Size = new System.Drawing.Size(377, 40);
             _cboSavedQueries.TabIndex = 20;
             _cboSavedQueries.SelectedIndexChanged += ComboBox_SavedQueries_SelectedIndexChanged;
             // 
@@ -289,18 +289,18 @@ namespace AzTagger
             _pnlQuickFilters.Controls.Add(_txtQuickFilter2Text);
             _pnlQuickFilters.Controls.Add(_lnkResetQuickFilters);
             _pnlQuickFilters.Controls.Add(_lnkDotNetRegExDocs);
-            _pnlQuickFilters.Location = new System.Drawing.Point(233, 287);
-            _pnlQuickFilters.Margin = new System.Windows.Forms.Padding(4);
+            _pnlQuickFilters.Location = new System.Drawing.Point(266, 328);
+            _pnlQuickFilters.Margin = new System.Windows.Forms.Padding(5);
             _pnlQuickFilters.Name = "_pnlQuickFilters";
-            _pnlQuickFilters.Size = new System.Drawing.Size(1746, 49);
+            _pnlQuickFilters.Size = new System.Drawing.Size(1995, 56);
             _pnlQuickFilters.TabIndex = 19;
             // 
             // _lblQuickFiltersLabel
             // 
-            _lblQuickFiltersLabel.Location = new System.Drawing.Point(4, 0);
-            _lblQuickFiltersLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblQuickFiltersLabel.Location = new System.Drawing.Point(5, 0);
+            _lblQuickFiltersLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblQuickFiltersLabel.Name = "_lblQuickFiltersLabel";
-            _lblQuickFiltersLabel.Size = new System.Drawing.Size(210, 42);
+            _lblQuickFiltersLabel.Size = new System.Drawing.Size(240, 48);
             _lblQuickFiltersLabel.TabIndex = 0;
             _lblQuickFiltersLabel.Text = "Quick Filters (regex)";
             _lblQuickFiltersLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -310,21 +310,21 @@ namespace AzTagger
             _cboQuickFilter1Column.CausesValidation = false;
             _cboQuickFilter1Column.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboQuickFilter1Column.FormattingEnabled = true;
-            _cboQuickFilter1Column.Location = new System.Drawing.Point(232, 4);
-            _cboQuickFilter1Column.Margin = new System.Windows.Forms.Padding(14, 4, 4, 4);
+            _cboQuickFilter1Column.Location = new System.Drawing.Point(266, 5);
+            _cboQuickFilter1Column.Margin = new System.Windows.Forms.Padding(16, 5, 5, 5);
             _cboQuickFilter1Column.MaxDropDownItems = 15;
             _cboQuickFilter1Column.Name = "_cboQuickFilter1Column";
-            _cboQuickFilter1Column.Size = new System.Drawing.Size(210, 38);
+            _cboQuickFilter1Column.Size = new System.Drawing.Size(239, 40);
             _cboQuickFilter1Column.TabIndex = 2;
             _toolTip.SetToolTip(_cboQuickFilter1Column, "Column to apply quick filter 1 to");
             // 
             // _txtQuickFilter1Text
             // 
-            _txtQuickFilter1Text.Location = new System.Drawing.Point(450, 4);
-            _txtQuickFilter1Text.Margin = new System.Windows.Forms.Padding(4);
+            _txtQuickFilter1Text.Location = new System.Drawing.Point(515, 5);
+            _txtQuickFilter1Text.Margin = new System.Windows.Forms.Padding(5);
             _txtQuickFilter1Text.MaxLength = 256;
             _txtQuickFilter1Text.Name = "_txtQuickFilter1Text";
-            _txtQuickFilter1Text.Size = new System.Drawing.Size(160, 35);
+            _txtQuickFilter1Text.Size = new System.Drawing.Size(182, 39);
             _txtQuickFilter1Text.TabIndex = 1;
             _toolTip.SetToolTip(_txtQuickFilter1Text, "Quick filter 1 regular expression");
             // 
@@ -333,31 +333,31 @@ namespace AzTagger
             _cboQuickFilter2Column.CausesValidation = false;
             _cboQuickFilter2Column.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboQuickFilter2Column.FormattingEnabled = true;
-            _cboQuickFilter2Column.Location = new System.Drawing.Point(635, 4);
-            _cboQuickFilter2Column.Margin = new System.Windows.Forms.Padding(21, 4, 4, 4);
+            _cboQuickFilter2Column.Location = new System.Drawing.Point(726, 5);
+            _cboQuickFilter2Column.Margin = new System.Windows.Forms.Padding(24, 5, 5, 5);
             _cboQuickFilter2Column.MaxDropDownItems = 15;
             _cboQuickFilter2Column.Name = "_cboQuickFilter2Column";
-            _cboQuickFilter2Column.Size = new System.Drawing.Size(210, 38);
+            _cboQuickFilter2Column.Size = new System.Drawing.Size(239, 40);
             _cboQuickFilter2Column.TabIndex = 3;
             _toolTip.SetToolTip(_cboQuickFilter2Column, "Column to apply quick filter 2 to");
             // 
             // _txtQuickFilter2Text
             // 
-            _txtQuickFilter2Text.Location = new System.Drawing.Point(853, 4);
-            _txtQuickFilter2Text.Margin = new System.Windows.Forms.Padding(4);
+            _txtQuickFilter2Text.Location = new System.Drawing.Point(975, 5);
+            _txtQuickFilter2Text.Margin = new System.Windows.Forms.Padding(5);
             _txtQuickFilter2Text.MaxLength = 256;
             _txtQuickFilter2Text.Name = "_txtQuickFilter2Text";
-            _txtQuickFilter2Text.Size = new System.Drawing.Size(160, 35);
+            _txtQuickFilter2Text.Size = new System.Drawing.Size(182, 39);
             _txtQuickFilter2Text.TabIndex = 4;
             _toolTip.SetToolTip(_txtQuickFilter2Text, "Quick filter 2 regular expression");
             // 
             // _lnkResetQuickFilters
             // 
             _lnkResetQuickFilters.AutoSize = true;
-            _lnkResetQuickFilters.Location = new System.Drawing.Point(1038, 10);
-            _lnkResetQuickFilters.Margin = new System.Windows.Forms.Padding(21, 10, 4, 0);
+            _lnkResetQuickFilters.Location = new System.Drawing.Point(1186, 11);
+            _lnkResetQuickFilters.Margin = new System.Windows.Forms.Padding(24, 11, 5, 0);
             _lnkResetQuickFilters.Name = "_lnkResetQuickFilters";
-            _lnkResetQuickFilters.Size = new System.Drawing.Size(179, 30);
+            _lnkResetQuickFilters.Size = new System.Drawing.Size(206, 32);
             _lnkResetQuickFilters.TabIndex = 5;
             _lnkResetQuickFilters.TabStop = true;
             _lnkResetQuickFilters.Text = "Clear Quick Filters";
@@ -367,10 +367,10 @@ namespace AzTagger
             // _lnkDotNetRegExDocs
             // 
             _lnkDotNetRegExDocs.AutoSize = true;
-            _lnkDotNetRegExDocs.Location = new System.Drawing.Point(1242, 10);
-            _lnkDotNetRegExDocs.Margin = new System.Windows.Forms.Padding(21, 10, 4, 0);
+            _lnkDotNetRegExDocs.Location = new System.Drawing.Point(1421, 11);
+            _lnkDotNetRegExDocs.Margin = new System.Windows.Forms.Padding(24, 11, 5, 0);
             _lnkDotNetRegExDocs.Name = "_lnkDotNetRegExDocs";
-            _lnkDotNetRegExDocs.Size = new System.Drawing.Size(288, 30);
+            _lnkDotNetRegExDocs.Size = new System.Drawing.Size(327, 32);
             _lnkDotNetRegExDocs.TabIndex = 6;
             _lnkDotNetRegExDocs.TabStop = true;
             _lnkDotNetRegExDocs.Text = ".NET Regular Expression Docs";
@@ -387,10 +387,10 @@ namespace AzTagger
             // _btnClearSearchQuery
             // 
             _btnClearSearchQuery.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnClearSearchQuery.Location = new System.Drawing.Point(21, 110);
-            _btnClearSearchQuery.Margin = new System.Windows.Forms.Padding(4);
+            _btnClearSearchQuery.Location = new System.Drawing.Point(24, 126);
+            _btnClearSearchQuery.Margin = new System.Windows.Forms.Padding(5);
             _btnClearSearchQuery.Name = "_btnClearSearchQuery";
-            _btnClearSearchQuery.Size = new System.Drawing.Size(38, 100);
+            _btnClearSearchQuery.Size = new System.Drawing.Size(43, 114);
             _btnClearSearchQuery.TabIndex = 28;
             _btnClearSearchQuery.Text = "X";
             _toolTip.SetToolTip(_btnClearSearchQuery, "Clear Search Query");
@@ -401,10 +401,10 @@ namespace AzTagger
             // 
             _lblCopyPasteHint.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             _lblCopyPasteHint.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0);
-            _lblCopyPasteHint.Location = new System.Drawing.Point(696, 550);
-            _lblCopyPasteHint.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblCopyPasteHint.Location = new System.Drawing.Point(795, 628);
+            _lblCopyPasteHint.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblCopyPasteHint.Name = "_lblCopyPasteHint";
-            _lblCopyPasteHint.Size = new System.Drawing.Size(682, 28);
+            _lblCopyPasteHint.Size = new System.Drawing.Size(779, 32);
             _lblCopyPasteHint.TabIndex = 27;
             _lblCopyPasteHint.Text = "(Use Ctrl+C to copy data into clipboard)";
             _lblCopyPasteHint.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -413,10 +413,10 @@ namespace AzTagger
             // _lblResultsFilteredCount
             // 
             _lblResultsFilteredCount.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lblResultsFilteredCount.Location = new System.Drawing.Point(1396, 550);
-            _lblResultsFilteredCount.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblResultsFilteredCount.Location = new System.Drawing.Point(1595, 628);
+            _lblResultsFilteredCount.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblResultsFilteredCount.Name = "_lblResultsFilteredCount";
-            _lblResultsFilteredCount.Size = new System.Drawing.Size(662, 37);
+            _lblResultsFilteredCount.Size = new System.Drawing.Size(757, 42);
             _lblResultsFilteredCount.TabIndex = 26;
             _lblResultsFilteredCount.Text = "(0 items)";
             _lblResultsFilteredCount.TextAlign = System.Drawing.ContentAlignment.TopRight;
@@ -427,10 +427,10 @@ namespace AzTagger
             _cboTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             _cboTagTemplates.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboTagTemplates.FormattingEnabled = true;
-            _cboTagTemplates.Location = new System.Drawing.Point(1269, 46);
-            _cboTagTemplates.Margin = new System.Windows.Forms.Padding(4);
+            _cboTagTemplates.Location = new System.Drawing.Point(1450, 53);
+            _cboTagTemplates.Margin = new System.Windows.Forms.Padding(5);
             _cboTagTemplates.Name = "_cboTagTemplates";
-            _cboTagTemplates.Size = new System.Drawing.Size(468, 38);
+            _cboTagTemplates.Size = new System.Drawing.Size(534, 40);
             _cboTagTemplates.TabIndex = 29;
             _toolTip.SetToolTip(_cboTagTemplates, "When you select a template, its tags will be added to your current list, and any existing tags will be updated.");
             _cboTagTemplates.SelectedIndexChanged += ComboBox_TagTemplates_SelectedIndexChanged;
@@ -441,12 +441,12 @@ namespace AzTagger
             _gvwTags.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             _gvwTags.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             _gvwTags.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { Key, Value });
-            _gvwTags.Location = new System.Drawing.Point(16, 46);
-            _gvwTags.Margin = new System.Windows.Forms.Padding(4);
+            _gvwTags.Location = new System.Drawing.Point(18, 53);
+            _gvwTags.Margin = new System.Windows.Forms.Padding(5);
             _gvwTags.Name = "_gvwTags";
             _gvwTags.RowHeadersWidth = 51;
             _gvwTags.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            _gvwTags.Size = new System.Drawing.Size(1209, 328);
+            _gvwTags.Size = new System.Drawing.Size(1382, 375);
             _gvwTags.TabIndex = 28;
             _toolTip.SetToolTip(_gvwTags, "When multiple rows are selected, only the tags common to all selected resources are displayed below. Only these shared tags can be updated; other tags will remain unchanged.");
             // 
@@ -470,10 +470,10 @@ namespace AzTagger
             // 
             _lnkResourceGraphDocs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             _lnkResourceGraphDocs.AutoSize = true;
-            _lnkResourceGraphDocs.Location = new System.Drawing.Point(1640, 79);
-            _lnkResourceGraphDocs.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lnkResourceGraphDocs.Location = new System.Drawing.Point(1874, 90);
+            _lnkResourceGraphDocs.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lnkResourceGraphDocs.Name = "_lnkResourceGraphDocs";
-            _lnkResourceGraphDocs.Size = new System.Drawing.Size(418, 30);
+            _lnkResourceGraphDocs.Size = new System.Drawing.Size(479, 32);
             _lnkResourceGraphDocs.TabIndex = 27;
             _lnkResourceGraphDocs.TabStop = true;
             _lnkResourceGraphDocs.Text = "Azure Resource Graph query language docs";
@@ -483,8 +483,8 @@ namespace AzTagger
             // _splitContainer
             // 
             _splitContainer.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            _splitContainer.Location = new System.Drawing.Point(2, 336);
-            _splitContainer.Margin = new System.Windows.Forms.Padding(4);
+            _splitContainer.Location = new System.Drawing.Point(2, 384);
+            _splitContainer.Margin = new System.Windows.Forms.Padding(5);
             _splitContainer.Name = "_splitContainer";
             _splitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
@@ -509,19 +509,19 @@ namespace AzTagger
             _splitContainer.Panel2.Controls.Add(_gvwTags);
             _splitContainer.Panel2.Controls.Add(_btnApplyTags);
             _splitContainer.Panel2MinSize = 200;
-            _splitContainer.Size = new System.Drawing.Size(2076, 998);
-            _splitContainer.SplitterDistance = 593;
-            _splitContainer.SplitterWidth = 14;
+            _splitContainer.Size = new System.Drawing.Size(2373, 1141);
+            _splitContainer.SplitterDistance = 677;
+            _splitContainer.SplitterWidth = 16;
             _splitContainer.TabIndex = 29;
             // 
             // _resultsActivityIndicator
             // 
             _resultsActivityIndicator.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            _resultsActivityIndicator.Location = new System.Drawing.Point(18, 542);
-            _resultsActivityIndicator.Margin = new System.Windows.Forms.Padding(4);
+            _resultsActivityIndicator.Location = new System.Drawing.Point(21, 618);
+            _resultsActivityIndicator.Margin = new System.Windows.Forms.Padding(5);
             _resultsActivityIndicator.MarqueeAnimationSpeed = 20;
             _resultsActivityIndicator.Name = "_resultsActivityIndicator";
-            _resultsActivityIndicator.Size = new System.Drawing.Size(2042, 7);
+            _resultsActivityIndicator.Size = new System.Drawing.Size(2334, 8);
             _resultsActivityIndicator.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             _resultsActivityIndicator.TabIndex = 28;
             _resultsActivityIndicator.Visible = false;
@@ -536,8 +536,8 @@ namespace AzTagger
             _gvwResults.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             _gvwResults.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableAlwaysIncludeHeaderText;
             _gvwResults.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            _gvwResults.Location = new System.Drawing.Point(18, 7);
-            _gvwResults.Margin = new System.Windows.Forms.Padding(4);
+            _gvwResults.Location = new System.Drawing.Point(21, 8);
+            _gvwResults.Margin = new System.Windows.Forms.Padding(5);
             _gvwResults.Name = "_gvwResults";
             _gvwResults.ReadOnly = true;
             _gvwResults.RowHeadersWidth = 51;
@@ -545,37 +545,33 @@ namespace AzTagger
             _gvwResults.ShowCellErrors = false;
             _gvwResults.ShowEditingIcon = false;
             _gvwResults.ShowRowErrors = false;
-            _gvwResults.Size = new System.Drawing.Size(2040, 537);
+            _gvwResults.Size = new System.Drawing.Size(2331, 613);
             _gvwResults.StandardTab = true;
             _gvwResults.TabIndex = 25;
             // 
             // _lnkEditSettingsFile
             // 
             _lnkEditSettingsFile.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkEditSettingsFile.AutoSize = true;
-            _lnkEditSettingsFile.Location = new System.Drawing.Point(1892, 251);
-            _lnkEditSettingsFile.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lnkEditSettingsFile.Location = new System.Drawing.Point(1983, 280);
+            _lnkEditSettingsFile.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lnkEditSettingsFile.Name = "_lnkEditSettingsFile";
-            _lnkEditSettingsFile.Size = new System.Drawing.Size(165, 30);
+            _lnkEditSettingsFile.Size = new System.Drawing.Size(218, 37);
             _lnkEditSettingsFile.TabIndex = 36;
             _lnkEditSettingsFile.TabStop = true;
             _lnkEditSettingsFile.Text = "Edit Settings File";
-            _lnkEditSettingsFile.TextAlign = System.Drawing.ContentAlignment.TopRight;
             _lnkEditSettingsFile.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkEditSettingsFile.LinkClicked += LinkLabel_EditSettingsFile_LinkClicked;
             // 
             // _lnkResetToDefaults
             // 
             _lnkResetToDefaults.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkResetToDefaults.AutoSize = true;
-            _lnkResetToDefaults.Location = new System.Drawing.Point(1804, 283);
-            _lnkResetToDefaults.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lnkResetToDefaults.Location = new System.Drawing.Point(1983, 317);
+            _lnkResetToDefaults.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lnkResetToDefaults.Name = "_lnkResetToDefaults";
-            _lnkResetToDefaults.Size = new System.Drawing.Size(253, 30);
+            _lnkResetToDefaults.Size = new System.Drawing.Size(330, 37);
             _lnkResetToDefaults.TabIndex = 35;
             _lnkResetToDefaults.TabStop = true;
             _lnkResetToDefaults.Text = "Reset Window to Defaults";
-            _lnkResetToDefaults.TextAlign = System.Drawing.ContentAlignment.TopRight;
             _lnkResetToDefaults.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkResetToDefaults.LinkClicked += LinkLabel_ResetToDefaults_LinkClicked;
             // 
@@ -583,50 +579,46 @@ namespace AzTagger
             // 
             _lblVersion.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
             _lblVersion.AutoSize = true;
-            _lblVersion.Location = new System.Drawing.Point(1584, 348);
-            _lblVersion.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblVersion.Location = new System.Drawing.Point(1742, 391);
+            _lblVersion.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblVersion.Name = "_lblVersion";
-            _lblVersion.Size = new System.Drawing.Size(132, 30);
+            _lblVersion.Size = new System.Drawing.Size(147, 32);
             _lblVersion.TabIndex = 34;
             _lblVersion.Text = "Version: x.x.x";
             // 
             // _lnkDonation
             // 
             _lnkDonation.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkDonation.AutoSize = true;
-            _lnkDonation.Location = new System.Drawing.Point(1749, 347);
-            _lnkDonation.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lnkDonation.Location = new System.Drawing.Point(1983, 391);
+            _lnkDonation.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lnkDonation.Name = "_lnkDonation";
-            _lnkDonation.Size = new System.Drawing.Size(308, 30);
+            _lnkDonation.Size = new System.Drawing.Size(366, 37);
             _lnkDonation.TabIndex = 33;
             _lnkDonation.TabStop = true;
             _lnkDonation.Text = "👍 Thumbs-up with a Donation";
-            _lnkDonation.TextAlign = System.Drawing.ContentAlignment.TopRight;
             _lnkDonation.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkDonation.LinkClicked += LinkLabel_Donation_LinkClicked;
             // 
             // _lnkGitHubLink
             // 
             _lnkGitHubLink.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            _lnkGitHubLink.AutoSize = true;
-            _lnkGitHubLink.Location = new System.Drawing.Point(1823, 315);
-            _lnkGitHubLink.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lnkGitHubLink.Location = new System.Drawing.Point(1983, 354);
+            _lnkGitHubLink.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lnkGitHubLink.Name = "_lnkGitHubLink";
-            _lnkGitHubLink.Size = new System.Drawing.Size(234, 30);
+            _lnkGitHubLink.Size = new System.Drawing.Size(309, 37);
             _lnkGitHubLink.TabIndex = 32;
             _lnkGitHubLink.TabStop = true;
             _lnkGitHubLink.Text = "Open Source on GitHub";
-            _lnkGitHubLink.TextAlign = System.Drawing.ContentAlignment.TopRight;
             _lnkGitHubLink.VisitedLinkColor = System.Drawing.Color.Blue;
             _lnkGitHubLink.LinkClicked += LinkLabel_GitHubLink_LinkClicked;
             // 
             // _lnkEditTagTemplates
             // 
             _lnkEditTagTemplates.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            _lnkEditTagTemplates.Location = new System.Drawing.Point(1550, 88);
-            _lnkEditTagTemplates.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lnkEditTagTemplates.Location = new System.Drawing.Point(1771, 101);
+            _lnkEditTagTemplates.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lnkEditTagTemplates.Name = "_lnkEditTagTemplates";
-            _lnkEditTagTemplates.Size = new System.Drawing.Size(186, 35);
+            _lnkEditTagTemplates.Size = new System.Drawing.Size(213, 40);
             _lnkEditTagTemplates.TabIndex = 31;
             _lnkEditTagTemplates.TabStop = true;
             _lnkEditTagTemplates.Text = "Edit Templates";
@@ -637,10 +629,10 @@ namespace AzTagger
             // _lblTags
             // 
             _lblTags.AutoSize = true;
-            _lblTags.Location = new System.Drawing.Point(16, 12);
-            _lblTags.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblTags.Location = new System.Drawing.Point(18, 14);
+            _lblTags.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblTags.Name = "_lblTags";
-            _lblTags.Size = new System.Drawing.Size(59, 30);
+            _lblTags.Size = new System.Drawing.Size(65, 32);
             _lblTags.TabIndex = 30;
             _lblTags.Text = "Tags:";
             // 
@@ -649,10 +641,10 @@ namespace AzTagger
             _btnApplyTags.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             _btnApplyTags.AutoSize = true;
             _btnApplyTags.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _btnApplyTags.Location = new System.Drawing.Point(1274, 198);
-            _btnApplyTags.Margin = new System.Windows.Forms.Padding(4);
+            _btnApplyTags.Location = new System.Drawing.Point(1456, 226);
+            _btnApplyTags.Margin = new System.Windows.Forms.Padding(5);
             _btnApplyTags.Name = "_btnApplyTags";
-            _btnApplyTags.Size = new System.Drawing.Size(238, 40);
+            _btnApplyTags.Size = new System.Drawing.Size(272, 42);
             _btnApplyTags.TabIndex = 27;
             _btnApplyTags.Text = "Apply Tags to Selection";
             _btnApplyTags.UseVisualStyleBackColor = true;
@@ -671,10 +663,10 @@ namespace AzTagger
             _cboAzureContext.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             _cboAzureContext.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cboAzureContext.FormattingEnabled = true;
-            _cboAzureContext.Location = new System.Drawing.Point(1778, 18);
-            _cboAzureContext.Margin = new System.Windows.Forms.Padding(4);
+            _cboAzureContext.Location = new System.Drawing.Point(2032, 21);
+            _cboAzureContext.Margin = new System.Windows.Forms.Padding(5);
             _cboAzureContext.Name = "_cboAzureContext";
-            _cboAzureContext.Size = new System.Drawing.Size(275, 38);
+            _cboAzureContext.Size = new System.Drawing.Size(314, 40);
             _cboAzureContext.TabIndex = 30;
             _cboAzureContext.SelectedValueChanged += ComboBox_AzureContext_SelectedValueChanged;
             // 
@@ -682,18 +674,18 @@ namespace AzTagger
             // 
             _lblAzureContext.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             _lblAzureContext.AutoSize = true;
-            _lblAzureContext.Location = new System.Drawing.Point(1628, 23);
-            _lblAzureContext.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            _lblAzureContext.Location = new System.Drawing.Point(1861, 26);
+            _lblAzureContext.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             _lblAzureContext.Name = "_lblAzureContext";
-            _lblAzureContext.Size = new System.Drawing.Size(150, 30);
+            _lblAzureContext.Size = new System.Drawing.Size(170, 32);
             _lblAzureContext.TabIndex = 31;
             _lblAzureContext.Text = "Azure Context:";
             // 
             // MainForm
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(168F, 168F);
+            AutoScaleDimensions = new System.Drawing.SizeF(192F, 192F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            ClientSize = new System.Drawing.Size(2076, 1334);
+            ClientSize = new System.Drawing.Size(2373, 1525);
             Controls.Add(_queryActivityIndicator);
             Controls.Add(_lblAzureContext);
             Controls.Add(_cboAzureContext);
@@ -710,8 +702,8 @@ namespace AzTagger
             Controls.Add(_splitContainer);
             DoubleBuffered = true;
             Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
-            Margin = new System.Windows.Forms.Padding(4);
-            MinimumSize = new System.Drawing.Size(1790, 1265);
+            Margin = new System.Windows.Forms.Padding(5);
+            MinimumSize = new System.Drawing.Size(2042, 1436);
             Name = "MainForm";
             StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             Text = "AzTagger";
