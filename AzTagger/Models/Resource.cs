@@ -17,4 +17,5 @@ public class Resource
     public IDictionary<string, string> SubscriptionTags { get; set; }
     public IDictionary<string, string> ResourceGroupTags { get; set; }
     public IDictionary<string, string> ResourceTags { get; set; }
+    public IDictionary<string, string> CombinedTags { get; set; }
 }

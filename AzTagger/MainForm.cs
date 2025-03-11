@@ -132,6 +132,7 @@ public partial class MainForm : Form
     SubscriptionTags, 
     ResourceGroupTags = ResourceGroupTags_dynamic, 
     ResourceTags = ResourceTags_dynamic
+| extend CombinedTags = bag_merge(ResourceTags, ResourceGroupTags, SubscriptionTags)
 | order by EntityType desc, (tolower(SubscriptionName)) asc, (tolower(ResourceGroup)) asc, (tolower(ResourceName)) asc
 ";
 
@@ -808,7 +809,7 @@ public partial class MainForm : Form
                 .ToList();
 
             var resourceIds = string.Join(", ", selectedResources.Select(r => $"'{r.Id}'"));
-            var query = _baseQuery + $@"| where Id in ({resourceIds}) | project Id, SubscriptionTags, ResourceGroupTags, ResourceTags";
+            var query = _baseQuery + $@"| where Id in ({resourceIds}) | project Id, SubscriptionTags, ResourceGroupTags, ResourceTags, CombinedTags";
 
             var updatedResources = await _azureService.QueryResourcesAsync(query);
 
@@ -820,6 +821,7 @@ public partial class MainForm : Form
                     localResource.SubscriptionTags = updatedResource.SubscriptionTags;
                     localResource.ResourceGroupTags = updatedResource.ResourceGroupTags;
                     localResource.ResourceTags = updatedResource.ResourceTags;
+                    localResource.CombinedTags = updatedResource.CombinedTags;
                 }
             }
 
@@ -996,7 +998,8 @@ public partial class MainForm : Form
             if (column != null &&
                 column.DataPropertyName == "ResourceTags" ||
                 column.DataPropertyName == "ResourceGroupTags" ||
-                column.DataPropertyName == "SubscriptionTags")
+                column.DataPropertyName == "SubscriptionTags" ||
+                column.DataPropertyName == "CombinedTags")
             {
                 _currentCellEventArgs = e;
                 _tooltipTimer.Start();
@@ -1039,7 +1042,8 @@ public partial class MainForm : Form
         var column = _gvwResults.Columns[cellEventArgs.ColumnIndex];
         if (column.DataPropertyName == "ResourceTags" ||
             column.DataPropertyName == "ResourceGroupTags" ||
-            column.DataPropertyName == "SubscriptionTags")
+            column.DataPropertyName == "SubscriptionTags" ||
+            column.DataPropertyName == "CombinedTags")
         {
             var tags = cell.Value as IDictionary<string, string>;
             if (tags != null && tags.Count > 0)
@@ -1108,7 +1112,8 @@ public partial class MainForm : Form
         {
             if (columnName == "ResourceTags" ||
                 columnName == "ResourceGroupTags" ||
-                columnName == "SubscriptionTags")
+                columnName == "SubscriptionTags" ||
+                columnName == "CombinedTags")
             {
                 var queryText = $"| where {columnName}[''] =~ ''";
                 _txtSearchQuery.Text = queryText;
