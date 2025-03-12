@@ -71,7 +71,7 @@ public partial class MainForm : Form
     | where type =~ ""microsoft.resources/subscriptions/resourcegroups""
     | project rg_subscriptionId = subscriptionId, resourceGroup = name, resourceGroupTags = tags
 ) on $left.subscriptionId == $right.rg_subscriptionId and $left.resourceGroup == $right.resourceGroup
-| join kind=leftouter (
+| join kind=inner (  
     resourcecontainers
     | where type =~ ""microsoft.resources/subscriptions"" and not(properties['state'] =~ 'disabled')
     | project sub_subscriptionId = subscriptionId, subscriptionTags = tags, subscriptionName = name
@@ -90,9 +90,9 @@ public partial class MainForm : Form
 | union (
     resourcecontainers
     | where type =~ ""microsoft.resources/subscriptions/resourcegroups""
-    | join kind=leftouter (
+    | join kind=inner (
         resourcecontainers
-        | where type =~ ""microsoft.resources/subscriptions""
+        | where type =~ ""microsoft.resources/subscriptions"" and not(properties['state'] =~ 'disabled')
         | project subscriptionId, subscriptionTags = tags, subscriptionName = name
     ) on $left.subscriptionId == $right.subscriptionId
     | project 
