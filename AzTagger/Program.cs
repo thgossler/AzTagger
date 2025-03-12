@@ -5,19 +5,22 @@ using AzTagger.Services;
 using Serilog;
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace AzTagger;
 
 static class Program
 {
+    private static string LogDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger");
+
     [STAThread]
     static void Main()
     {
         // Initialize Serilog for logging
         Log.Logger = new LoggerConfiguration()
             .WriteTo.File(
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "errorlog.txt"),
+                Path.Combine(LogDirectory, "errorlog.txt"),
                 rollingInterval: RollingInterval.Day,
                 fileSizeLimitBytes: 10 * 1024 * 1024, // 10 MB
                 rollOnFileSizeLimit: true)
@@ -66,5 +69,16 @@ static class Program
         {
             Log.CloseAndFlush();
         }
+    }
+
+    public static string GetLatestErrorLogFile()
+    {
+        string logFilePattern = "errorlog*.txt";
+        string[] logFiles = Directory.GetFiles(LogDirectory, logFilePattern);
+        if (logFiles.Length == 0)
+        {
+            return null;
+        }
+        return logFiles.OrderByDescending(file => File.GetLastWriteTime(file)).First();
     }
 }

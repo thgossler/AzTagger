@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -486,7 +487,7 @@ public partial class MainForm : Form
         var graphics = this.CreateGraphics();
         DisplayScaleFactor = graphics.DpiX / 96.0f;
         graphics.Dispose();
-        
+
         UpdateResultsColumnsWidth();
         UpdateTagsColumnsWidth();
     }
@@ -1396,6 +1397,16 @@ public partial class MainForm : Form
     {
         var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
         Process.Start(editor, SettingsService.SettingsFilePath);
+    }
+
+    private void LinkLabel_ShowErrorLog_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+    {
+        var logFile = Program.GetLatestErrorLogFile();
+        if (!string.IsNullOrEmpty(logFile))
+        {
+            var editor = Environment.GetEnvironmentVariable("EDITOR") ?? "notepad";
+            Process.Start(editor, logFile);
+        }
     }
 
     private void LinkLabel_ResetToDefaults_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
