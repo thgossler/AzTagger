@@ -1928,7 +1928,27 @@ public partial class MainForm : Form
                     resTags.Remove(key);
                 }
             }
+
+            // Update combined tags
+            var combinedTags = new Dictionary<string, string>();
+            var subscriptionTags = resource.SubscriptionTags ?? new Dictionary<string, string>();
+            var resourceGroupTags = resource.ResourceGroupTags ?? new Dictionary<string, string>();
+            var resourceTags = resource.ResourceTags ?? new Dictionary<string, string>();
+            foreach (var tag in subscriptionTags)
+            {
+                combinedTags[tag.Key] = tag.Value;
+            }
+            foreach (var tag in resourceGroupTags)
+            {
+                combinedTags[tag.Key] = tag.Value;
+            }
+            foreach (var tag in resourceTags)
+            {
+                combinedTags[tag.Key] = tag.Value;
+            }
+            resource.CombinedTags = combinedTags;
         }
+
         _gvwResults.Refresh();
     }
 
