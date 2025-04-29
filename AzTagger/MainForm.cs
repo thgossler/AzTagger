@@ -12,7 +12,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -210,6 +209,14 @@ public partial class MainForm : Form
         var openUrlsInTagValuesMenuItem = new ToolStripMenuItem("Open URLs in tags");
         openUrlsInTagValuesMenuItem.Click += MenuItem_OpenUrlsInTagValues_Click;
         _resultsDataGridViewContextMenu.Items.Add(openUrlsInTagValuesMenuItem);
+
+        var copyEmailAdressesInTagValuesMenuItem = new ToolStripMenuItem("Copy email addresses in tags");
+        copyEmailAdressesInTagValuesMenuItem.Click += MenuItem_CopyEmailAddressesInTagValues_Click;
+        _resultsDataGridViewContextMenu.Items.Add(copyEmailAdressesInTagValuesMenuItem);
+
+        var copyAllTagValuesAsJsonMenuItem = new ToolStripMenuItem("Copy tags as JSON");
+        copyAllTagValuesAsJsonMenuItem.Click += MenuItem_CopyAllTagValuesAsJson_Click;
+        _resultsDataGridViewContextMenu.Items.Add(copyAllTagValuesAsJsonMenuItem);
 
         var copyCellValueMenuItem = new ToolStripMenuItem("Copy cell value");
         copyCellValueMenuItem.Click += MenuItem_CopyCellValue_Click;
@@ -570,7 +577,7 @@ public partial class MainForm : Form
             return;
         }
 
-        using (var inputDialog = new InputDialog(this, "Enter a name for the saved query:"))
+        using (var inputDialog = new InputDialog(this, "Save query as...", "Enter a name for the saved query:"))
         {
             if (inputDialog.ShowDialog(this) == DialogResult.OK)
             {
@@ -596,6 +603,7 @@ public partial class MainForm : Form
                 {
                     var savedQuery = new SavedSearchItem(queryName, queryText);
                     _settings.SavedSearches.Add(savedQuery);
+                    _settings.SavedSearches.Sort();
                     _cboSavedQueries.Items.Add(savedQuery);
                 }
 
@@ -628,7 +636,7 @@ public partial class MainForm : Form
             var resource = selectedRow.DataBoundItem as Resource;
 
             var urls = new List<string>();
-            var tags = GetEntityTags(resource);
+            var tags = GetColumnTags(_gvwResults.Columns[_contextMenuClickedCell.ColumnIndex], resource);
             foreach (var tag in tags)
             {
                 var matches = Regex.Matches(tag.Value, @"https?://\S+");
@@ -650,6 +658,78 @@ public partial class MainForm : Form
                 MessageBox.Show(this, "No tags with URLs found.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
+    }
+
+    private void MenuItem_CopyEmailAddressesInTagValues_Click(object sender, EventArgs e)
+    {
+        if (_gvwResults.SelectedRows.Count > 0)
+        {
+            var selectedRow = _gvwResults.SelectedRows[0];
+            var resource = selectedRow.DataBoundItem as Resource;
+
+            var emailAddresses = new List<string>();
+
+            var tags = GetColumnTags(_gvwResults.Columns[_contextMenuClickedCell.ColumnIndex], resource);
+            foreach (var tag in tags)
+            {
+                var matches = Regex.Matches(tag.Value, @"(?<=^|[\s\(\)\<\>\[\]])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?=$|[\s\(\)\<\>\[\]])");
+                foreach (Match match in matches)
+                {
+                    emailAddresses.Add(match.Value);
+                }
+            }
+
+            if (emailAddresses.Count > 0)
+            {
+                foreach (var url in emailAddresses)
+                {
+                    Clipboard.SetText(string.Join("; ", emailAddresses));
+                }
+            }
+            else
+            {
+                MessageBox.Show(this, "No email addresses found.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+    }
+
+    private void MenuItem_CopyAllTagValuesAsJson_Click(object sender, EventArgs e)
+    {
+        if (_gvwResults.SelectedRows.Count > 0)
+        {
+            var selectedRow = _gvwResults.SelectedRows[0];
+            var resource = selectedRow.DataBoundItem as Resource;
+
+            var emailAddresses = new List<string>();
+
+            var tags = GetColumnTags(_gvwResults.Columns[_contextMenuClickedCell.ColumnIndex], resource);
+
+            var json = JsonSerializer.Serialize(tags.OrderBy(t => t.Key), new JsonSerializerOptions { WriteIndented = true });
+            Clipboard.SetText(json);
+        }
+    }
+
+    private static IDictionary<string, string> GetColumnTags(DataGridViewColumn selectedColumn, Resource resource)
+    {
+        IDictionary<string, string> tags;
+        if (selectedColumn.DataPropertyName == "ResourceGroupTags")
+        {
+            tags = resource.ResourceGroupTags;
+        }
+        else if (selectedColumn.DataPropertyName == "SubscriptionTags")
+        {
+            tags = resource.SubscriptionTags;
+        }
+        else if (selectedColumn.DataPropertyName == "ResourceTags")
+        {
+            tags = resource.ResourceTags;
+        }
+        else
+        {
+            tags = resource.CombinedTags;
+        }
+
+        return tags;
     }
 
     private void MenuItem_OpenInAzurePortal_Click(object sender, EventArgs e)
@@ -1144,6 +1224,31 @@ public partial class MainForm : Form
         }
 
         _txtSearchQuery.Focus();
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == (Keys.Control | Keys.C))
+        {
+            if (_gvwTags.IsCurrentCellInEditMode)
+            {
+                var editingControl = _gvwTags.EditingControl as TextBox;
+                if (editingControl != null)
+                {
+                    if (editingControl.SelectionLength > 0)
+                    {
+                        Clipboard.SetText(editingControl.SelectedText);
+                    }
+                    else if (!string.IsNullOrEmpty(editingControl.Text))
+                    {
+                        Clipboard.SetText(editingControl.Text);
+                    }
+                    return true; // Return true to indicate we've handled it
+                }
+            }
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 
     private void DataGridView_Tags_KeyDown(object sender, KeyEventArgs e)
