@@ -159,6 +159,30 @@ resources
         _tagTemplates = TagTemplatesService.Load();
 
         _txtSearchQuery = new TextArea { Height = 80 };
+        _txtSearchQuery.TextChanged += new EventHandler<EventArgs>((_, _) =>
+        {
+            var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "").Trim();
+            if (normalizedQuery.StartsWith("resources|") || normalizedQuery.StartsWith("resourcecontainers|"))
+            {
+                //_lblQueryMode.Text = "(KQL full expression) --> not supported";
+                _queryMode = QueryMode.KqlFull;
+            }
+            else if (normalizedQuery.StartsWith("|"))
+            {
+                //_lblQueryMode.Text = "(KQL filter-only expression)";
+                _queryMode = QueryMode.KqlFilter;
+            }
+            else if (normalizedQuery.Length > 0)
+            {
+                //_lblQueryMode.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
+                _queryMode = QueryMode.Regex;
+            }
+            else
+            {
+                //_lblQueryMode.Text = string.Empty;
+                _queryMode = QueryMode.Regex;
+            }
+        });
 
         _btnSearch = new Button { Text = "Search" };
         _btnSearch.Click += async (_, _) => await SearchAsync();
@@ -188,57 +212,27 @@ resources
             }
         };
 
-        _gvwResults = new GridView { DataStore = _results, AllowMultipleSelection = true };
-        var colName = new GridColumn
+        // Set fixed heights for GridViews to show a fixed number of rows
+        int resultsRowCount = 10;
+        int tagsRowCount = 6;
+        int rowHeight = 28; // Typical row height for Eto.Forms GridView
+        _gvwResults = new GridView { DataStore = _results, AllowMultipleSelection = true, Height = resultsRowCount * rowHeight };
+        // Dynamically add columns for all Resource properties except CombinedTagsFormatted
+        var resourceProps = typeof(Resource).GetProperties()
+            .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted));
+        foreach (var prop in resourceProps)
         {
-            HeaderText = "Name",
-            DataCell = new TextBoxCell { Binding = Binding.Property<Resource, string>(r => r.ResourceName) },
-            CellToolTipBinding = Binding.Property<Resource, string>(r => r.ResourceName),
-            Width = 200,
-            Sortable = true
-        };
-        _columnPropertyMap[colName] = nameof(Resource.ResourceName);
-        _gvwResults.Columns.Add(colName);
-        var colType = new GridColumn
-        {
-            HeaderText = "Type",
-            DataCell = new TextBoxCell { Binding = Binding.Property<Resource, string>(r => r.ResourceType) },
-            CellToolTipBinding = Binding.Property<Resource, string>(r => r.ResourceType),
-            Width = 180,
-            Sortable = true
-        };
-        _columnPropertyMap[colType] = nameof(Resource.ResourceType);
-        _gvwResults.Columns.Add(colType);
-        var colRg = new GridColumn
-        {
-            HeaderText = "Resource Group",
-            DataCell = new TextBoxCell { Binding = Binding.Property<Resource, string>(r => r.ResourceGroup) },
-            CellToolTipBinding = Binding.Property<Resource, string>(r => r.ResourceGroup),
-            Width = 180,
-            Sortable = true
-        };
-        _columnPropertyMap[colRg] = nameof(Resource.ResourceGroup);
-        _gvwResults.Columns.Add(colRg);
-        var colSub = new GridColumn
-        {
-            HeaderText = "Subscription",
-            DataCell = new TextBoxCell { Binding = Binding.Property<Resource, string>(r => r.SubscriptionName) },
-            CellToolTipBinding = Binding.Property<Resource, string>(r => r.SubscriptionName),
-            Width = 180,
-            Sortable = true
-        };
-        _columnPropertyMap[colSub] = nameof(Resource.SubscriptionName);
-        _gvwResults.Columns.Add(colSub);
-        var colTags = new GridColumn
-        {
-            HeaderText = "Tags",
-            DataCell = new TextBoxCell { Binding = Binding.Property<Resource, string>(r => r.CombinedTagsFormatted) },
-            CellToolTipBinding = Binding.Property<Resource, string>(r => r.CombinedTagsFormatted),
-            Width = 250,
-            Sortable = true
-        };
-        _columnPropertyMap[colTags] = nameof(Resource.CombinedTags);
-        _gvwResults.Columns.Add(colTags);
+            GridColumn col = new GridColumn
+            {
+                HeaderText = prop.Name,
+                DataCell = new TextBoxCell { Binding = Binding.Delegate<Resource, string>(r => FormatPropertyForGrid(r, prop.Name)) },
+                CellToolTipBinding = Binding.Delegate<Resource, string>(r => FormatPropertyForTooltip(r, prop.Name)),
+                Sortable = true
+            };
+            _columnPropertyMap[col] = prop.Name;
+            _gvwResults.Columns.Add(col);
+        }
+
         _gvwResults.SelectionChanged += (_, _) => LoadTagsForSelection();
         _gvwResults.CellDoubleClick += (_, _) => OpenSelectedResourceInPortal();
         _gvwResults.MouseDown += (s, e) =>
@@ -256,7 +250,7 @@ resources
         };
         _gvwResults.ColumnHeaderClick += (_, e) => SortResults(e.Column);
 
-        _gvwTags = new GridView { DataStore = _tags, AllowMultipleSelection = false };
+        _gvwTags = new GridView { DataStore = _tags, AllowMultipleSelection = false, Height = tagsRowCount * rowHeight };
         var keyCol = new GridColumn
         {
             HeaderText = "Key",
@@ -475,11 +469,11 @@ resources
         layout.AddRow(topRow);
         layout.AddRow(new TableRow(_cboQuickFilter1Column, _txtQuickFilter1Text, _cboQuickFilter2Column, _txtQuickFilter2Text));
         var resultsPanel = new DynamicLayout { DefaultSpacing = new Size(5, 5) };
-        resultsPanel.AddRow(new TableRow(_gvwResults) { ScaleHeight = true });
+        resultsPanel.AddRow(new TableRow(_gvwResults));
         resultsPanel.AddRow(_lblResultsCount);
 
         var tagsPanel = new DynamicLayout { DefaultSpacing = new Size(5, 5) };
-        tagsPanel.AddRow(new TableRow(_gvwTags) { ScaleHeight = true });
+        tagsPanel.AddRow(new TableRow(_gvwTags));
         tagsPanel.AddRow(new StackLayout
         {
             Orientation = Orientation.Horizontal,
@@ -538,17 +532,46 @@ resources
         await _azureService.SignInAsync();
     }
 
+    enum QueryMode
+    {
+        KqlFilter,
+        Regex,
+        KqlFull
+    }
+    private QueryMode _queryMode = QueryMode.Regex;
+
     private string BuildQuery()
     {
-        if (string.IsNullOrWhiteSpace(_txtSearchQuery.Text))
-            return BaseQuery;
+        var resultQuery = BaseQuery;
 
-        var filter = $"| where ResourceName contains '{_txtSearchQuery.Text.Replace("'", "''")}' or ResourceGroup contains '{_txtSearchQuery.Text.Replace("'", "''")}' or SubscriptionName contains '{_txtSearchQuery.Text.Replace("'", "''")}'";
-        return BaseQuery + "\n" + filter;
+        if (!string.IsNullOrEmpty(_txtSearchQuery.Text) && _queryMode != QueryMode.KqlFull)
+        {
+            var filter = string.Empty;
+            if (_queryMode == QueryMode.KqlFilter)
+            {
+                filter = _txtSearchQuery.Text;
+            }
+            else
+            {
+                filter = $@"| where ResourceName matches regex @""(?i){_txtSearchQuery.Text}""
+       or ResourceGroup matches regex @""(?i){_txtSearchQuery.Text}""
+       or SubscriptionName matches regex @""(?i){_txtSearchQuery.Text}""";
+            }
+            resultQuery += filter;
+        }
+
+        return resultQuery;
     }
 
     private async Task SearchAsync()
     {
+        if (_queryMode == QueryMode.KqlFull)
+        {
+            MessageBox.Show(this, "KQL full expressions are not supported! Please use KQL filter-only expressions or a regular expression.",
+                "Info", MessageBoxButtons.OK, MessageBoxType.Information);
+            return;
+        }
+
         _btnSearch.Enabled = false;
         try
         {
@@ -845,6 +868,10 @@ resources
         foreach (var r in filtered)
             _results.Add(r);
 
+        // Force GridView to refresh in case of UI update issues
+        _gvwResults.DataStore = null;
+        _gvwResults.DataStore = _results;
+
         UpdateResultsCountLabel();
     }
 
@@ -1076,5 +1103,30 @@ resources
         _settings.LastQuickFilter2Text = _txtQuickFilter2Text.Text;
         _settings.SplitterPosition = _splitter.Position;
         SettingsService.Save(_settings);
+    }
+
+    // Helper for displaying any property in the grid
+    private static string FormatPropertyForGrid(Resource r, string propertyName)
+    {
+        var prop = typeof(Resource).GetProperty(propertyName);
+        var value = prop?.GetValue(r);
+        if (value is IDictionary<string, string> dict)
+        {
+            if (dict.Count == 0) return string.Empty;
+            return string.Join(", ", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
+        }
+        return value?.ToString() ?? string.Empty;
+    }
+
+    private static string FormatPropertyForTooltip(Resource r, string propertyName)
+    {
+        var prop = typeof(Resource).GetProperty(propertyName);
+        var value = prop?.GetValue(r);
+        if (value is IDictionary<string, string> dict)
+        {
+            if (dict.Count == 0) return string.Empty;
+            return string.Join("\n", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
+        }
+        return value?.ToString() ?? string.Empty;
     }
 }
