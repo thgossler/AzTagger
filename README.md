@@ -90,15 +90,39 @@ The Eto.Forms UI runs on Windows, Linux, and macOS via the WPF, GTK, and Mac bac
 
 Clone the repository and build all projects:
 
-```bash
-dotnet build AzTagger.sln -c Release
+`dotnet build AzTagger.sln -c Release`
+
+### Build and Run for Each Platform
+
+#### Windows
+
+```
+dotnet build AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0 --runtime win-x64
+dotnet run --project AzTagger.Wpf/AzTagger.Wpf.csproj --framework net9.0 --runtime win-x64
 ```
 
-Run the application for your platform:
+#### Linux
 
-- **Windows**: `dotnet run --project AzTagger.Wpf`
-- **Linux**: `dotnet run --project AzTagger.Gtk`
-- **macOS**: `dotnet run --project AzTagger.Mac`
+```
+dotnet build AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net9.0 --runtime linux-x64
+dotnet run --project AzTagger.Gtk/AzTagger.Gtk.csproj --framework net9.0 --runtime linux-x64
+```
+
+#### macOS
+
+```
+Apple Silicon (arm64):
+    dotnet build AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-arm64
+    dotnet run --project AzTagger.Mac/AzTagger.Mac.csproj --framework net9.0 --runtime osx-arm64
+
+Intel (x64):
+    dotnet build AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-x64
+    dotnet run --project AzTagger.Mac/AzTagger.Mac.csproj --framework net9.0 --runtime osx-x64
+```
+
+### Publish
+
+You can publish self-contained executables for each platform using `dotnet publish` with the same `--framework` and `--runtime` parameters.
 
 ## Report Bugs
 
