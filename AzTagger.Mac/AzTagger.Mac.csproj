@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <RuntimeIdentifiers>osx-x64;osx-arm64</RuntimeIdentifiers>
+    <IgnoreMissingWorkloadErrors>true</IgnoreMissingWorkloadErrors>
+    <SuppressNETSdkUnsupportedPlatformCheck>true</SuppressNETSdkUnsupportedPlatformCheck>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
+    <PackageReference Include="Eto.Platform.Mac64" Version="2.9.0" />
+  </ItemGroup>
+</Project>

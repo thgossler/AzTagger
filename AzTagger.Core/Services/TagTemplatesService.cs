@@ -120,6 +120,9 @@ public class TagTemplatesService
                 IndentSize = 2,
                 WriteIndented = true
             });
+        var dir = Path.GetDirectoryName(TagTemplatesFilePath);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
         File.WriteAllText(TagTemplatesFilePath, tagTemplatesJson);
     }
 }

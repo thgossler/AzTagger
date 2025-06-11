@@ -35,9 +35,10 @@
 
 # Introduction
 
-AzTagger is a Windows Desktop GUI application for fast and flexible querying of Azure resources 
-and tag management. It is a helper tool that allows fast search and filtering of all resources, 
-resource groups, and subscriptions using Azure Resource Graph for your Entra ID tenant.
+AzTagger is a cross-platform desktop GUI application built with Eto.Forms for fast and flexible
+querying of Azure resources and tag management. It allows fast search and filtering of all
+resources, resource groups, and subscriptions using Azure Resource Graph for your Entra ID tenant.
+The Eto.Forms UI runs on Windows, Linux, and macOS via the WPF, GTK, and Mac backends.
 
 <img src="./AzTagger/images/screenshot.jpg" alt="Screenshot" width="2049">
 
@@ -70,6 +71,7 @@ resource groups, and subscriptions using Azure Resource Graph for your Entra ID 
 - Use default and maintain custom tag templates in a `tagtemplates.json` file in the user's AppData Local folder
 - Support of variables in tag template values such as {Date}, {Time}, {DateTime}, {User} 
 - Create and update all specified tags on all selected subscriptions, resource groups, and resources at once
+- Copy any tag cell value via right-click context menu
 
 ### Error Handling and Logging
 
@@ -78,11 +80,25 @@ resource groups, and subscriptions using Azure Resource Graph for your Entra ID 
 ## Used Technologies
 
 - C# .NET 9
-- WinForms
+- Eto.Forms (with WPF, GTK, and macOS backends)
 - SeriLog
 - Azure Identity
 - Azure Resource Graph
 - Azure Resource Manager
+
+## Building and Running
+
+Clone the repository and build all projects:
+
+```bash
+dotnet build AzTagger.sln -c Release
+```
+
+Run the application for your platform:
+
+- **Windows**: `dotnet run --project AzTagger.Wpf`
+- **Linux**: `dotnet run --project AzTagger.Gtk`
+- **macOS**: `dotnet run --project AzTagger.Mac`
 
 ## Report Bugs
 

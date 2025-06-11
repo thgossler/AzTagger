@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
+    <PackageReference Include="Eto.Platform.Gtk" Version="2.9.0" />
+  </ItemGroup>
+</Project>

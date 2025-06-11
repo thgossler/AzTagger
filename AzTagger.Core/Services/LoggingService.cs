@@ -9,10 +9,16 @@ namespace AzTagger.Services;
 
 public class LoggingService
 {
-    private static readonly string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "errorlog.txt");
+    public static readonly string LogDirectory =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger");
+
+    private static readonly string LogFilePath = Path.Combine(LogDirectory, "errorlog.txt");
 
     public static void Initialize()
     {
+        var logDir = Path.GetDirectoryName(LogFilePath);
+        if (!string.IsNullOrEmpty(logDir))
+            Directory.CreateDirectory(logDir);
         Log.Logger = new LoggerConfiguration()
             .WriteTo.File(
                 LogFilePath,
@@ -35,5 +41,16 @@ public class LoggingService
     public static void CloseAndFlush()
     {
         Log.CloseAndFlush();
+    }
+
+    public static string GetLatestLogFile()
+    {
+        if (!Directory.Exists(LogDirectory))
+            return string.Empty;
+        var files = Directory.GetFiles(LogDirectory, "errorlog*.txt");
+        if (files.Length == 0)
+            return string.Empty;
+        Array.Sort(files, (a, b) => File.GetLastWriteTime(b).CompareTo(File.GetLastWriteTime(a)));
+        return files[0];
     }
 }

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AzTagger.Core/AzTagger.Core.csproj" />
+    <PackageReference Include="Eto.Forms" Version="2.9.0" />
+  </ItemGroup>
+</Project>
