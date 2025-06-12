@@ -1,0 +1,75 @@
+{
+    // See https://go.microsoft.com/fwlink/?linkid=830387 for more about VS Code debugging
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Debug: Auto-detect Platform",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build: mac",
+            "program": "${workspaceFolder}/AzTagger.Mac/bin/Debug/net9.0/AzTagger.Mac.app/Contents/MacOS/AzTagger.Mac",
+            "args": [],
+            "cwd": "${workspaceFolder}/AzTagger.Mac",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "windows": {
+                "preLaunchTask": "build: wpf (windows only)",
+                "program": "${workspaceFolder}/AzTagger.Wpf/bin/Debug/net9.0-windows/AzTagger.Wpf.dll",
+                "cwd": "${workspaceFolder}/AzTagger.Wpf"
+            },
+            "linux": {
+                "preLaunchTask": "build: gtk",
+                "program": "${workspaceFolder}/AzTagger.Gtk/bin/Debug/net9.0/AzTagger.Gtk.dll",
+                "cwd": "${workspaceFolder}/AzTagger.Gtk"
+            },
+            "osx": {
+                "preLaunchTask": "build: mac",
+                "program": "${workspaceFolder}/AzTagger.Mac/bin/Debug/net9.0/AzTagger.Mac.app/Contents/MacOS/AzTagger.Mac", 
+                "cwd": "${workspaceFolder}/AzTagger.Mac"
+            }
+        },
+        {
+            "name": ".NET Debug: Mac",
+            "type": "coreclr", 
+            "request": "launch",
+            "preLaunchTask": "build: mac",
+            "program": "${workspaceFolder}/AzTagger.Mac/bin/Debug/net9.0/AzTagger.Mac.app/Contents/MacOS/AzTagger.Mac",
+            "args": [],
+            "cwd": "${workspaceFolder}/AzTagger.Mac",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": ".NET Debug: GTK (Linux/Unix)",
+            "type": "coreclr",
+            "request": "launch", 
+            "preLaunchTask": "build: gtk",
+            "program": "${workspaceFolder}/AzTagger.Gtk/bin/Debug/net9.0/AzTagger.Gtk.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/AzTagger.Gtk",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": ".NET Debug: WPF (Windows)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build: wpf (windows only)",
+            "program": "${workspaceFolder}/AzTagger.Wpf/bin/Debug/net9.0-windows/AzTagger.Wpf.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/AzTagger.Wpf",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug All Projects",
+            "configurations": [
+                ".NET Debug: Mac",
+                ".NET Debug: GTK (Linux/Unix)"
+            ],
+            "stopAll": true
+        }
+    ]
+}

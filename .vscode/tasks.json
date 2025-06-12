@@ -1,0 +1,325 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		// ===== BUILD TASKS =====
+		{
+			"label": "build: all",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"build: core",
+				"build: app",
+				"build: platform-specific"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "build: platform-specific",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["build", "AzTagger.Mac/AzTagger.Mac.csproj"],
+			"group": "build",
+			"problemMatcher": ["$msCompile"],
+			"windows": {
+				"command": "dotnet",
+				"args": ["build", "AzTagger.Wpf/AzTagger.Wpf.csproj"]
+			},
+			"linux": {
+				"command": "dotnet", 
+				"args": ["build", "AzTagger.Gtk/AzTagger.Gtk.csproj"]
+			}
+		},
+		{
+			"label": "build: wpf (windows only)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["build", "AzTagger.Wpf/AzTagger.Wpf.csproj"],
+			"group": "build",
+			"problemMatcher": ["$msCompile"],
+			"windows": {
+				"command": "dotnet"
+			},
+			"linux": {
+				"command": "echo",
+				"args": ["Skipping WPF build on non-Windows platform"]
+			},
+			"osx": {
+				"command": "echo",
+				"args": ["Skipping WPF build on non-Windows platform"]
+			}
+		},
+		{
+			"label": "build: mac",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["build", "AzTagger.Mac/AzTagger.Mac.csproj"],
+			"group": "build",
+			"problemMatcher": ["$msCompile"]
+		},
+		{
+			"label": "build: gtk",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["build", "AzTagger.Gtk/AzTagger.Gtk.csproj"],
+			"group": "build",
+			"problemMatcher": ["$msCompile"]
+		},
+		{
+			"label": "build: core",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["build", "AzTagger.Core/AzTagger.Core.csproj"],
+			"group": "build",
+			"problemMatcher": ["$msCompile"]
+		},
+		{
+			"label": "build: app",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["build", "AzTagger.App/AzTagger.App.csproj"],
+			"group": "build",
+			"problemMatcher": ["$msCompile"]
+		},
+
+		// ===== RUN TASKS =====
+		{
+			"label": "run: wpf (windows only)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["run", "--project", "AzTagger.Wpf/AzTagger.Wpf.csproj"],
+			"group": "none",
+			"dependsOn": "build: wpf (windows only)",
+			"windows": {
+				"command": "dotnet"
+			},
+			"linux": {
+				"command": "echo",
+				"args": ["Cannot run WPF on non-Windows platform"]
+			},
+			"osx": {
+				"command": "echo",
+				"args": ["Cannot run WPF on non-Windows platform"]
+			}
+		},
+		{
+			"label": "run: mac",
+			"type": "shell",
+			"command": "open",
+			"args": ["AzTagger.Mac/bin/Debug/net9.0/AzTagger.Mac.app"],
+			"group": "none",
+			"dependsOn": "build: mac"
+		},
+		{
+			"label": "run: gtk",
+			"type": "shell",
+			"command": "./AzTagger.Gtk/bin/Debug/net9.0/AzTagger.Gtk",
+			"args": [],
+			"group": "none",
+			"dependsOn": "build: gtk"
+		},
+
+		// ===== CLEAN TASKS =====
+		{
+			"label": "clean: all",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["clean"],
+			"group": "none",
+			"problemMatcher": []
+		},
+		{
+			"label": "clean: wpf",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["clean", "AzTagger.Wpf/AzTagger.Wpf.csproj"],
+			"group": "none",
+			"problemMatcher": []
+		},
+		{
+			"label": "clean: mac",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["clean", "AzTagger.Mac/AzTagger.Mac.csproj"],
+			"group": "none",
+			"problemMatcher": []
+		},
+		{
+			"label": "clean: gtk",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["clean", "AzTagger.Gtk/AzTagger.Gtk.csproj"],
+			"group": "none",
+			"problemMatcher": []
+		},
+
+		// ===== PUBLISH TASKS - WINDOWS =====
+		{
+			"label": "publish: wpf-win-x64",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"publish",
+				"AzTagger.Wpf/AzTagger.Wpf.csproj",
+				"-c", "Release",
+				"-r", "win-x64",
+				"--self-contained", "true",
+				"-p:PublishSingleFile=true",
+				"-p:PublishTrimmed=false",
+				"-o", "./publish/wpf-win-x64"
+			],
+			"group": "none",
+			"problemMatcher": ["$msCompile"]
+		},
+		{
+			"label": "publish: wpf-win-arm64",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"publish",
+				"AzTagger.Wpf/AzTagger.Wpf.csproj",
+				"-c", "Release",
+				"-r", "win-arm64",
+				"--self-contained", "true",
+				"-p:PublishSingleFile=true",
+				"-p:PublishTrimmed=false",
+				"-o", "./publish/wpf-win-arm64"
+			],
+			"group": "none",
+			"problemMatcher": ["$msCompile"]
+		},
+
+		// ===== PUBLISH TASKS - MACOS =====
+		{
+			"label": "publish: mac-x64",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"publish",
+				"AzTagger.Mac/AzTagger.Mac.csproj",
+				"-c", "Release",
+				"-r", "osx-x64",
+				"--self-contained", "true",
+				"-p:PublishSingleFile=true",
+				"-p:PublishTrimmed=false",
+				"-o", "./publish/mac-x64"
+			],
+			"group": "none",
+			"problemMatcher": ["$msCompile"]
+		},
+		{
+			"label": "publish: mac-arm64",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"publish",
+				"AzTagger.Mac/AzTagger.Mac.csproj",
+				"-c", "Release",
+				"-r", "osx-arm64",
+				"--self-contained", "true",
+				"-p:PublishSingleFile=true",
+				"-p:PublishTrimmed=false",
+				"-o", "./publish/mac-arm64"
+			],
+			"group": "none",
+			"problemMatcher": ["$msCompile"]
+		},
+
+		// ===== PUBLISH TASKS - LINUX =====
+		{
+			"label": "publish: gtk-linux-x64",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"publish",
+				"AzTagger.Gtk/AzTagger.Gtk.csproj",
+				"-c", "Release",
+				"-r", "linux-x64",
+				"--self-contained", "true",
+				"-p:PublishSingleFile=true",
+				"-p:PublishTrimmed=false",
+				"-o", "./publish/gtk-linux-x64"
+			],
+			"group": "none",
+			"problemMatcher": ["$msCompile"]
+		},
+		{
+			"label": "publish: gtk-linux-arm64",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"publish",
+				"AzTagger.Gtk/AzTagger.Gtk.csproj",
+				"-c", "Release",
+				"-r", "linux-arm64",
+				"--self-contained", "true",
+				"-p:PublishSingleFile=true",
+				"-p:PublishTrimmed=false",
+				"-o", "./publish/gtk-linux-arm64"
+			],
+			"group": "none",
+			"problemMatcher": ["$msCompile"]
+		},
+
+		// ===== COMPOSITE PUBLISH TASKS =====
+		{
+			"label": "publish: all-windows",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"publish: wpf-win-x64",
+				"publish: wpf-win-arm64"
+			],
+			"group": "none"
+		},
+		{
+			"label": "publish: all-macos",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"publish: mac-x64",
+				"publish: mac-arm64"
+			],
+			"group": "none"
+		},
+		{
+			"label": "publish: all-linux",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"publish: gtk-linux-x64",
+				"publish: gtk-linux-arm64"
+			],
+			"group": "none"
+		},
+		{
+			"label": "publish: all-platforms",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"publish: all-windows",
+				"publish: all-macos", 
+				"publish: all-linux"
+			],
+			"group": "none"
+		},
+
+		// ===== UTILITY TASKS =====
+		{
+			"label": "restore",
+			"type": "shell",
+			"command": "dotnet",
+			"args": ["restore"],
+			"group": "none",
+			"problemMatcher": []
+		},
+		{
+			"label": "clean-publish",
+			"type": "shell",
+			"command": "rm",
+			"args": ["-rf", "./publish"],
+			"group": "none",
+			"windows": {
+				"command": "powershell",
+				"args": ["-Command", "Remove-Item -Recurse -Force ./publish -ErrorAction SilentlyContinue"]
+			}
+		}
+	]
+}

@@ -400,3 +400,5 @@ FodyWeavers.xsd
 # Other
 local.*
 *.local.*
+TODO.*
+Temp/

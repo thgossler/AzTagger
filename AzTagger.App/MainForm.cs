@@ -158,6 +158,12 @@ resources
 
         _tagTemplates = TagTemplatesService.Load();
 
+        // Create MenuBar with File menu and platform-specific Exit item with keyboard shortcuts
+        CreateMenuBar();
+
+        // Add keyboard shortcut handlers
+        SetupKeyboardShortcuts();
+
         _txtSearchQuery = new TextArea { Height = 80 };
         _txtSearchQuery.TextChanged += new EventHandler<EventArgs>((_, _) =>
         {
@@ -522,7 +528,107 @@ resources
 
         Content = layout;
 
-        Closed += (_, _) => SaveSettings();
+        // Save settings and quit when the window is closed
+        Closing += (_, _) => SaveSettings();
+        Closed += (_, _) => Application.Instance.Quit();
+
+        Shown += (_, _) => ResizeResultsGridColumns();
+        SizeChanged += (_, _) => ResizeResultsGridColumns();
+    }
+
+    private void CreateMenuBar()
+    {
+        // Create Close command with Command+W for macOS
+        var closeCommand = new Command
+        {
+            MenuText = "&Close",
+            ToolBarText = "Close",
+            Shortcut = Application.Instance.CommonModifier | Keys.W  // Cmd+W on Mac, Ctrl+W on others
+        };
+        closeCommand.Executed += (_, _) => ExitApplication();
+
+        // Create Exit command with platform-specific keyboard shortcuts
+        var exitCommand = new Command
+        {
+            MenuText = "E&xit",
+            ToolBarText = "Exit",
+            Shortcut = Application.Instance.CommonModifier | Keys.Q  // Cmd+Q on Mac, Ctrl+Q on others
+        };
+        exitCommand.Executed += (_, _) => ExitApplication();
+
+        // Create additional exit command for Alt+F4 (Windows standard)
+        var altF4ExitCommand = new Command
+        {
+            Shortcut = Keys.Alt | Keys.F4
+        };
+        altF4ExitCommand.Executed += (_, _) => ExitApplication();
+
+        // Create About menu item for macOS application menu
+        var aboutItem = new ButtonMenuItem { Text = "&About AzTagger..." };
+        aboutItem.Click += (_, _) => ShowAboutDialog();
+
+        // Create File menu
+        var fileMenu = new SubMenuItem
+        {
+            Text = "&File",
+            Items = { closeCommand, exitCommand }
+        };
+
+        // Create MenuBar and add File menu
+        var menuBar = new MenuBar
+        {
+            Items = { fileMenu }
+        };
+
+        // Set required items for proper macOS menu handling
+        menuBar.QuitItem = exitCommand;  // This populates the "Quit AzTagger" item
+        menuBar.AboutItem = aboutItem;   // This populates the "About AzTagger" item and prevents empty menu items
+
+        // Add application commands for keyboard shortcuts (only add Alt+F4, not duplicate Cmd+Q)
+        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+        {
+            menuBar.ApplicationItems.Add(altF4ExitCommand);
+        }
+
+        Menu = menuBar;
+    }
+
+    private void SetupKeyboardShortcuts()
+    {
+        // Handle Escape key to close application
+        KeyDown += (_, e) =>
+        {
+            if (e.Key == Keys.Escape)
+            {
+                ExitApplication();
+                e.Handled = true;
+            }
+        };
+    }
+
+    private void ExitApplication()
+    {
+        SaveSettings();
+        Application.Instance.Quit();
+    }
+
+    private void ResizeResultsGridColumns()
+    {
+        if (_gvwResults.Columns.Count == 0)
+            return;
+        // Subtract a small tolerance to avoid scrollbars
+        int tolerance = 10; // px
+        int totalWidth = _gvwResults.Width - tolerance;
+        if (totalWidth <= 0) return;
+        int colCount = _gvwResults.Columns.Count;
+        int colWidth = totalWidth / colCount;
+        int remainder = totalWidth % colCount;
+        for (int i = 0; i < colCount; i++)
+        {
+            // Distribute remainder to the first columns
+            int width = colWidth + (i < remainder ? 1 : 0);
+            _gvwResults.Columns[i].Width = width;
+        }
     }
 
     private async Task EnsureSignedInAsync()
@@ -1128,5 +1234,44 @@ resources
             return string.Join("\n", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
         }
         return value?.ToString() ?? string.Empty;
+    }
+
+    private void ShowAboutDialog()
+    {
+        // Get the version from the assembly
+        var version = GetType().Assembly.GetName().Version?.ToString() ?? "Unknown";
+        
+        var aboutDialog = new Dialog
+        {
+            Title = "About AzTagger",
+            ClientSize = new Size(350, 200),
+            Resizable = false
+        };
+
+        var content = new StackLayout
+        {
+            Orientation = Orientation.Vertical,
+            Spacing = 10,
+            Padding = 20,
+            Items =
+            {
+                new Label { Text = "AzTagger", Font = new Font(FontFamilies.Sans, 18, FontStyle.Bold), TextAlignment = TextAlignment.Center },
+                new Label { Text = $"Version {version}", TextAlignment = TextAlignment.Center },
+                new Label { Text = "A tool for querying and managing Azure resources and tags.", TextAlignment = TextAlignment.Center, Wrap = WrapMode.Word },
+                new StackLayout
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 10,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    Items =
+                    {
+                        new Button { Text = "OK", Command = new Command((_, _) => aboutDialog.Close()) }
+                    }
+                }
+            }
+        };
+
+        aboutDialog.Content = content;
+        aboutDialog.ShowModal(this);
     }
 }

@@ -16,7 +16,13 @@ public static class Program
             var platform = new Eto.GtkSharp.Platform();
             var app = new Application(platform);
             app.Terminating += (_, _) => LoggingService.CloseAndFlush();
-            app.Run(new MainForm());
+            
+            // Create the main form and set it as the application's main form
+            // This ensures the application quits when the main form is closed
+            var mainForm = new MainForm();
+            app.MainForm = mainForm;
+            
+            app.Run(mainForm);
         }
         catch (Exception ex)
         {
