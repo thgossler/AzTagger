@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -41,6 +43,18 @@ public class MainForm : Form
     private readonly TextBox _txtQuickFilter2Text;
     private readonly Label _lblResultsCount;
 
+    // Delayed filter timers
+    private System.Threading.Timer? _quickFilter1Timer;
+    private System.Threading.Timer? _quickFilter2Timer;
+
+    // Pagination controls
+    private readonly Button _btnFirstPage;
+    private readonly Button _btnPreviousPage;
+    private readonly Button _btnNextPage;
+    private readonly Button _btnLastPage;
+    private readonly Label _lblPageInfo;
+    private readonly ComboBox _cboPageSize;
+
     private readonly LinkButton _lnkRegExDocs;
     private readonly LinkButton _lnkResourceGraphDocs;
     private readonly LinkButton _lnkGitHub;
@@ -65,8 +79,8 @@ public class MainForm : Form
 
     private List<TagTemplate> _tagTemplates = new();
 
-    private readonly ObservableCollection<Resource> _results = new();
     private readonly ObservableCollection<TagEntry> _tags = new();
+    private readonly PaginatedResourceCollection _paginatedResults = new();
     private List<Resource> _allResults = new();
 
     private const string BaseQuery = """
@@ -164,7 +178,21 @@ resources
         // Add keyboard shortcut handlers
         SetupKeyboardShortcuts();
 
-        _txtSearchQuery = new TextArea { Height = 80 };
+        _txtSearchQuery = new TextArea 
+        { 
+            Height = 80,
+            SpellCheck = false,
+            TextReplacements = TextReplacements.None
+        };
+        
+        // Ensure text replacements are thoroughly disabled for macOS
+        _txtSearchQuery.GotFocus += (_, _) => 
+        {
+            // Force disable all text replacements when the control gets focus
+            _txtSearchQuery.TextReplacements = TextReplacements.None;
+            // Also explicitly disable spell check to prevent any interference
+            _txtSearchQuery.SpellCheck = false;
+        };
         _txtSearchQuery.TextChanged += new EventHandler<EventArgs>((_, _) =>
         {
             var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "").Trim();
@@ -222,7 +250,7 @@ resources
         int resultsRowCount = 10;
         int tagsRowCount = 6;
         int rowHeight = 28; // Typical row height for Eto.Forms GridView
-        _gvwResults = new GridView { DataStore = _results, AllowMultipleSelection = true, Height = resultsRowCount * rowHeight };
+        _gvwResults = new GridView { DataStore = _paginatedResults.DisplayedItems, AllowMultipleSelection = true, Height = resultsRowCount * rowHeight };
         // Dynamically add columns for all Resource properties except CombinedTagsFormatted
         var resourceProps = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted));
@@ -347,8 +375,36 @@ resources
 
         _txtQuickFilter1Text = new TextBox { Width = 180 };
         _txtQuickFilter2Text = new TextBox { Width = 180 };
-        _txtQuickFilter1Text.TextChanged += (_, _) => FilterResults();
-        _txtQuickFilter2Text.TextChanged += (_, _) => FilterResults();
+        _txtQuickFilter1Text.TextChanged += (_, _) => ScheduleDelayedFilter(1);
+        _txtQuickFilter2Text.TextChanged += (_, _) => ScheduleDelayedFilter(2);
+
+        // Initialize pagination controls
+        _btnFirstPage = new Button { Text = "⏮", ToolTip = "First page" };
+        _btnPreviousPage = new Button { Text = "◀", ToolTip = "Previous page" };
+        _btnNextPage = new Button { Text = "▶", ToolTip = "Next page" };
+        _btnLastPage = new Button { Text = "⏭", ToolTip = "Last page" };
+        _lblPageInfo = new Label { Text = "Page 0 of 0" };
+        _cboPageSize = new ComboBox { 
+            DataStore = new[] { "100", "500", "1000", "2000", "5000" }, 
+            SelectedIndex = 2,
+            ToolTip = "Number of items to display per page"
+        };
+
+        _btnFirstPage.Click += (_, _) => { _paginatedResults.GoToPage(0); UpdatePaginationControls(); };
+        _btnPreviousPage.Click += (_, _) => { _paginatedResults.PreviousPage(); UpdatePaginationControls(); };
+        _btnNextPage.Click += (_, _) => { _paginatedResults.NextPage(); UpdatePaginationControls(); };
+        _btnLastPage.Click += (_, _) => { _paginatedResults.GoToPage(_paginatedResults.TotalPages - 1); UpdatePaginationControls(); };
+        _cboPageSize.SelectedIndexChanged += (_, _) => 
+        {
+            if (int.TryParse(_cboPageSize.SelectedValue?.ToString(), out int pageSize))
+            {
+                _paginatedResults.SetPageSize(pageSize);
+                UpdatePaginationControls();
+            }
+        };
+
+        // Wire up paginated collection events
+        _paginatedResults.FilterChanged += (_, _) => UpdatePaginationControls();
 
         _quickFilterContextMenu = CreateQuickFilterContextMenu(_txtQuickFilter1Text);
         _txtQuickFilter1Text.MouseUp += (s, e) => { if (e.Buttons == MouseButtons.Alternate) _quickFilterContextMenu.Show(_txtQuickFilter1Text); };
@@ -476,7 +532,25 @@ resources
         layout.AddRow(new TableRow(_cboQuickFilter1Column, _txtQuickFilter1Text, _cboQuickFilter2Column, _txtQuickFilter2Text));
         var resultsPanel = new DynamicLayout { DefaultSpacing = new Size(5, 5) };
         resultsPanel.AddRow(new TableRow(_gvwResults));
-        resultsPanel.AddRow(_lblResultsCount);
+        
+        var paginationRow = new StackLayout
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 5,
+            Items =
+            {
+                _lblResultsCount,
+                null, // spacer
+                new Label { Text = "Page size:" },
+                _cboPageSize,
+                _btnFirstPage,
+                _btnPreviousPage,
+                _lblPageInfo,
+                _btnNextPage,
+                _btnLastPage
+            }
+        };
+        resultsPanel.AddRow(paginationRow);
 
         var tagsPanel = new DynamicLayout { DefaultSpacing = new Size(5, 5) };
         tagsPanel.AddRow(new TableRow(_gvwTags));
@@ -532,7 +606,13 @@ resources
         Closing += (_, _) => SaveSettings();
         Closed += (_, _) => Application.Instance.Quit();
 
-        Shown += (_, _) => ResizeResultsGridColumns();
+        Shown += (_, _) => 
+        {
+            ResizeResultsGridColumns();
+            // Additional safeguard: ensure text replacements are disabled after the form is fully loaded
+            _txtSearchQuery.TextReplacements = TextReplacements.None;
+            _txtSearchQuery.SpellCheck = false;
+        };
         SizeChanged += (_, _) => ResizeResultsGridColumns();
     }
 
@@ -601,6 +681,32 @@ resources
             if (e.Key == Keys.Escape)
             {
                 ExitApplication();
+                e.Handled = true;
+            }
+            // Handle Page Up/Down for pagination
+            else if (e.Key == Keys.PageUp && e.Modifiers == Keys.None)
+            {
+                _paginatedResults.PreviousPage();
+                UpdatePaginationControls();
+                e.Handled = true;
+            }
+            else if (e.Key == Keys.PageDown && e.Modifiers == Keys.None)
+            {
+                _paginatedResults.NextPage();
+                UpdatePaginationControls();
+                e.Handled = true;
+            }
+            // Handle Ctrl+Home/End for first/last page
+            else if (e.Key == Keys.Home && e.Modifiers == Keys.Control)
+            {
+                _paginatedResults.GoToPage(0);
+                UpdatePaginationControls();
+                e.Handled = true;
+            }
+            else if (e.Key == Keys.End && e.Modifiers == Keys.Control)
+            {
+                _paginatedResults.GoToPage(_paginatedResults.TotalPages - 1);
+                UpdatePaginationControls();
                 e.Handled = true;
             }
         };
@@ -685,7 +791,8 @@ resources
             var query = BuildQuery();
             var items = (await _azureService.QueryResourcesAsync(query)).ToList();
             _allResults = items;
-            FilterResults();
+            _paginatedResults.SetAllItems(_allResults);
+            UpdatePaginationControls();
             SaveRecentSearch(_txtSearchQuery.Text);
         }
         catch (Exception ex)
@@ -823,7 +930,7 @@ resources
         var scopes = new[] { "User.Read" };
         var graphClient = new GraphServiceClient(_azureService.CurrentCredential, scopes);
         var user = await graphClient.Me.GetAsync();
-        return user.Mail ?? user.UserPrincipalName ?? Environment.UserName;
+        return user?.Mail ?? user?.UserPrincipalName ?? Environment.UserName;
     }
 
     private void OpenSelectedResourceInPortal()
@@ -923,7 +1030,7 @@ resources
         return new ContextMenu { Items = { excludeTemplate, excludeCurrent } };
     }
 
-    private static object GetPropertyValue(Resource resource, string propertyName)
+    private static object? GetPropertyValue(Resource resource, string propertyName)
     {
         var prop = typeof(Resource).GetProperty(propertyName);
         var value = prop?.GetValue(resource);
@@ -941,49 +1048,106 @@ resources
 
     private void FilterResults()
     {
-        IEnumerable<Resource> filtered = _allResults;
+        var filter1 = ResourceFilters.CreateRegexFilter(
+            _cboQuickFilter1Column.SelectedIndex > 0 ? _cboQuickFilter1Column.SelectedValue?.ToString() : null,
+            _txtQuickFilter1Text.Text);
+            
+        var filter2 = ResourceFilters.CreateRegexFilter(
+            _cboQuickFilter2Column.SelectedIndex > 0 ? _cboQuickFilter2Column.SelectedValue?.ToString() : null,
+            _txtQuickFilter2Text.Text);
 
-        if (_cboQuickFilter1Column.SelectedIndex > 0 && !string.IsNullOrWhiteSpace(_txtQuickFilter1Text.Text))
-        {
-            try
-            {
-                var regex = new Regex(_txtQuickFilter1Text.Text, RegexOptions.IgnoreCase);
-                var column = _cboQuickFilter1Column.SelectedValue.ToString();
-                filtered = filtered.Where(r => regex.IsMatch(GetPropertyValue(r, column)?.ToString() ?? string.Empty));
-            }
-            catch
-            {
-                // ignore invalid regex
-            }
-        }
-
-        if (_cboQuickFilter2Column.SelectedIndex > 0 && !string.IsNullOrWhiteSpace(_txtQuickFilter2Text.Text))
-        {
-            try
-            {
-                var regex = new Regex(_txtQuickFilter2Text.Text, RegexOptions.IgnoreCase);
-                var column = _cboQuickFilter2Column.SelectedValue.ToString();
-                filtered = filtered.Where(r => regex.IsMatch(GetPropertyValue(r, column)?.ToString() ?? string.Empty));
-            }
-            catch
-            {
-            }
-        }
-
-        _results.Clear();
-        foreach (var r in filtered)
-            _results.Add(r);
-
-        // Force GridView to refresh in case of UI update issues
-        _gvwResults.DataStore = null;
-        _gvwResults.DataStore = _results;
-
-        UpdateResultsCountLabel();
+        _paginatedResults.SetFilters(filter1, filter2);
+        UpdatePaginationControls();
     }
 
-    private void UpdateResultsCountLabel()
+    private void ScheduleDelayedFilter(int filterNumber)
     {
-        _lblResultsCount.Text = $"Items: {_results.Count}";
+        if (filterNumber == 1)
+        {
+            // Cancel any existing timer
+            _quickFilter1Timer?.Dispose();
+            
+            // Only schedule filtering if the dropdown has a non-empty value selected
+            if (_cboQuickFilter1Column.SelectedIndex > 0)
+            {
+                _quickFilter1Timer = new System.Threading.Timer(
+                    _ => Application.Instance.Invoke(FilterResults),
+                    null,
+                    TimeSpan.FromMilliseconds(250),
+                    TimeSpan.FromMilliseconds(-1) // Don't repeat
+                );
+            }
+        }
+        else if (filterNumber == 2)
+        {
+            // Cancel any existing timer
+            _quickFilter2Timer?.Dispose();
+            
+            // Only schedule filtering if the dropdown has a non-empty value selected
+            if (_cboQuickFilter2Column.SelectedIndex > 0)
+            {
+                _quickFilter2Timer = new System.Threading.Timer(
+                    _ => Application.Instance.Invoke(FilterResults),
+                    null,
+                    TimeSpan.FromMilliseconds(250),
+                    TimeSpan.FromMilliseconds(-1) // Don't repeat
+                );
+            }
+        }
+    }
+
+    private void ShowAboutDialog()
+    {
+        var version = GetType().Assembly.GetName().Version?.ToString() ?? "Unknown";
+        
+        var aboutDialog = new Dialog
+        {
+            Title = "About AzTagger",
+            ClientSize = new Size(350, 200),
+            Resizable = false
+        };
+
+        var content = new StackLayout
+        {
+            Orientation = Orientation.Vertical,
+            Spacing = 10,
+            Padding = 20,
+            Items =
+            {
+                new Label { Text = "AzTagger", Font = new Font(FontFamilies.Sans, 18, FontStyle.Bold), TextAlignment = TextAlignment.Center },
+                new Label { Text = $"Version {version}", TextAlignment = TextAlignment.Center },
+                new Label { Text = "A tool for querying and managing Azure resources and tags.", TextAlignment = TextAlignment.Center, Wrap = WrapMode.Word },
+                new StackLayout
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 10,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    Items =
+                    {
+                        new Button { Text = "OK", Command = new Command((_, _) => aboutDialog.Close()) }
+                    }
+                }
+            }
+        };
+
+        aboutDialog.Content = content;
+        aboutDialog.ShowModal(this);
+    }
+
+    private void SaveSettings()
+    {
+        _settings.WindowSize = new Settings.WinSize(ClientSize.Width, ClientSize.Height);
+        _settings.WindowLocation = new Settings.WinLocation(Location.X, Location.Y);
+        _settings.LastSearchQuery = _txtSearchQuery.Text;
+        _settings.LastQuickFilter1Text = _txtQuickFilter1Text.Text;
+        _settings.LastQuickFilter2Text = _txtQuickFilter2Text.Text;
+        _settings.SplitterPosition = _splitter.Position;
+        
+        // Dispose timers
+        _quickFilter1Timer?.Dispose();
+        _quickFilter2Timer?.Dispose();
+        
+        SettingsService.Save(_settings);
     }
 
     private void LoadRecentSearches()
@@ -1063,14 +1227,29 @@ resources
         LoadSavedSearches();
     }
 
+    private void UpdatePaginationControls()
+    {
+        var currentPage = _paginatedResults.CurrentPage + 1; // Convert to 1-based
+        var totalPages = _paginatedResults.TotalPages;
+        var totalItems = _paginatedResults.TotalFilteredCount;
+        
+        _lblPageInfo.Text = totalPages > 0 ? $"Page {currentPage} of {totalPages}" : "Page 0 of 0";
+        _lblResultsCount.Text = $"Results: {totalItems}";
+        
+        _btnFirstPage.Enabled = _paginatedResults.HasPreviousPage;
+        _btnPreviousPage.Enabled = _paginatedResults.HasPreviousPage;
+        _btnNextPage.Enabled = _paginatedResults.HasNextPage;
+        _btnLastPage.Enabled = _paginatedResults.HasNextPage;
+    }
+
     private void AddToFilterQuery(bool exclude)
     {
         if (_resultsContextRow < 0 || _resultsContextColumn == null)
             return;
-        if (_resultsContextRow >= _results.Count)
+        if (_resultsContextRow >= _paginatedResults.DisplayedItems.Count)
             return;
 
-        var item = _results[_resultsContextRow];
+        var item = _paginatedResults.DisplayedItems[_resultsContextRow];
         if (!_columnPropertyMap.TryGetValue(_resultsContextColumn, out var columnName))
             return;
 
@@ -1124,10 +1303,10 @@ resources
     {
         if (_resultsContextRow < 0 || _resultsContextColumn == null)
             return;
-        if (_resultsContextRow >= _results.Count)
+        if (_resultsContextRow >= _paginatedResults.DisplayedItems.Count)
             return;
 
-        var item = _results[_resultsContextRow];
+        var item = _paginatedResults.DisplayedItems[_resultsContextRow];
         if (!_columnPropertyMap.TryGetValue(_resultsContextColumn, out var columnName))
             return;
 
@@ -1165,6 +1344,7 @@ resources
             ? _allResults.OrderBy(r => GetPropertyValue(r, columnName)?.ToString()).ToList()
             : _allResults.OrderByDescending(r => GetPropertyValue(r, columnName)?.ToString()).ToList();
 
+        _paginatedResults.SetAllItems(_allResults);
         FilterResults();
     }
 
@@ -1182,7 +1362,7 @@ resources
             var updated = await _azureService.QueryResourcesAsync(query);
             foreach (var up in updated)
             {
-                var local = _results.FirstOrDefault(r => r.Id == up.Id);
+                var local = _allResults.FirstOrDefault(r => r.Id == up.Id);
                 if (local != null)
                 {
                     local.SubscriptionTags = up.SubscriptionTags;
@@ -1198,17 +1378,6 @@ resources
             LoggingService.LogError(ex, "Failed to refresh tags");
             MessageBox.Show(this, "Failed to refresh tags", MessageBoxButtons.OK, MessageBoxType.Error);
         }
-    }
-
-    private void SaveSettings()
-    {
-        _settings.WindowSize = new Settings.WinSize(ClientSize.Width, ClientSize.Height);
-        _settings.WindowLocation = new Settings.WinLocation(Location.X, Location.Y);
-        _settings.LastSearchQuery = _txtSearchQuery.Text;
-        _settings.LastQuickFilter1Text = _txtQuickFilter1Text.Text;
-        _settings.LastQuickFilter2Text = _txtQuickFilter2Text.Text;
-        _settings.SplitterPosition = _splitter.Position;
-        SettingsService.Save(_settings);
     }
 
     // Helper for displaying any property in the grid
@@ -1234,44 +1403,5 @@ resources
             return string.Join("\n", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
         }
         return value?.ToString() ?? string.Empty;
-    }
-
-    private void ShowAboutDialog()
-    {
-        // Get the version from the assembly
-        var version = GetType().Assembly.GetName().Version?.ToString() ?? "Unknown";
-        
-        var aboutDialog = new Dialog
-        {
-            Title = "About AzTagger",
-            ClientSize = new Size(350, 200),
-            Resizable = false
-        };
-
-        var content = new StackLayout
-        {
-            Orientation = Orientation.Vertical,
-            Spacing = 10,
-            Padding = 20,
-            Items =
-            {
-                new Label { Text = "AzTagger", Font = new Font(FontFamilies.Sans, 18, FontStyle.Bold), TextAlignment = TextAlignment.Center },
-                new Label { Text = $"Version {version}", TextAlignment = TextAlignment.Center },
-                new Label { Text = "A tool for querying and managing Azure resources and tags.", TextAlignment = TextAlignment.Center, Wrap = WrapMode.Word },
-                new StackLayout
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 10,
-                    HorizontalContentAlignment = HorizontalAlignment.Center,
-                    Items =
-                    {
-                        new Button { Text = "OK", Command = new Command((_, _) => aboutDialog.Close()) }
-                    }
-                }
-            }
-        };
-
-        aboutDialog.Content = content;
-        aboutDialog.ShowModal(this);
     }
 }
