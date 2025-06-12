@@ -32,6 +32,7 @@ public class PaginatedResourceCollection
     private Func<Resource, bool>? _filter2;
     
     public ObservableCollection<Resource> DisplayedItems => _displayedItems;
+    public IReadOnlyList<Resource> FilteredItems => _filteredItems;
     public int TotalFilteredCount => _totalFilteredCount;
     public int CurrentPage => _currentPage;
     public int PageSize => _pageSize;

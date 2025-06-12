@@ -1233,8 +1233,13 @@ resources
         var totalPages = _paginatedResults.TotalPages;
         var totalItems = _paginatedResults.TotalFilteredCount;
         
+        // Count different entity types in filtered results
+        var subscriptionCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Subscription");
+        var resourceGroupCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "ResourceGroup");
+        var resourceCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Resource");
+        
         _lblPageInfo.Text = totalPages > 0 ? $"Page {currentPage} of {totalPages}" : "Page 0 of 0";
-        _lblResultsCount.Text = $"Results: {totalItems}";
+        _lblResultsCount.Text = $"Results: {totalItems} (Subscriptions: {subscriptionCount}, Resource Groups: {resourceGroupCount}, Resources: {resourceCount})";
         
         _btnFirstPage.Enabled = _paginatedResults.HasPreviousPage;
         _btnPreviousPage.Enabled = _paginatedResults.HasPreviousPage;
