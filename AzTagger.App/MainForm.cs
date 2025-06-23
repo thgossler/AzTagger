@@ -798,7 +798,34 @@ resources
         catch (Exception ex)
         {
             LoggingService.LogError(ex, "Search failed");
-            MessageBox.Show(this, "Search failed", MessageBoxButtons.OK, MessageBoxType.Error);
+            
+            // Check if the error is due to missing Azure context configuration
+            if (ex.Message.Contains("TenantId is not set in the settings") || 
+                ex.Message.Contains("TenantId") && ex.Message.Contains("settings"))
+            {
+                var result = MessageBox.Show(this, 
+                    "Azure context is not configured. Would you like to configure it now?",
+                    "Configuration Required", 
+                    MessageBoxButtons.YesNo, 
+                    MessageBoxType.Question);
+                
+                if (result == DialogResult.Yes)
+                {
+                    var dlg = new AzureContextConfigDialog(_settings, _azureService);
+                    if (dlg.ShowModal(this))
+                    {
+                        SettingsService.Save(_settings);
+                        // Optionally retry the search automatically after configuration
+                        _btnSearch.Enabled = true;
+                        await SearchAsync();
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show(this, "Search failed", MessageBoxButtons.OK, MessageBoxType.Error);
+            }
         }
         finally
         {
