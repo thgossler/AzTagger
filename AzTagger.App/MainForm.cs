@@ -37,9 +37,9 @@ public class MainForm : Form
     private readonly DropDown _cboRecentSearches;
     private readonly DropDown _cboSavedQueries;
 
-    private readonly ComboBox _cboQuickFilter1Column;
+    private readonly DropDown _cboQuickFilter1Column;
     private readonly TextBox _txtQuickFilter1Text;
-    private readonly ComboBox _cboQuickFilter2Column;
+    private readonly DropDown _cboQuickFilter2Column;
     private readonly TextBox _txtQuickFilter2Text;
     private readonly Label _lblResultsCount;
 
@@ -414,8 +414,8 @@ resources
         _btnApplyTags = new Button { Text = "Apply Tags" };
         _btnApplyTags.Click += async (_, _) => await ApplyTagsAsync();
 
-        _cboQuickFilter1Column = new ComboBox { Width = GetDpiScaledWidth(50) };
-        _cboQuickFilter2Column = new ComboBox { Width = GetDpiScaledWidth(50) };
+        _cboQuickFilter1Column = new DropDown { Width = GetDpiScaledWidth(80) };
+        _cboQuickFilter2Column = new DropDown { Width = GetDpiScaledWidth(80) };
         var propertyNames = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted))
             .Select(p => p.Name).ToList();
@@ -608,7 +608,7 @@ resources
         
         var quickFilterRow = new TableLayout();
         var cboQuickFilter2WithMargin = new Panel { Padding = new Padding(GetDpiScaledWidth(4), 0, 0, 0), Content = _cboQuickFilter2Column };
-        quickFilterRow.Rows.Add(new TableRow(new TableCell(_cboQuickFilter1Column, true), new TableCell(_txtQuickFilter1Text, true), new TableCell(cboQuickFilter2WithMargin, true), new TableCell(_txtQuickFilter2Text, true), new TableCell(null, true)));
+        quickFilterRow.Rows.Add(new TableRow(new TableCell(_cboQuickFilter1Column, false), new TableCell(_txtQuickFilter1Text, true), new TableCell(cboQuickFilter2WithMargin, false), new TableCell(_txtQuickFilter2Text, true), new TableCell(null, true)));
         layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch));
         
         // Results panel with grid that resizes and fixed pagination at bottom
