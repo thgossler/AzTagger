@@ -596,12 +596,12 @@ resources
         };
         recentSavedRow.Rows.Add(new TableRow(
             new TableCell(_cboRecentSearches, true),  // scaleWidth = true for both
-            new TableCell(new Panel { Width = GetDpiScaledWidth(2) }, false), // 2px separator
-            new TableCell(_cboSavedQueries, true)
+            new TableCell(new Panel { Width = GetDpiScaledWidth(3) }, false), // 2px separator
+            new TableCell(_cboSavedQueries, false)
         ));
         // Create custom sizing by setting specific widths relative to parent
         _cboRecentSearches.Width = -1; // Use default for now, will be managed by TableLayout
-        _cboSavedQueries.Width = -1;
+        _cboSavedQueries.Width = GetDpiScaledWidth(150); // Fixed width for saved queries dropdown
         layout.Items.Add(new StackLayoutItem(recentSavedRow, HorizontalAlignment.Stretch));
         
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Search Query:" } });
