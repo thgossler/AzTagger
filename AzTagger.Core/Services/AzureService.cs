@@ -109,6 +109,9 @@ public class AzureService
             }
         }
 
+        // Remove any existing context for this Azure context name to avoid duplicates
+        _signinContexts.RemoveAll(sc => sc.AzureContextName.Equals(_azContext.Name));
+        
         signinContext = new SigninContext { AzureContextName = _azContext.Name };
         _signinContexts.Add(signinContext);
 

@@ -414,8 +414,8 @@ resources
         _btnApplyTags = new Button { Text = "Apply Tags" };
         _btnApplyTags.Click += async (_, _) => await ApplyTagsAsync();
 
-        _cboQuickFilter1Column = new ComboBox { Width = GetDpiScaledWidth(150) };
-        _cboQuickFilter2Column = new ComboBox { Width = GetDpiScaledWidth(150) };
+        _cboQuickFilter1Column = new ComboBox { Width = GetDpiScaledWidth(50) };
+        _cboQuickFilter2Column = new ComboBox { Width = GetDpiScaledWidth(50) };
         var propertyNames = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted))
             .Select(p => p.Name).ToList();
