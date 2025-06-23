@@ -10,7 +10,7 @@ public class InputDialog : Dialog<string>
     public InputDialog(string title, string prompt)
     {
         Title = title;
-        ClientSize = new Size(400, 160);
+        ClientSize = new Size(400, 120);
         Resizable = false;
         Padding = 10;
 
