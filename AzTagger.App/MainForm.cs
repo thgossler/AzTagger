@@ -10,6 +10,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Graph;
+using Eto;
 using Eto.Drawing;
 using Eto.Forms;
 using AzTagger.Models;
@@ -746,9 +747,10 @@ resources
 
         var fileMenu = new SubMenuItem
         {
-            Text = "&File",
-            Items = { closeCommand, exitCommand }
+            Text = "&File"
         };
+
+        fileMenu.Items.Add(exitCommand);
 
         var menuBar = new MenuBar
         {
