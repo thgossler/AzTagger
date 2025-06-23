@@ -31,11 +31,11 @@ public class MainForm : Form
     private readonly Button _btnCopyQuery;
     private readonly Button _btnSaveQuery;
     private readonly Button _btnApplyTags;
-    private readonly ComboBox _cboTagTemplates;
+    private readonly DropDown _cboTagTemplates;
     private readonly Button _btnEditTemplates;
 
-    private readonly ComboBox _cboRecentSearches;
-    private readonly ComboBox _cboSavedQueries;
+    private readonly DropDown _cboRecentSearches;
+    private readonly DropDown _cboSavedQueries;
 
     private readonly ComboBox _cboQuickFilter1Column;
     private readonly TextBox _txtQuickFilter1Text;
@@ -265,10 +265,10 @@ resources
         _btnSaveQuery = new Button { Text = "Save Query" };
         _btnSaveQuery.Click += (_, _) => SaveQuery();
 
-        _cboRecentSearches = new ComboBox();
+        _cboRecentSearches = new DropDown();
         _cboRecentSearches.SelectedIndexChanged += (_, _) => OnRecentSearchSelected();
 
-        _cboSavedQueries = new ComboBox();
+        _cboSavedQueries = new DropDown();
         _cboSavedQueries.SelectedIndexChanged += (_, _) => OnSavedQuerySelected();
 
         var configureButton = new Button { Text = "Configure Azure Context" };
@@ -389,7 +389,7 @@ resources
             }
         };
 
-        _cboTagTemplates = new ComboBox { Width = GetDpiScaledWidth(200) }; // 2/3 of previous width (300 -> 200) with DPI scaling
+        _cboTagTemplates = new DropDown { Width = GetDpiScaledWidth(200) }; // 2/3 of previous width (300 -> 200) with DPI scaling
         _cboTagTemplates.SelectedIndexChanged += async (_, _) => await OnTagTemplateSelectedAsync();
 
         _btnEditTemplates = new Button { Text = "Edit Templates" };
@@ -416,7 +416,9 @@ resources
 
         _cboQuickFilter1Column = new ComboBox { Width = GetDpiScaledWidth(150) };
         _cboQuickFilter2Column = new ComboBox { Width = GetDpiScaledWidth(150) };
-        var propertyNames = typeof(Resource).GetProperties().Select(p => p.Name).ToList();
+        var propertyNames = typeof(Resource).GetProperties()
+            .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted))
+            .Select(p => p.Name).ToList();
         _cboQuickFilter1Column.DataStore = new List<string>(new[] { string.Empty }.Concat(propertyNames));
         _cboQuickFilter2Column.DataStore = new List<string>(new[] { string.Empty }.Concat(propertyNames));
         _cboQuickFilter1Column.SelectedIndexChanged += (_, _) => FilterResults();
