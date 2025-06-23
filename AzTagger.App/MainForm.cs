@@ -283,6 +283,7 @@ resources
 
         // Set up GridViews - remove fixed heights so they can resize with splitter
         _gvwResults = new GridView { DataStore = _paginatedResults.DisplayedItems, AllowMultipleSelection = true };
+        
         // Dynamically add columns for all Resource properties except CombinedTagsFormatted
         var resourceProps = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted));
@@ -304,10 +305,12 @@ resources
                 _ => GetDpiScaledWidth(150)
             };
             
+            var cell = new TextBoxCell { Binding = Binding.Delegate<Resource, string>(r => FormatPropertyForGrid(r, prop.Name)) };
+            
             GridColumn col = new GridColumn
             {
                 HeaderText = prop.Name,
-                DataCell = new TextBoxCell { Binding = Binding.Delegate<Resource, string>(r => FormatPropertyForGrid(r, prop.Name)) },
+                DataCell = cell,
                 CellToolTipBinding = Binding.Delegate<Resource, string>(r => FormatPropertyForTooltip(r, prop.Name)),
                 Sortable = true,
                 Width = defaultWidth
@@ -1704,9 +1707,126 @@ resources
         if (value is IDictionary<string, string> dict)
         {
             if (dict.Count == 0) return string.Empty;
-            return string.Join("\n", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
+            
+            const int maxLineWidth = 50;
+            const string indent = "    "; // 4 spaces for indentation
+            
+            var formattedLines = new List<string>();
+            
+            foreach (var kv in dict.OrderBy(kvp => kvp.Key))
+            {
+                // Format the key-value pair with potential wrapping
+                var keyValueLine = FormatKeyValueWithWrapping(kv.Key, kv.Value, maxLineWidth, indent);
+                formattedLines.Add(keyValueLine);
+            }
+            
+            return string.Join("\n", formattedLines);
         }
         return value?.ToString() ?? string.Empty;
+    }
+    
+    private static string FormatKeyValueWithWrapping(string key, string value, int maxLineWidth, string indent)
+    {
+        // Start with the key (we can't make it bold in plain text tooltips, but we can make it prominent)
+        var keyPart = $"{key}:";
+        var fullLine = $"{keyPart} {value}";
+        
+        // If the full line fits within the max width, return it as-is
+        if (fullLine.Length <= maxLineWidth)
+        {
+            return fullLine;
+        }
+        
+        var result = new List<string>();
+        var remainingValue = value;
+        var availableWidth = maxLineWidth - keyPart.Length - 1; // -1 for the space after colon
+        
+        // First line: try to fit as much of the value as possible after the key
+        if (remainingValue.Length <= availableWidth)
+        {
+            // Value fits on the same line as the key
+            result.Add($"{keyPart} {remainingValue}");
+        }
+        else
+        {
+            // Value needs to be wrapped - find the best break point
+            var breakIndex = FindBestBreakIndex(remainingValue, availableWidth);
+            var firstPart = remainingValue.Substring(0, breakIndex);
+            remainingValue = remainingValue.Substring(breakIndex);
+            
+            result.Add($"{keyPart} {firstPart}");
+            
+            // Continue with remaining value on indented lines
+            var indentedMaxWidth = maxLineWidth - indent.Length;
+            while (remainingValue.Length > 0)
+            {
+                if (remainingValue.Length <= indentedMaxWidth)
+                {
+                    // Remaining value fits on one indented line
+                    result.Add($"{indent}{remainingValue}");
+                    break;
+                }
+                else
+                {
+                    // Need to break the remaining value further
+                    var chunkBreakIndex = FindBestBreakIndex(remainingValue, indentedMaxWidth);
+                    var chunk = remainingValue.Substring(0, chunkBreakIndex);
+                    remainingValue = remainingValue.Substring(chunkBreakIndex);
+                    
+                    result.Add($"{indent}{chunk}");
+                }
+            }
+        }
+        
+        return string.Join("\n", result);
+    }
+    
+    private static int FindBestBreakIndex(string text, int maxLength)
+    {
+        if (text.Length <= maxLength)
+        {
+            return text.Length;
+        }
+        
+        // Priority 1: Break after '/' (good for URLs and file paths)
+        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
+        {
+            if (text[i] == '/' && i + 1 < text.Length)
+            {
+                return i + 1; // Include the '/' in the current line
+            }
+        }
+        
+        // Priority 2: Break before '@' (good for email addresses)
+        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
+        {
+            if (text[i] == '@')
+            {
+                return i; // Don't include the '@' in the current line
+            }
+        }
+        
+        // Priority 3: Break at word boundaries (spaces)
+        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 2; i--)
+        {
+            if (text[i] == ' ')
+            {
+                return i + 1; // Skip the space
+            }
+        }
+        
+        // Priority 4: Break after other common separators
+        var separators = new char[] { '-', '_', '.', ':', ';', ',', '&', '?', '=', '|', '\\' };
+        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
+        {
+            if (separators.Contains(text[i]) && i + 1 < text.Length)
+            {
+                return i + 1; // Include the separator in the current line
+            }
+        }
+        
+        // Last resort: Hard break at maxLength
+        return Math.Min(maxLength, text.Length);
     }
 
     private void CalculateInitialTagsPanelHeight()
