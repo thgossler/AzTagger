@@ -67,7 +67,11 @@ public class PaginatedResourceCollection
 
     public void GoToPage(int page)
     {
-        if (page < 0 || page >= TotalPages) return;
+        if (page < 0 || page >= TotalPages) 
+        {
+            return;
+        }
+        
         _currentPage = page;
         RefreshDisplayedItems();
     }
@@ -105,43 +109,82 @@ public class PaginatedResourceCollection
 
     private void ApplyFiltersAndRefresh()
     {
-        _filteredItems.Clear();
-        IEnumerable<Resource> filtered = _allItems;
-        
-        if (_filter1 != null)
+        try
         {
-            filtered = filtered.Where(_filter1);
+            _filteredItems.Clear();
+            IEnumerable<Resource> filtered = _allItems;
+            
+            if (_filter1 != null)
+            {
+                filtered = filtered.Where(_filter1);
+            }
+            
+            if (_filter2 != null)
+            {
+                filtered = filtered.Where(_filter2);
+            }
+            
+            _filteredItems.AddRange(filtered);
+            _totalFilteredCount = _filteredItems.Count;
+            
+            if (_currentPage >= TotalPages && TotalPages > 0)
+            {
+                _currentPage = TotalPages - 1;
+            }
+            
+            RefreshDisplayedItems();
+            FilterChanged?.Invoke(this, EventArgs.Empty);
         }
-        
-        if (_filter2 != null)
+        catch (Exception)
         {
-            filtered = filtered.Where(_filter2);
+            _filteredItems.Clear();
+            _totalFilteredCount = 0;
+            _displayedItems.Clear();
         }
-        
-        _filteredItems.AddRange(filtered);
-        _totalFilteredCount = _filteredItems.Count;
-        
-        if (_currentPage >= TotalPages && TotalPages > 0)
-        {
-            _currentPage = TotalPages - 1;
-        }
-        
-        RefreshDisplayedItems();
-        FilterChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void RefreshDisplayedItems()
     {
-        _displayedItems.Clear();
-        
-        if (_totalFilteredCount == 0) return;
-        
-        int startIndex = _currentPage * _pageSize;
-        int endIndex = Math.Min(startIndex + _pageSize, _totalFilteredCount);
-        
-        for (int i = startIndex; i < endIndex; i++)
+        try
         {
-            _displayedItems.Add(_filteredItems[i]);
+            _displayedItems.Clear();
+            
+            if (_totalFilteredCount == 0 || _filteredItems.Count == 0) 
+            {
+                return;
+            }
+            
+            int startIndex = _currentPage * _pageSize;
+            int endIndex = Math.Min(startIndex + _pageSize, _totalFilteredCount);
+            
+            // Additional bounds checking
+            if (startIndex >= _filteredItems.Count)
+            {
+                return;
+            }
+            
+            endIndex = Math.Min(endIndex, _filteredItems.Count);
+            
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (i >= 0 && i < _filteredItems.Count)
+                {
+                    var resource = _filteredItems[i];
+                    _displayedItems.Add(resource);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            _displayedItems.Clear();
+        }
+        catch (Exception)
+        {
+            _displayedItems.Clear();
         }
     }
 

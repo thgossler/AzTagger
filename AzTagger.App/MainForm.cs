@@ -314,6 +314,12 @@ resources
                 var cell = _gvwResults.GetCellAt(e.Location);
                 if (cell != null && cell.RowIndex >= 0 && cell.Column != null)
                 {
+                    // Add bounds checking
+                    if (cell.RowIndex >= (_paginatedResults?.DisplayedItems?.Count ?? 0))
+                    {
+                        return;
+                    }
+                    
                     _resultsContextRow = cell.RowIndex;
                     _resultsContextColumn = cell.Column;
                     _gvwResults.UnselectAll();
@@ -695,8 +701,16 @@ resources
 
         Content = layout;
 
-        Closing += (_, _) => SaveSettings();
-        Closed += (_, _) => Application.Instance.Quit();
+        Closing += (_, _) => 
+        {
+            SaveSettings();
+            LoggingService.CloseAndFlush();
+        };
+        Closed += (_, _) => 
+        {
+            LoggingService.CloseAndFlush();
+            Application.Instance.Quit();
+        };
 
         Shown += (_, _) => 
         {
@@ -1042,9 +1056,75 @@ resources
     private void LoadTagsForSelection()
     {
         _tags.Clear();
-        if (_gvwResults.SelectedItem is Resource res && res.CombinedTags != null)
+        
+        var selectedResources = _gvwResults.SelectedItems.Cast<Resource>().ToList();
+        
+        if (selectedResources.Count == 0)
         {
-            foreach (var kvp in res.CombinedTags.OrderBy(k => k.Key))
+            return;
+        }
+
+        if (selectedResources.Count == 1)
+        {
+            // Single selection - show all tags
+            var res = selectedResources[0];
+            
+            if (res.CombinedTags != null)
+            {
+                foreach (var kvp in res.CombinedTags.OrderBy(k => k.Key))
+                {
+                    _tags.Add(new TagEntry { Key = kvp.Key, Value = kvp.Value });
+                }
+            }
+        }
+        else
+        {
+            // Multiple selection - show only common tags with same values
+            var commonTags = new Dictionary<string, string>();
+            
+            // Start with tags from the first resource
+            var firstResource = selectedResources[0];
+            
+            if (firstResource.CombinedTags != null)
+            {
+                foreach (var kvp in firstResource.CombinedTags)
+                {
+                    commonTags[kvp.Key] = kvp.Value;
+                }
+            }
+            
+            // Remove tags that don't exist in all other resources or have different values
+            for (int i = 1; i < selectedResources.Count; i++)
+            {
+                var resource = selectedResources[i];
+                
+                if (resource.CombinedTags == null)
+                {
+                    commonTags.Clear();
+                    break;
+                }
+                
+                var tagsToRemove = new List<string>();
+                foreach (var commonTag in commonTags)
+                {
+                    if (!resource.CombinedTags.TryGetValue(commonTag.Key, out var value))
+                    {
+                        tagsToRemove.Add(commonTag.Key);
+                    }
+                    else if (value != commonTag.Value)
+                    {
+                        tagsToRemove.Add(commonTag.Key);
+                    }
+                }
+                
+                foreach (var tagKey in tagsToRemove)
+                {
+                    commonTags.Remove(tagKey);
+                }
+            }
+            
+            // Add common tags to the display
+            foreach (var kvp in commonTags.OrderBy(k => k.Key))
             {
                 _tags.Add(new TagEntry { Key = kvp.Key, Value = kvp.Value });
             }
@@ -1460,29 +1540,48 @@ resources
 
     private void UpdatePaginationControls()
     {
-        var currentPage = _paginatedResults.CurrentPage + 1;
-        var totalPages = _paginatedResults.TotalPages;
-        var totalItems = _paginatedResults.TotalFilteredCount;
-        
-        var subscriptionCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Subscription");
-        var resourceGroupCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "ResourceGroup");
-        var resourceCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Resource");
-        
-        _lblPageInfo.Text = totalPages > 0 ? $"Page {currentPage} of {totalPages}" : "Page 0 of 0";
-        _lblResultsCount.Text = $"Results: {totalItems} (Subscriptions: {subscriptionCount}, Resource Groups: {resourceGroupCount}, Resources: {resourceCount})";
-        
-        _btnFirstPage.Enabled = _paginatedResults.HasPreviousPage;
-        _btnPreviousPage.Enabled = _paginatedResults.HasPreviousPage;
-        _btnNextPage.Enabled = _paginatedResults.HasNextPage;
-        _btnLastPage.Enabled = _paginatedResults.HasNextPage;
+        try
+        {
+            var currentPage = _paginatedResults.CurrentPage + 1;
+            var totalPages = _paginatedResults.TotalPages;
+            var totalItems = _paginatedResults.TotalFilteredCount;
+            
+            var subscriptionCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Subscription");
+            var resourceGroupCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "ResourceGroup");
+            var resourceCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Resource");
+            
+            _lblPageInfo.Text = totalPages > 0 ? $"Page {currentPage} of {totalPages}" : "Page 0 of 0";
+            _lblResultsCount.Text = $"Results: {totalItems} (Subscriptions: {subscriptionCount}, Resource Groups: {resourceGroupCount}, Resources: {resourceCount})";
+            
+            _btnFirstPage.Enabled = _paginatedResults.HasPreviousPage;
+            _btnPreviousPage.Enabled = _paginatedResults.HasPreviousPage;
+            _btnNextPage.Enabled = _paginatedResults.HasNextPage;
+            _btnLastPage.Enabled = _paginatedResults.HasNextPage;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            _lblPageInfo.Text = "Page 0 of 0";
+            _lblResultsCount.Text = "Results: 0";
+            _btnFirstPage.Enabled = false;
+            _btnPreviousPage.Enabled = false;
+            _btnNextPage.Enabled = false;
+            _btnLastPage.Enabled = false;
+        }
+        catch (Exception)
+        {
+        }
     }
 
     private void AddToFilterQuery(bool exclude)
     {
         if (_resultsContextRow < 0 || _resultsContextColumn == null)
+        {
             return;
+        }
         if (_resultsContextRow >= _paginatedResults.DisplayedItems.Count)
+        {
             return;
+        }
 
         var item = _paginatedResults.DisplayedItems[_resultsContextRow];
         if (!_columnPropertyMap.TryGetValue(_resultsContextColumn, out var columnName))
@@ -1507,7 +1606,9 @@ resources
     private void AddTagToFilterQuery(bool exclude)
     {
         if (_tagsContextRow < 0 || _tagsContextRow >= _tags.Count)
+        {
             return;
+        }
 
         var tag = _tags[_tagsContextRow];
         var selected = _gvwResults.SelectedItems.Cast<Resource>().ToList();
@@ -1537,9 +1638,13 @@ resources
     private void CopyContextCellValue()
     {
         if (_resultsContextRow < 0 || _resultsContextColumn == null)
+        {
             return;
+        }
         if (_resultsContextRow >= _paginatedResults.DisplayedItems.Count)
+        {
             return;
+        }
 
         var item = _paginatedResults.DisplayedItems[_resultsContextRow];
         if (!_columnPropertyMap.TryGetValue(_resultsContextColumn, out var columnName))
@@ -1555,7 +1660,10 @@ resources
     private void CopyTagContextCellValue()
     {
         if (_tagsContextRow < 0 || _tagsContextRow >= _tags.Count || _tagsContextColumn == null)
+        {
+            LoggingService.LogError(new InvalidOperationException(), $"CopyTagContextCellValue: Invalid context - RowIndex: {_tagsContextRow}, Tags.Count: {_tags.Count}, Column: {_tagsContextColumn != null}");
             return;
+        }
 
         var tag = _tags[_tagsContextRow];
         var value = _tagsContextColumn.HeaderText.Contains("Key") ? tag.Key : tag.Value;
@@ -1653,93 +1761,162 @@ resources
     
     private static string FormatKeyValueWithWrapping(string key, string value, int maxLineWidth, string indent)
     {
-        var keyPart = $"{key}:";
-        var fullLine = $"{keyPart} {value}";
-        
-        if (fullLine.Length <= maxLineWidth)
-        {
-            return fullLine;
-        }
-        
-        var result = new List<string>();
-        var remainingValue = value;
-        var availableWidth = maxLineWidth - keyPart.Length - 1;
-        
-        if (remainingValue.Length <= availableWidth)
-        {
-            result.Add($"{keyPart} {remainingValue}");
-        }
-        else
-        {
-            var breakIndex = FindBestBreakIndex(remainingValue, availableWidth);
-            var firstPart = remainingValue.Substring(0, breakIndex);
-            remainingValue = remainingValue.Substring(breakIndex);
-            
-            result.Add($"{keyPart} {firstPart}");
-            
-            var indentedMaxWidth = maxLineWidth - indent.Length;
-            while (remainingValue.Length > 0)
+        try {
+            // Add bounds checking to prevent negative calculations
+            if (maxLineWidth <= 0)
             {
-                if (remainingValue.Length <= indentedMaxWidth)
+                return $"{key}: {value}"; // Return simple format
+            }
+            
+            var keyPart = $"{key}:";
+            var fullLine = $"{keyPart} {value}";
+            
+            if (fullLine.Length <= maxLineWidth)
+            {
+                return fullLine;
+            }
+            
+            var result = new List<string>();
+            var remainingValue = value;
+            var availableWidth = maxLineWidth - keyPart.Length - 1;
+            
+            // Ensure availableWidth is positive
+            if (availableWidth <= 0)
+            {
+                return $"{key}: {value}"; // Return simple format
+            }
+            
+            if (remainingValue.Length <= availableWidth)
+            {
+                result.Add($"{keyPart} {remainingValue}");
+            }
+            else
+            {
+                var breakIndex = FindBestBreakIndex(remainingValue, availableWidth);
+                
+                if (breakIndex < 0 || breakIndex > remainingValue.Length)
                 {
-                    result.Add($"{indent}{remainingValue}");
-                    break;
+                    return $"{key}: {value}"; // Return simple format
                 }
-                else
+                
+                var firstPart = remainingValue.Substring(0, breakIndex);
+                remainingValue = remainingValue.Substring(breakIndex);
+                
+                result.Add($"{keyPart} {firstPart}");
+                
+                var indentedMaxWidth = maxLineWidth - indent.Length;
+                
+                // Ensure indentedMaxWidth is positive
+                if (indentedMaxWidth <= 0)
                 {
-                    var chunkBreakIndex = FindBestBreakIndex(remainingValue, indentedMaxWidth);
-                    var chunk = remainingValue.Substring(0, chunkBreakIndex);
-                    remainingValue = remainingValue.Substring(chunkBreakIndex);
-                    
-                    result.Add($"{indent}{chunk}");
+                    indentedMaxWidth = 10; // Minimum useful width
+                }
+                
+                while (remainingValue.Length > 0)
+                {
+                    if (remainingValue.Length <= indentedMaxWidth)
+                    {
+                        result.Add($"{indent}{remainingValue}");
+                        break;
+                    }
+                    else
+                    {
+                        var chunkBreakIndex = FindBestBreakIndex(remainingValue, indentedMaxWidth);
+                        
+                        if (chunkBreakIndex <= 0 || chunkBreakIndex > remainingValue.Length)
+                        {
+                            result.Add($"{indent}{remainingValue}"); // Add remaining text and break
+                            break;
+                        }
+                        
+                        var chunk = remainingValue.Substring(0, chunkBreakIndex);
+                        remainingValue = remainingValue.Substring(chunkBreakIndex);
+                        
+                        result.Add($"{indent}{chunk}");
+                    }
                 }
             }
+            
+            return string.Join("\n", result);
         }
-        
-        return string.Join("\n", result);
+        catch (Exception)
+        {
+            return $"{key}: {value}"; // Return simple format as fallback
+        }
     }
     
     private static int FindBestBreakIndex(string text, int maxLength)
     {
-        if (text.Length <= maxLength)
+        try
         {
-            return text.Length;
-        }
-        
-        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
-        {
-            if (text[i] == '/' && i + 1 < text.Length)
+            if (string.IsNullOrEmpty(text))
             {
-                return i + 1;
+                return 0;
             }
-        }
-        
-        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
-        {
-            if (text[i] == '@')
+            
+            if (maxLength <= 0)
             {
-                return i;
+                return Math.Min(1, text.Length); // Return minimal safe value
             }
-        }
-        
-        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 2; i--)
-        {
-            if (text[i] == ' ')
+            
+            if (text.Length <= maxLength)
             {
-                return i + 1;
+                return text.Length;
             }
-        }
-        
-        var separators = new char[] { '-', '_', '.', ':', ';', ',', '&', '?', '=', '|', '\\' };
-        for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
-        {
-            if (separators.Contains(text[i]) && i + 1 < text.Length)
+            
+            // Ensure we don't go out of bounds
+            var safeMaxIndex = Math.Min(maxLength - 1, text.Length - 1);
+            var safeMinIndex = Math.Max(0, maxLength / 3);
+            
+            if (safeMaxIndex < 0 || safeMinIndex > safeMaxIndex)
             {
-                return i + 1;
+                return Math.Min(maxLength, text.Length);
             }
+            
+            // Look for '/' character
+            for (int i = safeMaxIndex; i >= safeMinIndex; i--)
+            {
+                if (text[i] == '/' && i + 1 < text.Length)
+                {
+                    return i + 1;
+                }
+            }
+            
+            // Look for '@' character
+            for (int i = safeMaxIndex; i >= safeMinIndex; i--)
+            {
+                if (text[i] == '@')
+                {
+                    return i;
+                }
+            }
+            
+            // Look for space character (with different range)
+            var spaceMinIndex = Math.Max(0, maxLength / 2);
+            for (int i = safeMaxIndex; i >= spaceMinIndex; i--)
+            {
+                if (text[i] == ' ')
+                {
+                    return i + 1;
+                }
+            }
+            
+            // Look for other separators
+            var separators = new char[] { '-', '_', '.', ':', ';', ',', '&', '?', '=', '|', '\\' };
+            for (int i = safeMaxIndex; i >= safeMinIndex; i--)
+            {
+                if (separators.Contains(text[i]) && i + 1 < text.Length)
+                {
+                    return i + 1;
+                }
+            }
+            
+            return Math.Min(maxLength, text.Length);
         }
-        
-        return Math.Min(maxLength, text.Length);
+        catch (Exception)
+        {
+            return Math.Min(Math.Max(1, maxLength), text?.Length ?? 0);
+        }
     }
 
     private void CalculateInitialTagsPanelHeight()
