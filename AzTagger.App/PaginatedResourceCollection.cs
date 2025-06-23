@@ -171,6 +171,44 @@ public static class ResourceFilters
         if (string.IsNullOrWhiteSpace(columnName) || string.IsNullOrWhiteSpace(filterText))
             return null;
 
+        // Handle "All" option - search across all properties
+        if (columnName == "All")
+        {
+            try
+            {
+                Regex? regex;
+                var cacheKey = $"All:{filterText}";
+                
+                lock (_cacheLock)
+                {
+                    if (!_regexCache.TryGetValue(cacheKey, out regex))
+                    {
+                        regex = new Regex(filterText, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+                        
+                        if (_regexCache.Count > 100)
+                        {
+                            _regexCache.Clear();
+                        }
+                        
+                        _regexCache[cacheKey] = regex;
+                    }
+                }
+                
+                return r => regex.IsMatch(r.SubscriptionName ?? string.Empty) ||
+                           regex.IsMatch(r.SubscriptionId ?? string.Empty) ||
+                           regex.IsMatch(r.ResourceGroup ?? string.Empty) ||
+                           regex.IsMatch(r.ResourceName ?? string.Empty) ||
+                           regex.IsMatch(r.ResourceType ?? string.Empty) ||
+                           FormatTags(r.SubscriptionTags).Contains(filterText, StringComparison.OrdinalIgnoreCase) ||
+                           FormatTags(r.ResourceGroupTags).Contains(filterText, StringComparison.OrdinalIgnoreCase) ||
+                           FormatTags(r.ResourceTags).Contains(filterText, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
         try
         {
             Regex? regex;

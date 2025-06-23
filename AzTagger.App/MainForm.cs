@@ -316,6 +316,7 @@ resources
                 {
                     _resultsContextRow = cell.RowIndex;
                     _resultsContextColumn = cell.Column;
+                    _gvwResults.UnselectAll();
                     _gvwResults.SelectRow(cell.RowIndex);
                 }
             }
@@ -373,6 +374,7 @@ resources
                 {
                     _tagsContextRow = cell.RowIndex;
                     _tagsContextColumn = _gvwTags.Columns[cell.ColumnIndex];
+                    _gvwTags.UnselectAll();
                     _gvwTags.SelectRow(cell.RowIndex);
                 }
             }
@@ -408,8 +410,8 @@ resources
         var propertyNames = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted))
             .Select(p => p.Name).ToList();
-        _cboQuickFilter1Column.DataStore = new List<string>(new[] { string.Empty }.Concat(propertyNames));
-        _cboQuickFilter2Column.DataStore = new List<string>(new[] { string.Empty }.Concat(propertyNames));
+        _cboQuickFilter1Column.DataStore = new List<string>(new[] { string.Empty, "All" }.Concat(propertyNames));
+        _cboQuickFilter2Column.DataStore = new List<string>(new[] { string.Empty, "All" }.Concat(propertyNames));
         _cboQuickFilter1Column.SelectedIndexChanged += (_, _) => FilterResults();
         _cboQuickFilter2Column.SelectedIndexChanged += (_, _) => FilterResults();
 
