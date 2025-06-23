@@ -43,13 +43,11 @@ public class MainForm : Form
     private readonly TextBox _txtQuickFilter2Text;
     private readonly Label _lblResultsCount;
 
-    // Delayed filter timers
     private System.Threading.Timer? _quickFilter1Timer;
     private System.Threading.Timer? _quickFilter2Timer;
     private System.Threading.Timer? _resizeTimer;
     private System.Threading.Timer? _splitterTimer;
 
-    // Pagination controls
     private readonly Button _btnFirstPage;
     private readonly Button _btnPreviousPage;
     private readonly Button _btnNextPage;
@@ -85,11 +83,8 @@ public class MainForm : Form
     private readonly PaginatedResourceCollection _paginatedResults = new();
     private List<Resource> _allResults = new();
 
-    // Splitter management - tags panel maintains fixed height, results panel grows/shrinks
-    // Use base values that will be DPI-scaled when used
-    private int _fixedTagsPanelHeight = 200; // Fixed height for tags panel (6 rows + controls)
+    private int _fixedTagsPanelHeight = 200;
     
-    // Calculate minimum panel heights as 15% of available height with absolute minimums
     private int MinResultsPanelHeight 
     { 
         get 
@@ -108,7 +103,7 @@ public class MainForm : Form
         }
     }
     
-    private bool _isProgrammaticSplitterUpdate = false; // Flag to prevent splitter position feedback loops
+    private bool _isProgrammaticSplitterUpdate = false;
 
     private const string BaseQuery = """
 resources
@@ -189,7 +184,6 @@ resources
 
         Title = "AzTagger";
         
-        // Set minimum window size
         MinimumSize = new Size(1024, 768);
         
         if (_settings.WindowSize.Width > 0 && _settings.WindowSize.Height > 0)
@@ -207,10 +201,7 @@ resources
 
         _tagTemplates = TagTemplatesService.Load();
 
-        // Create MenuBar with File menu and platform-specific Exit item with keyboard shortcuts
         CreateMenuBar();
-
-        // Add keyboard shortcut handlers
         SetupKeyboardShortcuts();
 
         _txtSearchQuery = new TextArea 
@@ -220,12 +211,9 @@ resources
             TextReplacements = TextReplacements.None
         };
         
-        // Ensure text replacements are thoroughly disabled for macOS
         _txtSearchQuery.GotFocus += (_, _) => 
         {
-            // Force disable all text replacements when the control gets focus
             _txtSearchQuery.TextReplacements = TextReplacements.None;
-            // Also explicitly disable spell check to prevent any interference
             _txtSearchQuery.SpellCheck = false;
         };
         _txtSearchQuery.TextChanged += new EventHandler<EventArgs>((_, _) =>
@@ -281,15 +269,12 @@ resources
             }
         };
 
-        // Set up GridViews - remove fixed heights so they can resize with splitter
         _gvwResults = new GridView { DataStore = _paginatedResults.DisplayedItems, AllowMultipleSelection = true };
         
-        // Dynamically add columns for all Resource properties except CombinedTagsFormatted
         var resourceProps = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted));
         foreach (var prop in resourceProps)
         {
-            // Set reasonable default widths based on property name
             var defaultWidth = prop.Name switch
             {
                 "EntityType" => GetDpiScaledWidth(100),
@@ -432,7 +417,6 @@ resources
         _txtQuickFilter1Text.TextChanged += (_, _) => ScheduleDelayedFilter(1);
         _txtQuickFilter2Text.TextChanged += (_, _) => ScheduleDelayedFilter(2);
 
-        // Initialize pagination controls
         _btnFirstPage = new Button { Text = "⏮", ToolTip = "First page" };
         _btnPreviousPage = new Button { Text = "◀", ToolTip = "Previous page" };
         _btnNextPage = new Button { Text = "▶", ToolTip = "Next page" };
@@ -457,7 +441,6 @@ resources
             }
         };
 
-        // Wire up paginated collection events
         _paginatedResults.FilterChanged += (_, _) => UpdatePaginationControls();
 
         _quickFilterContextMenu = CreateQuickFilterContextMenu(_txtQuickFilter1Text);
@@ -570,17 +553,16 @@ resources
             Items =
             {
                 _btnSearch,
-                new Panel { Width = GetDpiScaledWidth(10) }, // Fixed separator space after Search button (about half button width)
+                new Panel { Width = GetDpiScaledWidth(10) },
                 _btnSaveQuery,
                 _btnCopyQuery,
                 _btnClearQuery,
-                new Panel { Width = GetDpiScaledWidth(10) }, // Fixed separator space before Configure button (about half button width)
+                new Panel { Width = GetDpiScaledWidth(10) },
                 configureButton,
                 null
             }
         };
 
-        // Use StackLayout for the main container to ensure full width utilization
         var layout = new StackLayout 
         { 
             Orientation = Orientation.Vertical,
@@ -589,7 +571,6 @@ resources
             HorizontalContentAlignment = HorizontalAlignment.Stretch
         };
         
-        // Add controls to stack layout
         var recentSavedRow = new TableLayout
         {
             Spacing = new Size(5, 0)
@@ -599,9 +580,8 @@ resources
             new TableCell(new Panel { Width = GetDpiScaledWidth(3) }, false), // 2px separator
             new TableCell(_cboSavedQueries, false)
         ));
-        // Create custom sizing by setting specific widths relative to parent
-        _cboRecentSearches.Width = -1; // Use default for now, will be managed by TableLayout
-        _cboSavedQueries.Width = GetDpiScaledWidth(150); // Fixed width for saved queries dropdown
+        _cboRecentSearches.Width = -1;
+        _cboSavedQueries.Width = GetDpiScaledWidth(150);
         layout.Items.Add(new StackLayoutItem(recentSavedRow, HorizontalAlignment.Stretch));
         
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Search Query:" } });
@@ -614,11 +594,9 @@ resources
         quickFilterRow.Rows.Add(new TableRow(new TableCell(_cboQuickFilter1Column, false), new TableCell(_txtQuickFilter1Text, true), new TableCell(cboQuickFilter2WithMargin, false), new TableCell(_txtQuickFilter2Text, true), new TableCell(null, true)));
         layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch));
         
-        // Results panel with grid that resizes and fixed pagination at bottom
         var resultsPanel = new TableLayout { Spacing = new Size(5, 5) };
-        resultsPanel.Rows.Add(new TableRow(new TableCell(_gvwResults, true)) { ScaleHeight = true }); // Grid stretches full width and height
+        resultsPanel.Rows.Add(new TableRow(new TableCell(_gvwResults, true)) { ScaleHeight = true });
         
-        // Pagination controls anchored to the right
         var paginationRow = new StackLayout
         {
             Orientation = Orientation.Horizontal,
@@ -626,7 +604,7 @@ resources
             Items =
             {
                 _lblResultsCount,
-                new StackLayoutItem(null, true), // Spacer to push pagination controls to the right
+                new StackLayoutItem(null, true),
                 new Label { Text = "Page size:" },
                 _cboPageSize,
                 _btnFirstPage,
@@ -637,16 +615,12 @@ resources
             }
         };
         resultsPanel.Rows.Add(new TableRow(new TableCell(paginationRow, true)));
-        // Add 5px space at bottom of results panel (above splitter line)
         resultsPanel.Rows.Add(new TableRow(new Panel { Height = 5 }));
 
-        // Tags panel with grid that resizes and fixed controls at bottom
         var tagsPanel = new TableLayout { Spacing = new Size(5, 5) };
-        // Add 5px space at top of tags panel (below splitter line)
         tagsPanel.Rows.Add(new TableRow(new Panel { Height = 5 }));
-        tagsPanel.Rows.Add(new TableRow(new TableCell(_gvwTags, true)) { ScaleHeight = true }); // Grid stretches full width and height
+        tagsPanel.Rows.Add(new TableRow(new TableCell(_gvwTags, true)) { ScaleHeight = true });
         
-        // Tag templates row - Apply Tags anchored left, Tag Templates + Edit Templates anchored right
         var tagTemplatesRow = new StackLayout
         {
             Orientation = Orientation.Horizontal,
@@ -654,7 +628,7 @@ resources
             Items = 
             { 
                 _btnApplyTags,
-                new StackLayoutItem(null, true), // Spacer to push tag templates to the right
+                new StackLayoutItem(null, true),
                 _cboTagTemplates, 
                 _btnEditTemplates 
             }
@@ -667,12 +641,10 @@ resources
             FixedPanel = SplitterFixedPanel.None,
             Panel1 = resultsPanel,
             Panel2 = tagsPanel,
-            Position = Math.Max(100, _settings.SplitterPosition), // Set a conservative initial position
-            SplitterWidth = GetDpiScaledWidth(8) // Make splitter thicker and more visible for easier interaction
+            Position = Math.Max(100, _settings.SplitterPosition),
+            SplitterWidth = GetDpiScaledWidth(8)
         };
         
-        // Handle manual splitter position changes to update fixed tags panel height
-        // Use a flag to prevent feedback loops between manual changes and automatic updates
         _splitter.PositionChanged += (_, _) =>
         {
             if (_isProgrammaticSplitterUpdate) return;
@@ -680,24 +652,17 @@ resources
             var availableHeight = GetAvailableHeightForSplitter();
             if (availableHeight > 0)
             {
-                // Calculate the tags panel height based on current splitter position
                 var tagsPanelHeight = availableHeight - _splitter.Position;
-                // Update the fixed tags panel height when user manually moves splitter
                 _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
             }
             
-            // Schedule delayed enforcement of minimum heights after user stops dragging
             ScheduleDelayedSplitterConstraint();
         };
         
-        // Initial calculation will be done in Shown event when layout is complete
-        
-        layout.Items.Add(new StackLayoutItem(_splitter, HorizontalAlignment.Stretch, true)); // Splitter expands vertically
+        layout.Items.Add(new StackLayoutItem(_splitter, HorizontalAlignment.Stretch, true));
 
-        // Add 2px space before footer
         layout.Items.Add(new Panel { Height = GetDpiScaledWidth(2) });
 
-        // Fixed links and version at bottom - stretch across full width
         var linksRow = new StackLayout
         {
             Orientation = Orientation.Horizontal,
@@ -711,7 +676,7 @@ resources
                 _lnkEditSettings,
                 _lnkShowErrorLog,
                 _lnkResetDefaults,
-                new StackLayoutItem(null, true), // Spacer to push version to the right
+                new StackLayoutItem(null, true),
                 _lblVersion
             }
         };
@@ -727,24 +692,19 @@ resources
 
         Content = layout;
 
-        // Save settings and quit when the window is closed
         Closing += (_, _) => SaveSettings();
         Closed += (_, _) => Application.Instance.Quit();
 
         Shown += (_, _) => 
         {
-            // Additional safeguard: ensure text replacements are disabled after the form is fully loaded
             _txtSearchQuery.TextReplacements = TextReplacements.None;
             _txtSearchQuery.SpellCheck = false;
             
-            // Now that layout is complete, calculate proper initial splitter position
             CalculateInitialTagsPanelHeight();
             UpdateSplitterPosition();
             
-            // Ensure splitter is properly drawn at the initial position
             _splitter.Invalidate();
             
-            // Delay column resizing to ensure layout is fully established
             Application.Instance.AsyncInvoke(() => 
             {
                 ResizeResultsGridColumns();
@@ -753,60 +713,51 @@ resources
         };
         SizeChanged += (_, _) => 
         {
-            // Use delayed resize to avoid excessive calls during window resizing
             ScheduleDelayedResize();
         };
     }
 
     private void CreateMenuBar()
     {
-        // Create Close command with Command+W for macOS
         var closeCommand = new Command
         {
             MenuText = "&Close",
             ToolBarText = "Close",
-            Shortcut = Application.Instance.CommonModifier | Keys.W  // Cmd+W on Mac, Ctrl+W on others
+            Shortcut = Application.Instance.CommonModifier | Keys.W 
         };
         closeCommand.Executed += (_, _) => ExitApplication();
 
-        // Create Exit command with platform-specific keyboard shortcuts
         var exitCommand = new Command
         {
             MenuText = "E&xit",
             ToolBarText = "Exit",
-            Shortcut = Application.Instance.CommonModifier | Keys.Q  // Cmd+Q on Mac, Ctrl+Q on others
+            Shortcut = Application.Instance.CommonModifier | Keys.Q 
         };
         exitCommand.Executed += (_, _) => ExitApplication();
 
-        // Create additional exit command for Alt+F4 (Windows standard)
         var altF4ExitCommand = new Command
         {
             Shortcut = Keys.Alt | Keys.F4
         };
         altF4ExitCommand.Executed += (_, _) => ExitApplication();
 
-        // Create About menu item for macOS application menu
         var aboutItem = new ButtonMenuItem { Text = "&About AzTagger..." };
         aboutItem.Click += (_, _) => ShowAboutDialog();
 
-        // Create File menu
         var fileMenu = new SubMenuItem
         {
             Text = "&File",
             Items = { closeCommand, exitCommand }
         };
 
-        // Create MenuBar and add File menu
         var menuBar = new MenuBar
         {
             Items = { fileMenu }
         };
 
-        // Set required items for proper macOS menu handling
-        menuBar.QuitItem = exitCommand;  // This populates the "Quit AzTagger" item
-        menuBar.AboutItem = aboutItem;   // This populates the "About AzTagger" item and prevents empty menu items
+        menuBar.QuitItem = exitCommand;
+        menuBar.AboutItem = aboutItem;
 
-        // Add application commands for keyboard shortcuts (only add Alt+F4, not duplicate Cmd+Q)
         if (Environment.OSVersion.Platform == PlatformID.Win32NT)
         {
             menuBar.ApplicationItems.Add(altF4ExitCommand);
@@ -817,7 +768,6 @@ resources
 
     private void SetupKeyboardShortcuts()
     {
-        // Handle Escape key to close application
         KeyDown += (_, e) =>
         {
             if (e.Key == Keys.Escape)
@@ -825,7 +775,6 @@ resources
                 ExitApplication();
                 e.Handled = true;
             }
-            // Handle Page Up/Down for pagination
             else if (e.Key == Keys.PageUp && e.Modifiers == Keys.None)
             {
                 _paginatedResults.PreviousPage();
@@ -838,7 +787,6 @@ resources
                 UpdatePaginationControls();
                 e.Handled = true;
             }
-            // Handle Ctrl+Home/End for first/last page
             else if (e.Key == Keys.Home && e.Modifiers == Keys.Control)
             {
                 _paginatedResults.GoToPage(0);
@@ -860,10 +808,8 @@ resources
         Application.Instance.Quit();
     }
 
-    // Helper method to get DPI-scaled width to handle high-DPI displays properly
     private int GetDpiScaledWidth(int baseWidth)
     {
-        // Get the logical DPI scale factor
         var scale = Screen.LogicalPixelSize;
         return (int)(baseWidth * scale);
     }
@@ -873,19 +819,16 @@ resources
         if (_gvwResults.Columns.Count == 0)
             return;
         
-        // Account for DPI scaling when calculating tolerance and width
-        int tolerance = GetDpiScaledWidth(20); // Reduced tolerance for better utilization
+        int tolerance = GetDpiScaledWidth(20);
         int actualGridWidth = _gvwResults.Width - tolerance;
         
-        // Don't impose artificial minimum - let it shrink naturally
-        if (actualGridWidth <= GetDpiScaledWidth(100)) // Only skip if extremely small
+        if (actualGridWidth <= GetDpiScaledWidth(100))
             return;
         
         int availableWidth = actualGridWidth;
         
         int colCount = _gvwResults.Columns.Count;
         
-        // Set more reasonable column widths based on content type
         var columnWidths = new Dictionary<string, int>
         {
             ["EntityType"] = GetDpiScaledWidth(100),
@@ -911,18 +854,16 @@ resources
             }
             else
             {
-                totalPreferredWidth += GetDpiScaledWidth(150); // Default width
+                totalPreferredWidth += GetDpiScaledWidth(150);
             }
         }
         
-        // Scale widths proportionally to fit available space
         double scaleFactor = (double)availableWidth / totalPreferredWidth;
         
-        // Apply scaling to all columns to ensure they always fit the available width
         for (int i = 0; i < colCount; i++)
         {
             var column = _gvwResults.Columns[i];
-            int preferredWidth = GetDpiScaledWidth(150); // Default
+            int preferredWidth = GetDpiScaledWidth(150);
             
             if (_columnPropertyMap.TryGetValue(column, out var propertyName) && 
                 columnWidths.TryGetValue(propertyName, out var configuredWidth))
@@ -930,13 +871,11 @@ resources
                 preferredWidth = configuredWidth;
             }
             
-            // Apply scale factor and ensure minimum width (allows aggressive shrinking)
             int scaledWidth = (int)(preferredWidth * scaleFactor);
-            int finalWidth = Math.Max(GetDpiScaledWidth(40), scaledWidth); // Allow shrinking to 40px minimum
+            int finalWidth = Math.Max(GetDpiScaledWidth(40), scaledWidth);
             column.Width = finalWidth;
         }
         
-        // If total minimum widths exceed available space, proportionally reduce all columns
         int totalMinimumWidth = colCount * GetDpiScaledWidth(40);
         if (totalMinimumWidth > availableWidth && availableWidth > GetDpiScaledWidth(100))
         {
@@ -953,29 +892,23 @@ resources
         if (_gvwTags.Columns.Count == 0)
             return;
         
-        // Account for DPI scaling when calculating tolerance and width
-        int tolerance = GetDpiScaledWidth(20); // Reduced tolerance for better utilization
+        int tolerance = GetDpiScaledWidth(20);
         int actualGridWidth = _gvwTags.Width - tolerance;
         
-        // Don't impose artificial minimum - let it shrink naturally
-        if (actualGridWidth <= GetDpiScaledWidth(80)) // Only skip if extremely small
+        if (actualGridWidth <= GetDpiScaledWidth(80))
             return;
         
         int availableWidth = actualGridWidth;
         
-        // For tags grid, we have Key and Value columns
-        // Key column gets 1/3, Value column gets 2/3 of available width
         int keyColWidth = availableWidth / 3;
         int valueColWidth = availableWidth - keyColWidth;
         
-        // Set more aggressive minimum widths to allow better shrinking
-        int minKeyWidth = GetDpiScaledWidth(50); // Reduced from 80
-        int minValueWidth = GetDpiScaledWidth(80); // Reduced from 120
+        int minKeyWidth = GetDpiScaledWidth(50);
+        int minValueWidth = GetDpiScaledWidth(80);
         
         keyColWidth = Math.Max(keyColWidth, minKeyWidth);
         valueColWidth = Math.Max(valueColWidth, minValueWidth);
         
-        // If minimum widths exceed available space, distribute evenly
         if (minKeyWidth + minValueWidth > availableWidth && availableWidth > GetDpiScaledWidth(60))
         {
             keyColWidth = availableWidth / 3;
@@ -986,17 +919,15 @@ resources
         
         if (_gvwTags.Columns.Count >= 2)
         {
-            _gvwTags.Columns[0].Width = keyColWidth;  // Key column
-            _gvwTags.Columns[1].Width = valueColWidth; // Value column
+            _gvwTags.Columns[0].Width = keyColWidth;
+            _gvwTags.Columns[1].Width = valueColWidth;
         }
     }
 
     private void ScheduleDelayedResize()
     {
-        // Cancel any existing resize timer
         _resizeTimer?.Dispose();
         
-        // Schedule a new resize operation after a delay
         _resizeTimer = new System.Threading.Timer(
             _ => Application.Instance.Invoke(() => 
             {
@@ -1005,8 +936,8 @@ resources
                 UpdateSplitterPosition();
             }),
             null,
-            TimeSpan.FromMilliseconds(300), // 300ms delay to avoid excessive calls during resizing
-            TimeSpan.FromMilliseconds(-1) // Run only once
+            TimeSpan.FromMilliseconds(300),
+            TimeSpan.FromMilliseconds(-1)
         );
     }
 
@@ -1072,7 +1003,6 @@ resources
         {
             LoggingService.LogError(ex, "Search failed");
             
-            // Check if the error is due to missing Azure context configuration
             if (ex.Message.Contains("TenantId is not set in the settings") || 
                 ex.Message.Contains("TenantId") && ex.Message.Contains("settings"))
             {
@@ -1088,7 +1018,6 @@ resources
                     if (dlg.ShowModal(this))
                     {
                         SettingsService.Save(_settings);
-                        // Optionally retry the search automatically after configuration
                         _btnSearch.Enabled = true;
                         await SearchAsync();
                         return;
@@ -1364,33 +1293,29 @@ resources
     {
         if (filterNumber == 1)
         {
-            // Cancel any existing timer
             _quickFilter1Timer?.Dispose();
             
-            // Only schedule filtering if the dropdown has a non-empty value selected
             if (_cboQuickFilter1Column.SelectedIndex > 0)
             {
                 _quickFilter1Timer = new System.Threading.Timer(
                     _ => Application.Instance.Invoke(FilterResults),
                     null,
                     TimeSpan.FromMilliseconds(250),
-                    TimeSpan.FromMilliseconds(-1) // Don't repeat
+                    TimeSpan.FromMilliseconds(-1)
                 );
             }
         }
         else if (filterNumber == 2)
         {
-            // Cancel any existing timer
             _quickFilter2Timer?.Dispose();
             
-            // Only schedule filtering if the dropdown has a non-empty value selected
             if (_cboQuickFilter2Column.SelectedIndex > 0)
             {
                 _quickFilter2Timer = new System.Threading.Timer(
                     _ => Application.Instance.Invoke(FilterResults),
                     null,
                     TimeSpan.FromMilliseconds(250),
-                    TimeSpan.FromMilliseconds(-1) // Don't repeat
+                    TimeSpan.FromMilliseconds(-1)
                 );
             }
         }
@@ -1403,7 +1328,7 @@ resources
         var aboutDialog = new Dialog
         {
             Title = "About AzTagger",
-            ClientSize = new Size(350, 200),
+            ClientSize = new Size(350, 150),
             Resizable = false
         };
 
@@ -1416,21 +1341,22 @@ resources
             {
                 new Label { Text = "AzTagger", Font = new Font(FontFamilies.Sans, 18, FontStyle.Bold), TextAlignment = TextAlignment.Center },
                 new Label { Text = $"Version {version}", TextAlignment = TextAlignment.Center },
-                new Label { Text = "A tool for querying and managing Azure resources and tags.", TextAlignment = TextAlignment.Center, Wrap = WrapMode.Word },
-                new StackLayout
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 10,
-                    HorizontalContentAlignment = HorizontalAlignment.Center,
-                    Items =
-                    {
-                        new Button { Text = "OK", Command = new Command((_, _) => aboutDialog.Close()) }
-                    }
-                }
+                new Label { Text = "A tool for querying and managing Azure resources and tags.", TextAlignment = TextAlignment.Center, Wrap = WrapMode.Word }
             }
         };
 
         aboutDialog.Content = content;
+        
+        // Handle ESC key to close the dialog
+        aboutDialog.KeyDown += (_, e) =>
+        {
+            if (e.Key == Keys.Escape)
+            {
+                aboutDialog.Close();
+                e.Handled = true;
+            }
+        };
+
         aboutDialog.ShowModal(this);
     }
 
@@ -1443,7 +1369,6 @@ resources
         _settings.LastQuickFilter2Text = _txtQuickFilter2Text.Text;
         _settings.SplitterPosition = _splitter.Position;
         
-        // Dispose timers
         _quickFilter1Timer?.Dispose();
         _quickFilter2Timer?.Dispose();
         _resizeTimer?.Dispose();
@@ -1531,11 +1456,10 @@ resources
 
     private void UpdatePaginationControls()
     {
-        var currentPage = _paginatedResults.CurrentPage + 1; // Convert to 1-based
+        var currentPage = _paginatedResults.CurrentPage + 1;
         var totalPages = _paginatedResults.TotalPages;
         var totalItems = _paginatedResults.TotalFilteredCount;
         
-        // Count different entity types in filtered results
         var subscriptionCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Subscription");
         var resourceGroupCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "ResourceGroup");
         var resourceCount = _paginatedResults.FilteredItems.Count(r => r.EntityType == "Resource");
@@ -1687,7 +1611,6 @@ resources
         }
     }
 
-    // Helper for displaying any property in the grid
     private static string FormatPropertyForGrid(Resource r, string propertyName)
     {
         var prop = typeof(Resource).GetProperty(propertyName);
@@ -1709,13 +1632,12 @@ resources
             if (dict.Count == 0) return string.Empty;
             
             const int maxLineWidth = 50;
-            const string indent = "    "; // 4 spaces for indentation
+            const string indent = "    ";
             
             var formattedLines = new List<string>();
             
             foreach (var kv in dict.OrderBy(kvp => kvp.Key))
             {
-                // Format the key-value pair with potential wrapping
                 var keyValueLine = FormatKeyValueWithWrapping(kv.Key, kv.Value, maxLineWidth, indent);
                 formattedLines.Add(keyValueLine);
             }
@@ -1727,11 +1649,9 @@ resources
     
     private static string FormatKeyValueWithWrapping(string key, string value, int maxLineWidth, string indent)
     {
-        // Start with the key (we can't make it bold in plain text tooltips, but we can make it prominent)
         var keyPart = $"{key}:";
         var fullLine = $"{keyPart} {value}";
         
-        // If the full line fits within the max width, return it as-is
         if (fullLine.Length <= maxLineWidth)
         {
             return fullLine;
@@ -1739,36 +1659,30 @@ resources
         
         var result = new List<string>();
         var remainingValue = value;
-        var availableWidth = maxLineWidth - keyPart.Length - 1; // -1 for the space after colon
+        var availableWidth = maxLineWidth - keyPart.Length - 1;
         
-        // First line: try to fit as much of the value as possible after the key
         if (remainingValue.Length <= availableWidth)
         {
-            // Value fits on the same line as the key
             result.Add($"{keyPart} {remainingValue}");
         }
         else
         {
-            // Value needs to be wrapped - find the best break point
             var breakIndex = FindBestBreakIndex(remainingValue, availableWidth);
             var firstPart = remainingValue.Substring(0, breakIndex);
             remainingValue = remainingValue.Substring(breakIndex);
             
             result.Add($"{keyPart} {firstPart}");
             
-            // Continue with remaining value on indented lines
             var indentedMaxWidth = maxLineWidth - indent.Length;
             while (remainingValue.Length > 0)
             {
                 if (remainingValue.Length <= indentedMaxWidth)
                 {
-                    // Remaining value fits on one indented line
                     result.Add($"{indent}{remainingValue}");
                     break;
                 }
                 else
                 {
-                    // Need to break the remaining value further
                     var chunkBreakIndex = FindBestBreakIndex(remainingValue, indentedMaxWidth);
                     var chunk = remainingValue.Substring(0, chunkBreakIndex);
                     remainingValue = remainingValue.Substring(chunkBreakIndex);
@@ -1788,108 +1702,90 @@ resources
             return text.Length;
         }
         
-        // Priority 1: Break after '/' (good for URLs and file paths)
         for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
         {
             if (text[i] == '/' && i + 1 < text.Length)
             {
-                return i + 1; // Include the '/' in the current line
+                return i + 1;
             }
         }
         
-        // Priority 2: Break before '@' (good for email addresses)
         for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
         {
             if (text[i] == '@')
             {
-                return i; // Don't include the '@' in the current line
+                return i;
             }
         }
         
-        // Priority 3: Break at word boundaries (spaces)
         for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 2; i--)
         {
             if (text[i] == ' ')
             {
-                return i + 1; // Skip the space
+                return i + 1;
             }
         }
         
-        // Priority 4: Break after other common separators
         var separators = new char[] { '-', '_', '.', ':', ';', ',', '&', '?', '=', '|', '\\' };
         for (int i = Math.Min(maxLength - 1, text.Length - 1); i >= maxLength / 3; i--)
         {
             if (separators.Contains(text[i]) && i + 1 < text.Length)
             {
-                return i + 1; // Include the separator in the current line
+                return i + 1;
             }
         }
         
-        // Last resort: Hard break at maxLength
         return Math.Min(maxLength, text.Length);
     }
 
     private void CalculateInitialTagsPanelHeight()
     {
-        // Calculate the initial fixed tags panel height based on saved splitter position
         var availableHeight = GetAvailableHeightForSplitter();
         if (availableHeight > 0)
         {
             if (_settings.SplitterPosition > 0 && _settings.SplitterPosition < availableHeight)
             {
-                // Use saved position if available and valid
                 var tagsPanelHeight = availableHeight - _settings.SplitterPosition;
                 _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
             }
             else
             {
-                // First start or invalid saved position: Set tags panel to 1/3 of available height (results panel gets 2/3)
                 _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, (int)(availableHeight / 3.0));
             }
         }
         else
         {
-            // Fallback when no height is available yet
-            _fixedTagsPanelHeight = GetDpiScaledWidth(200); // Default tags panel height with DPI scaling
+            _fixedTagsPanelHeight = GetDpiScaledWidth(200);
         }
     }
 
     private void UpdateSplitterPosition()
     {
-        // Calculate new splitter position to maintain fixed tags panel height
         var availableHeight = GetAvailableHeightForSplitter();
         if (availableHeight <= 0) return;
 
-        // Ensure our fixed tags panel height is reasonable for the current available height
-        var maxAllowedTagsHeight = (int)(availableHeight * 0.7); // Tags panel should not exceed 70% of available height
+        var maxAllowedTagsHeight = (int)(availableHeight * 0.7);
         _fixedTagsPanelHeight = Math.Min(_fixedTagsPanelHeight, maxAllowedTagsHeight);
         _fixedTagsPanelHeight = Math.Max(_fixedTagsPanelHeight, MinTagsPanelHeight);
 
-        // Calculate desired position to maintain fixed tags panel height
         var desiredPosition = availableHeight - _fixedTagsPanelHeight;
         
-        // Ensure minimum sizes are respected
         var minPosition = MinResultsPanelHeight;
         var maxPosition = availableHeight - MinTagsPanelHeight;
         
         var newPosition = Math.Max(minPosition, Math.Min(maxPosition, desiredPosition));
         
-        // Only update if position difference is significant to avoid jitter
         if (Math.Abs(_splitter.Position - newPosition) > 5)
         {
-            // Set flag to prevent PositionChanged event from updating our fixed height
             _isProgrammaticSplitterUpdate = true;
             _splitter.Position = newPosition;
             _isProgrammaticSplitterUpdate = false;
             
-            // Force splitter to redraw at the new position
             _splitter.Invalidate();
             
-            // Also invalidate the parent layout to ensure proper redraw
             Content?.Invalidate();
         }
         
-        // Update the actual fixed height based on the final position
         var actualTagsPanelHeight = availableHeight - _splitter.Position;
         if (actualTagsPanelHeight != _fixedTagsPanelHeight)
         {
@@ -1899,15 +1795,13 @@ resources
 
     private void ScheduleDelayedSplitterConstraint()
     {
-        // Cancel any existing timer
         _splitterTimer?.Dispose();
         
-        // Schedule constraint enforcement after a short delay to detect end of dragging
         _splitterTimer = new System.Threading.Timer(
             _ => Application.Instance.Invoke(EnforceSplitterMinimumHeights),
             null,
-            TimeSpan.FromMilliseconds(300), // Wait 300ms after last position change
-            TimeSpan.FromMilliseconds(-1) // Don't repeat
+            TimeSpan.FromMilliseconds(300),
+            TimeSpan.FromMilliseconds(-1) 
         );
     }
 
@@ -1922,21 +1816,17 @@ resources
             var maxPosition = availableHeight - MinTagsPanelHeight;
             var currentPosition = _splitter.Position;
             
-            // Check if current position violates minimum heights
             if (currentPosition < minPosition || currentPosition > maxPosition)
             {
-                // Reset to a valid position
                 var correctedPosition = Math.Max(minPosition, Math.Min(maxPosition, currentPosition));
                 
                 _isProgrammaticSplitterUpdate = true;
                 _splitter.Position = correctedPosition;
                 _isProgrammaticSplitterUpdate = false;
                 
-                // Force splitter to redraw at the corrected position
                 _splitter.Invalidate();
                 Content?.Invalidate();
                 
-                // Update the fixed tags panel height based on corrected position
                 var tagsPanelHeight = availableHeight - correctedPosition;
                 _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
             }
@@ -1945,25 +1835,20 @@ resources
 
     private int GetActualSplitterHeight()
     {
-        // Get the actual height available to the splitter control
-        // This avoids circular dependency in minimum height calculations
         if (_splitter != null && _splitter.Height > 0)
         {
             return _splitter.Height;
         }
         
-        // Fallback calculation when splitter isn't available yet
-        // Use more accurate estimation based on actual control heights
-        int baseUIHeight = 320; // More accurate estimate for all non-splitter UI elements (includes margins and spacing)
+        int baseUIHeight = 320;
         int nonSplitterUIHeight = GetDpiScaledWidth(baseUIHeight);
-        var estimatedHeight = Math.Max(300, ClientSize.Height - nonSplitterUIHeight); // Ensure reasonable minimum
+        var estimatedHeight = Math.Max(300, ClientSize.Height - nonSplitterUIHeight);
         
         return estimatedHeight;
     }
 
     private int GetAvailableHeightForSplitter()
     {
-        // Return the actual height available to the splitter control
         return GetActualSplitterHeight();
     }
 }

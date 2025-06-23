@@ -25,7 +25,7 @@ public class PaginatedResourceCollection
     private readonly ObservableCollection<Resource> _displayedItems = new();
     
     private int _currentPage = 0;
-    private int _pageSize = 1000; // Display 1000 items at a time
+    private int _pageSize = 1000;
     private int _totalFilteredCount = 0;
     
     private Func<Resource, bool>? _filter1;
@@ -61,7 +61,7 @@ public class PaginatedResourceCollection
     {
         _filter1 = filter1;
         _filter2 = filter2;
-        _currentPage = 0; // Reset to first page when filters change
+        _currentPage = 0;
         ApplyFiltersAndRefresh();
     }
 
@@ -105,7 +105,6 @@ public class PaginatedResourceCollection
 
     private void ApplyFiltersAndRefresh()
     {
-        // Apply filters
         _filteredItems.Clear();
         IEnumerable<Resource> filtered = _allItems;
         
@@ -122,7 +121,6 @@ public class PaginatedResourceCollection
         _filteredItems.AddRange(filtered);
         _totalFilteredCount = _filteredItems.Count;
         
-        // Ensure current page is valid
         if (_currentPage >= TotalPages && TotalPages > 0)
         {
             _currentPage = TotalPages - 1;
@@ -184,7 +182,6 @@ public static class ResourceFilters
                 {
                     regex = new Regex(filterText, RegexOptions.IgnoreCase | RegexOptions.Compiled);
                     
-                    // Limit cache size to prevent memory issues
                     if (_regexCache.Count > 100)
                     {
                         _regexCache.Clear();
@@ -212,7 +209,6 @@ public static class ResourceFilters
         }
         catch (ArgumentException)
         {
-            // Invalid regex, return null filter
             return null;
         }
     }

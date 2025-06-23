@@ -66,7 +66,6 @@ public class VirtualResourceCollection : IList<Resource>, INotifyCollectionChang
             _filteredItems.AddRange(_sourceItems);
         }
 
-        // Notify collection changed
         OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
     }
 
@@ -75,7 +74,6 @@ public class VirtualResourceCollection : IList<Resource>, INotifyCollectionChang
         CollectionChanged?.Invoke(this, e);
     }
 
-    // IList<Resource> implementation
     public Resource this[int index]
     {
         get

@@ -102,14 +102,12 @@ public class AzureContextConfigDialog : Dialog<bool>
         DefaultButton = okButton;
         AbortButton = cancelButton;
 
-        // Create main layout using TableLayout for better control
         var mainLayout = new TableLayout
         {
             Padding = new Padding(10),
             Spacing = new Size(5, 5)
         };
 
-        // Top section: Add/Remove buttons
         var buttonLayout = new StackLayout
         {
             Orientation = Orientation.Horizontal,
@@ -117,18 +115,16 @@ public class AzureContextConfigDialog : Dialog<bool>
             Items = { addButton, removeButton }
         };
 
-        // Bottom section: OK/Cancel buttons anchored to bottom right
         var bottomButtonLayout = new TableLayout();
         bottomButtonLayout.Rows.Add(new TableRow(
-            new TableCell { ScaleWidth = true }, // Spacer cell to push buttons to the right
+            new TableCell { ScaleWidth = true },
             new TableCell(okButton, true) { ScaleWidth = false },
-            new TableCell(new Panel { Width = 10 }, true) { ScaleWidth = false }, // Spacer between buttons
+            new TableCell(new Panel { Width = 10 }, true) { ScaleWidth = false },
             new TableCell(cancelButton, true) { ScaleWidth = false }
         ));
 
-        // Configure table layout
         mainLayout.Rows.Add(new TableRow(buttonLayout) { ScaleHeight = false });
-        mainLayout.Rows.Add(new TableRow(_grid) { ScaleHeight = true }); // Grid expands
+        mainLayout.Rows.Add(new TableRow(_grid) { ScaleHeight = true });
         mainLayout.Rows.Add(new TableRow(bottomButtonLayout) { ScaleHeight = false });
 
         Content = mainLayout;
