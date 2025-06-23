@@ -47,6 +47,7 @@ public class MainForm : Form
     private System.Threading.Timer? _quickFilter1Timer;
     private System.Threading.Timer? _quickFilter2Timer;
     private System.Threading.Timer? _resizeTimer;
+    private System.Threading.Timer? _splitterTimer;
 
     // Pagination controls
     private readonly Button _btnFirstPage;
@@ -87,8 +88,26 @@ public class MainForm : Form
     // Splitter management - tags panel maintains fixed height, results panel grows/shrinks
     // Use base values that will be DPI-scaled when used
     private int _fixedTagsPanelHeight = 200; // Fixed height for tags panel (6 rows + controls)
-    private int MinResultsPanelHeight => GetDpiScaledWidth(200); // Minimum height for results panel (8 rows + pagination) 
-    private int MinTagsPanelHeight => GetDpiScaledWidth(150); // Minimum height for tags panel (4 rows + tag template controls)
+    
+    // Calculate minimum panel heights as 15% of available height with absolute minimums
+    private int MinResultsPanelHeight 
+    { 
+        get 
+        {
+            var availableHeight = GetActualSplitterHeight();
+            return Math.Max(GetDpiScaledWidth(60), (int)(availableHeight * 0.2));
+        }
+    }
+    
+    private int MinTagsPanelHeight 
+    { 
+        get 
+        {
+            var availableHeight = GetActualSplitterHeight(); 
+            return Math.Max(GetDpiScaledWidth(60), (int)(availableHeight * 0.2));
+        }
+    }
+    
     private bool _isProgrammaticSplitterUpdate = false; // Flag to prevent splitter position feedback loops
 
     private const string BaseQuery = """
@@ -546,9 +565,11 @@ resources
             Items =
             {
                 _btnSearch,
+                new Panel { Width = GetDpiScaledWidth(10) }, // Fixed separator space after Search button (about half button width)
                 _btnSaveQuery,
                 _btnCopyQuery,
                 _btnClearQuery,
+                new Panel { Width = GetDpiScaledWidth(10) }, // Fixed separator space before Configure button (about half button width)
                 configureButton,
                 null
             }
@@ -564,8 +585,18 @@ resources
         };
         
         // Add controls to stack layout
-        var recentSavedRow = new TableLayout();
-        recentSavedRow.Rows.Add(new TableRow(new TableCell(_cboRecentSearches, true), new TableCell(_cboSavedQueries, true)));
+        var recentSavedRow = new TableLayout
+        {
+            Spacing = new Size(5, 0)
+        };
+        recentSavedRow.Rows.Add(new TableRow(
+            new TableCell(_cboRecentSearches, true),  // scaleWidth = true for both
+            new TableCell(new Panel { Width = GetDpiScaledWidth(2) }, false), // 2px separator
+            new TableCell(_cboSavedQueries, true)
+        ));
+        // Create custom sizing by setting specific widths relative to parent
+        _cboRecentSearches.Width = -1; // Use default for now, will be managed by TableLayout
+        _cboSavedQueries.Width = -1;
         layout.Items.Add(new StackLayoutItem(recentSavedRow, HorizontalAlignment.Stretch));
         
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Search Query:" } });
@@ -574,7 +605,7 @@ resources
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Results:" } });
         
         var quickFilterRow = new TableLayout();
-        var cboQuickFilter2WithMargin = new Panel { Padding = new Padding(5, 0, 0, 0), Content = _cboQuickFilter2Column };
+        var cboQuickFilter2WithMargin = new Panel { Padding = new Padding(GetDpiScaledWidth(4), 0, 0, 0), Content = _cboQuickFilter2Column };
         quickFilterRow.Rows.Add(new TableRow(new TableCell(_cboQuickFilter1Column, true), new TableCell(_txtQuickFilter1Text, true), new TableCell(cboQuickFilter2WithMargin, true), new TableCell(_txtQuickFilter2Text, true), new TableCell(null, true)));
         layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch));
         
@@ -631,7 +662,8 @@ resources
             FixedPanel = SplitterFixedPanel.None,
             Panel1 = resultsPanel,
             Panel2 = tagsPanel,
-            Position = _settings.SplitterPosition
+            Position = Math.Max(100, _settings.SplitterPosition), // Set a conservative initial position
+            SplitterWidth = GetDpiScaledWidth(8) // Make splitter thicker and more visible for easier interaction
         };
         
         // Handle manual splitter position changes to update fixed tags panel height
@@ -643,17 +675,22 @@ resources
             var availableHeight = GetAvailableHeightForSplitter();
             if (availableHeight > 0)
             {
-                // Calculate the tags panel height based on splitter position
+                // Calculate the tags panel height based on current splitter position
                 var tagsPanelHeight = availableHeight - _splitter.Position;
                 // Update the fixed tags panel height when user manually moves splitter
                 _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
             }
+            
+            // Schedule delayed enforcement of minimum heights after user stops dragging
+            ScheduleDelayedSplitterConstraint();
         };
         
-        // Calculate initial fixed tags panel height based on saved position
-        CalculateInitialTagsPanelHeight();
+        // Initial calculation will be done in Shown event when layout is complete
         
         layout.Items.Add(new StackLayoutItem(_splitter, HorizontalAlignment.Stretch, true)); // Splitter expands vertically
+
+        // Add 2px space before footer
+        layout.Items.Add(new Panel { Height = GetDpiScaledWidth(2) });
 
         // Fixed links and version at bottom - stretch across full width
         var linksRow = new StackLayout
@@ -695,8 +732,12 @@ resources
             _txtSearchQuery.TextReplacements = TextReplacements.None;
             _txtSearchQuery.SpellCheck = false;
             
-            // Set initial splitter position based on window size
+            // Now that layout is complete, calculate proper initial splitter position
+            CalculateInitialTagsPanelHeight();
             UpdateSplitterPosition();
+            
+            // Ensure splitter is properly drawn at the initial position
+            _splitter.Invalidate();
             
             // Delay column resizing to ensure layout is fully established
             Application.Instance.AsyncInvoke(() => 
@@ -1401,6 +1442,7 @@ resources
         _quickFilter1Timer?.Dispose();
         _quickFilter2Timer?.Dispose();
         _resizeTimer?.Dispose();
+        _splitterTimer?.Dispose();
         
         SettingsService.Save(_settings);
     }
@@ -1669,13 +1711,23 @@ resources
     {
         // Calculate the initial fixed tags panel height based on saved splitter position
         var availableHeight = GetAvailableHeightForSplitter();
-        if (availableHeight > 0 && _settings.SplitterPosition > 0)
+        if (availableHeight > 0)
         {
-            var tagsPanelHeight = availableHeight - _settings.SplitterPosition;
-            _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
+            if (_settings.SplitterPosition > 0 && _settings.SplitterPosition < availableHeight)
+            {
+                // Use saved position if available and valid
+                var tagsPanelHeight = availableHeight - _settings.SplitterPosition;
+                _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
+            }
+            else
+            {
+                // First start or invalid saved position: Set tags panel to 1/3 of available height (results panel gets 2/3)
+                _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, (int)(availableHeight / 3.0));
+            }
         }
         else
         {
+            // Fallback when no height is available yet
             _fixedTagsPanelHeight = GetDpiScaledWidth(200); // Default tags panel height with DPI scaling
         }
     }
@@ -1685,6 +1737,11 @@ resources
         // Calculate new splitter position to maintain fixed tags panel height
         var availableHeight = GetAvailableHeightForSplitter();
         if (availableHeight <= 0) return;
+
+        // Ensure our fixed tags panel height is reasonable for the current available height
+        var maxAllowedTagsHeight = (int)(availableHeight * 0.7); // Tags panel should not exceed 70% of available height
+        _fixedTagsPanelHeight = Math.Min(_fixedTagsPanelHeight, maxAllowedTagsHeight);
+        _fixedTagsPanelHeight = Math.Max(_fixedTagsPanelHeight, MinTagsPanelHeight);
 
         // Calculate desired position to maintain fixed tags panel height
         var desiredPosition = availableHeight - _fixedTagsPanelHeight;
@@ -1702,31 +1759,89 @@ resources
             _isProgrammaticSplitterUpdate = true;
             _splitter.Position = newPosition;
             _isProgrammaticSplitterUpdate = false;
+            
+            // Force splitter to redraw at the new position
+            _splitter.Invalidate();
+            
+            // Also invalidate the parent layout to ensure proper redraw
+            Content?.Invalidate();
         }
         
         // Update the actual fixed height based on the final position
         var actualTagsPanelHeight = availableHeight - _splitter.Position;
-        if (actualTagsPanelHeight < _fixedTagsPanelHeight)
+        if (actualTagsPanelHeight != _fixedTagsPanelHeight)
         {
             _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, actualTagsPanelHeight);
         }
     }
 
+    private void ScheduleDelayedSplitterConstraint()
+    {
+        // Cancel any existing timer
+        _splitterTimer?.Dispose();
+        
+        // Schedule constraint enforcement after a short delay to detect end of dragging
+        _splitterTimer = new System.Threading.Timer(
+            _ => Application.Instance.Invoke(EnforceSplitterMinimumHeights),
+            null,
+            TimeSpan.FromMilliseconds(300), // Wait 300ms after last position change
+            TimeSpan.FromMilliseconds(-1) // Don't repeat
+        );
+    }
+
+    private void EnforceSplitterMinimumHeights()
+    {
+        if (_isProgrammaticSplitterUpdate) return;
+        
+        var availableHeight = GetAvailableHeightForSplitter();
+        if (availableHeight > 0)
+        {
+            var minPosition = MinResultsPanelHeight;
+            var maxPosition = availableHeight - MinTagsPanelHeight;
+            var currentPosition = _splitter.Position;
+            
+            // Check if current position violates minimum heights
+            if (currentPosition < minPosition || currentPosition > maxPosition)
+            {
+                // Reset to a valid position
+                var correctedPosition = Math.Max(minPosition, Math.Min(maxPosition, currentPosition));
+                
+                _isProgrammaticSplitterUpdate = true;
+                _splitter.Position = correctedPosition;
+                _isProgrammaticSplitterUpdate = false;
+                
+                // Force splitter to redraw at the corrected position
+                _splitter.Invalidate();
+                Content?.Invalidate();
+                
+                // Update the fixed tags panel height based on corrected position
+                var tagsPanelHeight = availableHeight - correctedPosition;
+                _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
+            }
+        }
+    }
+
+    private int GetActualSplitterHeight()
+    {
+        // Get the actual height available to the splitter control
+        // This avoids circular dependency in minimum height calculations
+        if (_splitter != null && _splitter.Height > 0)
+        {
+            return _splitter.Height;
+        }
+        
+        // Fallback calculation when splitter isn't available yet
+        // Use more accurate estimation based on actual control heights
+        int baseUIHeight = 320; // More accurate estimate for all non-splitter UI elements (includes margins and spacing)
+        int nonSplitterUIHeight = GetDpiScaledWidth(baseUIHeight);
+        var estimatedHeight = Math.Max(300, ClientSize.Height - nonSplitterUIHeight); // Ensure reasonable minimum
+        
+        return estimatedHeight;
+    }
+
     private int GetAvailableHeightForSplitter()
     {
-        // Calculate available height for the splitter based on the current window size
-        // This accounts for the other UI elements (query area, buttons, pagination, links, etc.)
-        // Use DPI-scaled height calculation to account for high-DPI displays
-        // Approximate heights (base values for standard DPI):
-        // - Query area and controls: ~140px
-        // - Results label and quick filters: ~30px
-        // - Pagination controls: ~30px  
-        // - Links and version info: ~30px
-        // - Padding and margins: ~40px
-        // - Additional buffer for DPI scaling: ~20px
-        int baseUIHeight = 290;
-        int nonSplitterUIHeight = GetDpiScaledWidth(baseUIHeight); // Use width scaling method for consistency
-        
-        return Math.Max(0, ClientSize.Height - nonSplitterUIHeight);
+        // Return the actual height available to the splitter control
+        return GetActualSplitterHeight();
     }
 }
