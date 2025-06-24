@@ -8,4 +8,15 @@
     <ProjectReference Include="../AzTagger.Core/AzTagger.Core.csproj" />
     <PackageReference Include="Eto.Forms" Version="2.9.0" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../images/icon.ico">
+      <Link>Resources/icon.ico</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="../images/icon.png">
+      <Link>Resources/icon.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="../images/Icon.icns">
+      <Link>Resources/Icon.icns</Link>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

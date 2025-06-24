@@ -5,7 +5,24 @@
     <RuntimeIdentifiers>osx-x64;osx-arm64</RuntimeIdentifiers>
     <IgnoreMissingWorkloadErrors>true</IgnoreMissingWorkloadErrors>
     <SuppressNETSdkUnsupportedPlatformCheck>true</SuppressNETSdkUnsupportedPlatformCheck>
+    <UseAppHost>true</UseAppHost>
+    <CreatePackage>true</CreatePackage>
+    <CFBundleDisplayName>AzTagger</CFBundleDisplayName>
+    <CFBundleName>AzTagger</CFBundleName>
+    <CFBundleIdentifier>com.aztools.aztagger</CFBundleIdentifier>
+    <CFBundleVersion>1.1.0</CFBundleVersion>
+    <CFBundleShortVersionString>1.1.0</CFBundleShortVersionString>
+    <CFBundleIconFile>Icon.icns</CFBundleIconFile>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="../images/icon.png">
+      <Link>Resources/icon.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <BundleResource Include="../images/Icon.icns">
+      <Link>Icon.icns</Link>
+    </BundleResource>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
     <PackageReference Include="Eto.Platform.Mac64" Version="2.9.0" />

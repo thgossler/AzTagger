@@ -6,6 +6,12 @@
     <UseAppHost>true</UseAppHost>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="../images/icon.png">
+      <Link>icon.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
     <PackageReference Include="Eto.Platform.Gtk" Version="2.9.0" />
   </ItemGroup>

@@ -188,6 +188,94 @@ resources
 
         UpdateTitle();
         
+        // Set application icon
+        try
+        {
+            Icon? icon = null;
+            
+            if (Platform.IsWpf)
+            {
+                // Try embedded resource first
+                try
+                {
+                    icon = Icon.FromResource("Resources.icon.ico");
+                }
+                catch
+                {
+                    // Fallback to file system
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    var iconPath = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "images", "icon.ico"));
+                    if (File.Exists(iconPath))
+                    {
+                        using var stream = new FileStream(iconPath, FileMode.Open, FileAccess.Read);
+                        icon = new Icon(stream);
+                    }
+                }
+            }
+            else if (Platform.IsMac)
+            {
+                // Try embedded resource first for Mac
+                try
+                {
+                    icon = Icon.FromResource("Resources.icon.icns");
+                }
+                catch
+                {
+                    // Fallback to PNG for Mac
+                    try
+                    {
+                        icon = Icon.FromResource("Resources.icon.png");
+                    }
+                    catch
+                    {
+                        // Fallback to copied file
+                        var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icon.png");
+                        if (File.Exists(iconPath))
+                        {
+                            icon = new Icon(iconPath);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // GTK/Linux - use PNG
+                try
+                {
+                    icon = Icon.FromResource("Resources.icon.png");
+                }
+                catch
+                {
+                    // Fallback to copied file
+                    var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icon.png");
+                    if (File.Exists(iconPath))
+                    {
+                        icon = new Icon(iconPath);
+                    }
+                    else
+                    {
+                        // Final fallback: try to find the icon in the images directory
+                        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                        var fallbackPath = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "images", "icon.png"));
+                        if (File.Exists(fallbackPath))
+                        {
+                            icon = new Icon(fallbackPath);
+                        }
+                    }
+                }
+            }
+            
+            if (icon != null)
+            {
+                Icon = icon;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't fail the application
+            System.Diagnostics.Debug.WriteLine($"Failed to load application icon: {ex.Message}");
+        }
+        
         MinimumSize = new Size(1024, 768);
         
         if (_settings.WindowSize.Width > 0 && _settings.WindowSize.Height > 0)

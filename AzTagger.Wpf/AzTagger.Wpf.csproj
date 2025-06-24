@@ -5,6 +5,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <SuppressNETSdkUnsupportedPlatformCheck>true</SuppressNETSdkUnsupportedPlatformCheck>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>../images/icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
