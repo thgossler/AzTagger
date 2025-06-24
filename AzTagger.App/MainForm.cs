@@ -607,6 +607,8 @@ resources
             _settings.ResetToWindowDefaults();
             ClientSize = new Size(_settings.WindowSize.Width, _settings.WindowSize.Height);
             Location = new Point(_settings.WindowLocation.X, _settings.WindowLocation.Y);
+            _splitter!.Position = _settings.SplitterPosition;
+            Invalidate();
         };
 
         var version = typeof(MainForm).Assembly.GetName().Version?.ToString() ?? "";
@@ -722,7 +724,7 @@ resources
             new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
             new TableCell(_lnkRegExDocs, false) 
         ));
-        layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch));
+        layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch) { VerticalAlignment = VerticalAlignment.Center });
         
         var resultsPanel = new TableLayout { Spacing = new Size(5, 5) };
         resultsPanel.Rows.Add(new TableRow(new TableCell(_gvwResults, true)) { ScaleHeight = true });
