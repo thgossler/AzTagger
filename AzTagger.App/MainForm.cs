@@ -498,8 +498,8 @@ resources
         _btnApplyTags = new Button { Text = "Apply Tags" };
         _btnApplyTags.Click += async (_, _) => await ApplyTagsAsync();
 
-        _cboQuickFilter1Column = new DropDown { Width = GetDpiScaledWidth(80) };
-        _cboQuickFilter2Column = new DropDown { Width = GetDpiScaledWidth(80) };
+        _cboQuickFilter1Column = new DropDown { Width = GetDpiScaledWidth(130) };
+        _cboQuickFilter2Column = new DropDown { Width = GetDpiScaledWidth(130) };
         var propertyNames = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted))
             .Select(p => p.Name).ToList();
@@ -510,8 +510,8 @@ resources
         _cboQuickFilter1Column.SelectedIndexChanged += (_, _) => FilterResults();
         _cboQuickFilter2Column.SelectedIndexChanged += (_, _) => FilterResults();
 
-        _txtQuickFilter1Text = new TextBox { Width = GetDpiScaledWidth(180), PlaceholderText = "Quick filter 1 regex..." };
-        _txtQuickFilter2Text = new TextBox { Width = GetDpiScaledWidth(180), PlaceholderText = "Quick filter 2 regex..." };
+        _txtQuickFilter1Text = new TextBox { Width = GetDpiScaledWidth(150), PlaceholderText = "Quick filter 1 regex..." };
+        _txtQuickFilter2Text = new TextBox { Width = GetDpiScaledWidth(150), PlaceholderText = "Quick filter 2 regex..." };
         _txtQuickFilter1Text.TextChanged += (_, _) => ScheduleDelayedFilter(1);
         _txtQuickFilter2Text.TextChanged += (_, _) => ScheduleDelayedFilter(2);
 
@@ -691,12 +691,13 @@ resources
             new TableCell(_cboSavedQueries, false)
         ));
         _cboRecentSearches.Width = -1;
-        _cboSavedQueries.Width = GetDpiScaledWidth(150);
+        _cboSavedQueries.Width = GetDpiScaledWidth(250);
         layout.Items.Add(new StackLayoutItem(recentSavedRow, HorizontalAlignment.Stretch));
         
         layout.Items.Add(new StackLayoutItem(new StackLayout {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
+            VerticalContentAlignment = VerticalAlignment.Center,
             Items = {
                 new Label { Text = "Search Query:" },
                 _lblQueryMode,
@@ -711,10 +712,10 @@ resources
         
         var quickFilterRow = new TableLayout();
         quickFilterRow.Rows.Add(new TableRow(
-            new TableCell(_txtQuickFilter1Text, false),
+            new TableCell(_txtQuickFilter1Text, true),
             new TableCell(_cboQuickFilter1Column, false),
             new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
-            new TableCell(_txtQuickFilter2Text, false),
+            new TableCell(_txtQuickFilter2Text, true),
             new TableCell(_cboQuickFilter2Column, false),
             new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
             new TableCell(_lnkClearFilters, false),
@@ -730,6 +731,7 @@ resources
         {
             Orientation = Orientation.Horizontal,
             Spacing = 5,
+            VerticalContentAlignment = VerticalAlignment.Center,
             Items =
             {
                 _lblResultsCount,
@@ -797,6 +799,7 @@ resources
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
+            VerticalContentAlignment = VerticalAlignment.Center,
             Items =
             {
                 _lnkEditSettings,

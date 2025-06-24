@@ -111,7 +111,7 @@ public class AboutDialog : Dialog
         {
             Orientation = Orientation.Horizontal,
             Spacing = 5,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
             Items =
             {
                 new Label { Text = "GitHub:", TextAlignment = TextAlignment.Center },
