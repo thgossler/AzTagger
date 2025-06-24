@@ -13,7 +13,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/thgossler/AzTagger">
-    <img src="AzTagger/images/icon.png" alt="Icon" width="80" height="80">
+    <img src="images/icon.png" alt="Icon" width="80" height="80">
   </a>
 
   <h1 align="center">AzTagger</h1>
@@ -35,24 +35,24 @@
 
 # Introduction
 
-AzTagger is a cross-platform desktop GUI application built with Eto.Forms for fast and flexible
+AzTagger is a cross-platform desktop GUI application for fast and flexible
 querying of Azure resources and tag management. It allows fast search and filtering of all
 resources, resource groups, and subscriptions using Azure Resource Graph for your Entra ID tenant.
-The Eto.Forms UI runs on Windows, Linux, and macOS via the WPF, GTK, and Mac backends.
+It runs on latst Windows 11 (WPF), macOS (Mac) and Linux (GTK).
 
-<img src="./AzTagger/images/screenshot.jpg" alt="Screenshot" width="2049">
+<img src="./images/screenshot.jpg" alt="Screenshot" width="2049">
 
 ## Features
 
 ### User Authentication and Tenant Selection
 
-- Interactive sign-in to Entra ID via web browser, support for multi-factor authentication
-- Support for multiple contexts including Azure environment (e.g., AzurePublicCloud, AzureChina), Entra ID tenant and app ID
+- Interactive sign-in to Entra ID via web browser, support for SSO and multi-factor authentication (MFA)
+- Support for multiple parallel Azure contexts including environment (e.g., AzurePublicCloud, AzureChina), Entra ID tenant and app ID
 
 ### Search Functionality
 
 - Fast search and filtering of all Azure resources, resource groups, and subscriptions based on in-memory result data from Azure Resource Graph
-- A single input field for easy and flexible querying of resources
+- A single input field for easy and flexible rmot querying of resources
 - Multiple input fields for easy and flexible local quick-filtering of resources
 - Comprehensive support of KQL and .NET regular expressions
 
@@ -62,29 +62,32 @@ The Eto.Forms UI runs on Windows, Linux, and macOS via the WPF, GTK, and Mac bac
 - Column sorting
 - Double-click on item to open it in the Azure Portal
 - Context menu items to add result values to the search query for filtering
-- Full display of all tags in tooltips
+- Full display of all tags of all levels (subscription, resource group, resource) and combined
 
 ### Tag Management
 
 - Easy inline editing and deletion of tags in a table
 - Add new tags by clicking into the last empty line's key or value cells and start typing
-- Use default and maintain custom tag templates in a `tagtemplates.json` file in the user's AppData Local folder
+- Use default tag templates and maintain custom ones in a `tagtemplates.json` file in the user's AppData Local folder
 - Support of variables in tag template values such as {Date}, {Time}, {DateTime}, {User} 
 - Create and update all specified tags on all selected subscriptions, resource groups, and resources at once
 - Copy any tag cell value via right-click context menu
+- Open all hyperlinks of all tag values of a resource in the browser
 
 ### Error Handling and Logging
 
-- All errors logged to an `errorlog.txt` file in the user's AppData Local folder.
+- All errors logged to `errorlog.txt` files in the user's AppData Local folder.
 
 ## Used Technologies
 
 - C# .NET 9
-- Eto.Forms (with WPF, GTK, and macOS backends)
+- Eto.Forms, supporting for Windows 11 (WPF), Linux (GTK), and macOS (Mac)
 - SeriLog
 - Azure Identity
-- Azure Resource Graph
 - Azure Resource Manager
+- Azure Resource Graph
+
+_Hint for your interest: The migration from a .NET 9 Windows Forms application into a cross-platform .NET 9 Eto.Forms application was done within 3 days with help of OpenAI Codex and then GitHub Copilot using Claude Sonnet 4 (Preview) and GPT 4.1 models._
 
 ## Building and Running
 

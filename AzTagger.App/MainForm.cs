@@ -184,8 +184,15 @@ resources
 
     private bool _isClosing = false;
 
+    private readonly ProgressBar _searchProgress;
+    private readonly ProgressBar _applyTagsProgress;
+    private readonly ProgressBar _resultsRefreshProgress;
+
     public MainForm()
     {
+        _searchProgress = new ProgressBar { Indeterminate = true, Visible = false, Width = 24, Height = 24 };
+        _applyTagsProgress = new ProgressBar { Indeterminate = true, Visible = false, Width = 24, Height = 24 };
+        _resultsRefreshProgress = new ProgressBar { Indeterminate = true, Visible = false, Width = 24, Height = 24 };
         _settings = SettingsService.Load();
 
         UpdateTitle();
@@ -649,6 +656,7 @@ resources
         };
         _gvwResults.ContextMenu = _resultsContextMenu;
 
+        var searchProgressPanel = new Panel { Content = _searchProgress, Width = 28, Height = 24, MinimumSize = new Size(28, 24) };
         var topRow = new StackLayout
         {
             Orientation = Orientation.Horizontal,
@@ -656,6 +664,7 @@ resources
             Items =
             {
                 _btnSearch,
+                searchProgressPanel,
                 new Panel { Width = GetDpiScaledWidth(10) },
                 _btnSaveQuery,
                 _btnCopyQuery,
@@ -731,6 +740,7 @@ resources
             Items = 
             { 
                 _btnApplyTags,
+                _applyTagsProgress,
                 new StackLayoutItem(null, true),
                 _cboTagTemplates, 
                 _btnEditTemplates 
@@ -1140,8 +1150,8 @@ resources
                 "Info", MessageBoxButtons.OK, MessageBoxType.Information);
             return;
         }
-
         _btnSearch.Enabled = false;
+        _searchProgress.Visible = true;
         try
         {
             await EnsureSignedInAsync();
@@ -1186,6 +1196,7 @@ resources
         finally
         {
             _btnSearch.Enabled = true;
+            _searchProgress.Visible = false;
         }
     }
 
@@ -1271,12 +1282,11 @@ resources
     {
         if (!_gvwResults.SelectedItems.Cast<object>().Any())
             return;
-
+        _applyTagsProgress.Visible = true;
         var selected = _gvwResults.SelectedItems.Cast<Resource>().ToList();
         var tagsToUpdate = _tags
             .Where(t => !string.IsNullOrWhiteSpace(t.Key))
             .ToDictionary(t => t.Key, t => t.Value);
-
         try
         {
             var errors = await _azureService.UpdateTagsAsync(selected, tagsToUpdate, null);
@@ -1285,7 +1295,6 @@ resources
                 MessageBox.Show(this, string.Join("\n", errors.Distinct()), "Error", MessageBoxButtons.OK, MessageBoxType.Error);
                 return;
             }
-
             foreach (var res in selected)
             {
                 var tags = GetEntityTags(res);
@@ -1293,13 +1302,16 @@ resources
                     tags[kv.Key] = kv.Value;
                 res.CombinedTags = new Dictionary<string, string>(tags);
             }
-
             MessageBox.Show(this, "Tags updated", MessageBoxButtons.OK);
         }
         catch (Exception ex)
         {
             LoggingService.LogError(ex, "Failed to apply tags");
             MessageBox.Show(this, "Failed to apply tags", MessageBoxButtons.OK, MessageBoxType.Error);
+        }
+        finally
+        {
+            _applyTagsProgress.Visible = false;
         }
     }
 
@@ -1799,7 +1811,7 @@ resources
         var selected = _gvwResults.SelectedItems.Cast<Resource>().ToList();
         if (selected.Count == 0)
             return;
-
+        _resultsRefreshProgress.Visible = true;
         try
         {
             await EnsureSignedInAsync();
@@ -1823,6 +1835,10 @@ resources
         {
             LoggingService.LogError(ex, "Failed to refresh tags");
             MessageBox.Show(this, "Failed to refresh tags", MessageBoxButtons.OK, MessageBoxType.Error);
+        }
+        finally
+        {
+            _resultsRefreshProgress.Visible = false;
         }
     }
 
@@ -2141,7 +2157,7 @@ resources
         {
             // Multiple approaches to ensure the splitter visual is updated
             
-            // 1. Invalidate the splitter and its panels
+            //  1. Invalidate the splitter and its panels
             _splitter.Invalidate();
             _splitter.Panel1?.Invalidate();
             _splitter.Panel2?.Invalidate();
