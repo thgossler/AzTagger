@@ -811,11 +811,8 @@ resources
                 _isClosing = true;
                 LoggingService.CloseAndFlush();
             }
-            // Only quit if not already quitting to prevent loops
-            if (!Application.Instance.IsDisposed)
-            {
-                Application.Instance.Quit();
-            }
+            // Don't call Application.Instance.Quit() here to prevent loops
+            // The application will quit naturally when the main form closes
         };
 
         Shown += (_, _) => 
@@ -946,10 +943,9 @@ resources
             _isClosing = true;
             SaveSettings();
             LoggingService.CloseAndFlush();
-            
-            // Close the form, which will trigger the Closed event
-            Close();
         }
+        // Simply close the window - this will naturally exit the application
+        Close();
     }
 
     private int GetDpiScaledWidth(int baseWidth)

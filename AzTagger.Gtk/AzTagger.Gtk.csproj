@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <RuntimeIdentifiers>linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
     <UseAppHost>true</UseAppHost>
     <ApplicationTitle>AzTagger</ApplicationTitle>
     <ApplicationId>com.thomasgossler.aztagger</ApplicationId>
@@ -10,10 +10,6 @@
   <ItemGroup>
     <Content Include="../images/icon.png">
       <Link>icon.png</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="../images/Icon.icns">
-      <Link>Icon.icns</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

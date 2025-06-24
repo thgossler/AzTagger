@@ -15,21 +15,12 @@ namespace AzTagger.Gtk;
 
 public static class Program
 {
-    // P/Invoke declarations for macOS dock icon
-    [DllImport("/System/Library/Frameworks/Foundation.framework/Foundation")]
-    private static extern IntPtr objc_getClass(string className);
+    // P/Invoke declarations for GTK icon handling (Linux)
+    [DllImport("gtk-3", CallingConvention = CallingConvention.Cdecl)]
+    private static extern void gtk_window_set_default_icon_name(string icon_name);
     
-    [DllImport("/System/Library/Frameworks/Foundation.framework/Foundation")]
-    private static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector);
-    
-    [DllImport("/System/Library/Frameworks/Foundation.framework/Foundation")]
-    private static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector, IntPtr arg1);
-    
-    [DllImport("/System/Library/Frameworks/Foundation.framework/Foundation")]
-    private static extern IntPtr sel_registerName(string selectorName);
-    
-    [DllImport("/System/Library/Frameworks/Foundation.framework/Foundation")]
-    private static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector, string arg1);
+    [DllImport("gtk-3", CallingConvention = CallingConvention.Cdecl)]
+    private static extern void gtk_window_set_default_icon_from_file(string filename, out IntPtr error);
 
     public static void Main(string[] args)
     {
@@ -40,12 +31,8 @@ public static class Program
             var app = new Application(platform);
             app.Terminating += (_, _) => LoggingService.CloseAndFlush();
             
-            // Set macOS dock icon if running on macOS
-            // Temporarily disabled due to P/Invoke issues - will be improved in future version
-            // if (Environment.OSVersion.Platform == PlatformID.Unix && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            // {
-            //     SetMacOSDockIcon();
-            // }
+            // Set GTK application icon - works on Linux
+            SetGtkApplicationIcon();
             
             // Create the main form and set it as the application's main form
             // This ensures the application quits when the main form is closed
@@ -61,7 +48,7 @@ public static class Program
         }
     }
     
-    private static void SetMacOSDockIcon()
+    private static void SetGtkApplicationIcon()
     {
         try
         {
@@ -72,10 +59,7 @@ public static class Program
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var candidatePaths = new[]
             {
-                Path.Combine(baseDir, "Icon.icns"),
-                Path.Combine(baseDir, "icon.icns"),
                 Path.Combine(baseDir, "icon.png"),
-                Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "images", "Icon.icns")),
                 Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "images", "icon.png"))
             };
             
@@ -90,44 +74,43 @@ public static class Program
             
             if (iconPath == null)
             {
-                LoggingService.LogInfo("No icon file found for macOS dock icon");
+                LoggingService.LogInfo("No icon file found for GTK application icon");
                 return;
             }
             
-            // Use Objective-C runtime to set the dock icon
-            var nsApplicationClass = objc_getClass("NSApplication");
-            var sharedApplicationSel = sel_registerName("sharedApplication");
-            var nsApp = objc_msgSend(nsApplicationClass, sharedApplicationSel);
-            
-            var nsImageClass = objc_getClass("NSImage");
-            var allocSel = sel_registerName("alloc");
-            var initWithContentsOfFileSel = sel_registerName("initWithContentsOfFile:");
-            var nsStringClass = objc_getClass("NSString");
-            var stringWithUTF8StringSel = sel_registerName("stringWithUTF8String:");
-            
-            // Create NSString for the file path
-            var nsIconPath = objc_msgSend(nsStringClass, stringWithUTF8StringSel, iconPath);
-            
-            // Create NSImage instance
-            var nsImageInstance = objc_msgSend(nsImageClass, allocSel);
-            var nsImage = objc_msgSend(nsImageInstance, initWithContentsOfFileSel, nsIconPath);
-            
-            if (nsImage != IntPtr.Zero)
+            // Use GTK to set the default window icon
+            try
             {
-                // Set the application icon
-                var setApplicationIconImageSel = sel_registerName("setApplicationIconImage:");
-                objc_msgSend(nsApp, setApplicationIconImageSel, nsImage);
+                gtk_window_set_default_icon_from_file(iconPath, out var error);
                 
-                LoggingService.LogInfo($"Successfully set macOS dock icon from: {iconPath}");
+                if (error == IntPtr.Zero)
+                {
+                    LoggingService.LogInfo($"Successfully set GTK application icon from: {iconPath}");
+                }
+                else
+                {
+                    LoggingService.LogError(new Exception("GTK icon error"), $"Failed to set GTK icon from: {iconPath}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                LoggingService.LogInfo($"Failed to create NSImage from: {iconPath}");
+                LoggingService.LogError(ex, $"Exception setting GTK icon from: {iconPath}");
+                
+                // Fallback: try to set a generic icon name that might be available
+                try
+                {
+                    gtk_window_set_default_icon_name("application-default-icon");
+                    LoggingService.LogInfo("Set fallback GTK icon name");
+                }
+                catch (Exception fallbackEx)
+                {
+                    LoggingService.LogError(fallbackEx, "Failed to set fallback GTK icon");
+                }
             }
         }
         catch (Exception ex)
         {
-            LoggingService.LogError(ex, "Failed to set macOS dock icon");
+            LoggingService.LogError(ex, "Failed to set GTK application icon");
         }
     }
 }
