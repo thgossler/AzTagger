@@ -46,6 +46,7 @@ public class MainForm : Form
     private readonly DropDown _cboQuickFilter2Column;
     private readonly TextBox _txtQuickFilter2Text;
     private readonly Label _lblResultsCount;
+    private readonly Label _lblQueryMode;
 
     private System.Threading.Timer? _quickFilter1Timer;
     private System.Threading.Timer? _quickFilter2Timer;
@@ -322,22 +323,22 @@ resources
             var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "").Trim();
             if (normalizedQuery.StartsWith("resources|") || normalizedQuery.StartsWith("resourcecontainers|"))
             {
-                //_lblQueryMode.Text = "(KQL full expression) --> not supported";
+                _lblQueryMode!.Text = "(KQL full expression) --> not supported";
                 _queryMode = QueryMode.KqlFull;
             }
             else if (normalizedQuery.StartsWith("|"))
             {
-                //_lblQueryMode.Text = "(KQL filter-only expression)";
+                _lblQueryMode!.Text = "(KQL filter-only expression)";
                 _queryMode = QueryMode.KqlFilter;
             }
             else if (normalizedQuery.Length > 0)
             {
-                //_lblQueryMode.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
+                _lblQueryMode!.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
                 _queryMode = QueryMode.Regex;
             }
             else
             {
-                //_lblQueryMode.Text = string.Empty;
+                _lblQueryMode!.Text = string.Empty;
                 _queryMode = QueryMode.Regex;
             }
         });
@@ -559,6 +560,7 @@ resources
         _txtQuickFilter2Text.MouseUp += (s, e) => { if (e.Buttons == MouseButtons.Alternate) menu2.Show(_txtQuickFilter2Text); };
 
         _lblResultsCount = new Label();
+        _lblQueryMode = new Label { Text = string.Empty, TextColor = Colors.Gray, Font = new Font(SystemFont.Default) };
 
         _lnkRegExDocs = new LinkButton { Text = ".NET RegEx Docs" };
         _lnkRegExDocs.Click += (_, _) => Process.Start(new ProcessStartInfo
@@ -696,7 +698,11 @@ resources
         _cboSavedQueries.Width = GetDpiScaledWidth(150);
         layout.Items.Add(new StackLayoutItem(recentSavedRow, HorizontalAlignment.Stretch));
         
-        layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Search Query:" } });
+        layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new StackLayout {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Items = { new Label { Text = "Search Query:" }, _lblQueryMode }
+        }});
         layout.Items.Add(new StackLayoutItem(_txtSearchQuery, HorizontalAlignment.Stretch) { Expand = false });
         layout.Items.Add(new StackLayoutItem(topRow, HorizontalAlignment.Stretch));
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Results:" } });
@@ -2124,6 +2130,7 @@ resources
                 _isProgrammaticSplitterUpdate = false;
                 
                 // Force a complete visual refresh of the splitter
+
                 ForceRefreshSplitter();
                 
                 var tagsPanelHeight = availableHeight - correctedPosition;
