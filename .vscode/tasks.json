@@ -114,7 +114,7 @@
 		{
 			"label": "run: gtk",
 			"type": "shell",
-			"command": "./AzTagger.Gtk/bin/Debug/net9.0/AzTagger.Gtk",
+			"command": "./run-gtk.sh",
 			"args": [],
 			"group": "none",
 			"dependsOn": "build: gtk"

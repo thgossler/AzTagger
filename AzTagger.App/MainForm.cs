@@ -182,6 +182,8 @@ resources
 | order by EntityType desc, (tolower(SubscriptionName)) asc, (tolower(ResourceGroup)) asc, (tolower(ResourceName)) asc
 """;
 
+    private bool _isClosing = false;
+
     public MainForm()
     {
         _settings = SettingsService.Load();
@@ -793,15 +795,27 @@ resources
 
         Content = layout;
 
-        Closing += (_, _) => 
+        Closing += (_, e) => 
         {
-            SaveSettings();
-            LoggingService.CloseAndFlush();
+            if (!_isClosing)
+            {
+                _isClosing = true;
+                SaveSettings();
+                LoggingService.CloseAndFlush();
+            }
         };
         Closed += (_, _) => 
         {
-            LoggingService.CloseAndFlush();
-            Application.Instance.Quit();
+            if (!_isClosing)
+            {
+                _isClosing = true;
+                LoggingService.CloseAndFlush();
+            }
+            // Only quit if not already quitting to prevent loops
+            if (!Application.Instance.IsDisposed)
+            {
+                Application.Instance.Quit();
+            }
         };
 
         Shown += (_, _) => 
@@ -927,14 +941,29 @@ resources
 
     private void ExitApplication()
     {
-        SaveSettings();
-        Application.Instance.Quit();
+        if (!_isClosing)
+        {
+            _isClosing = true;
+            SaveSettings();
+            LoggingService.CloseAndFlush();
+            
+            // Close the form, which will trigger the Closed event
+            Close();
+        }
     }
 
     private int GetDpiScaledWidth(int baseWidth)
     {
-        var scale = Screen.LogicalPixelSize;
-        return (int)(baseWidth * scale);
+        try
+        {
+            var scale = Screen.LogicalPixelSize;
+            return (int)(baseWidth * scale);
+        }
+        catch
+        {
+            // Fallback to base width if screen information is not available
+            return baseWidth;
+        }
     }
 
     private void ResizeResultsGridColumns()
@@ -2035,9 +2064,8 @@ resources
             _splitter.Position = newPosition;
             _isProgrammaticSplitterUpdate = false;
             
-            _splitter.Invalidate();
-            
-            Content?.Invalidate();
+            // Force a complete visual refresh of the splitter
+            ForceRefreshSplitter();
         }
         
         var actualTagsPanelHeight = availableHeight - _splitter.Position;
@@ -2078,8 +2106,8 @@ resources
                 _splitter.Position = correctedPosition;
                 _isProgrammaticSplitterUpdate = false;
                 
-                _splitter.Invalidate();
-                Content?.Invalidate();
+                // Force a complete visual refresh of the splitter
+                ForceRefreshSplitter();
                 
                 var tagsPanelHeight = availableHeight - correctedPosition;
                 _fixedTagsPanelHeight = Math.Max(MinTagsPanelHeight, tagsPanelHeight);
@@ -2104,5 +2132,40 @@ resources
     private int GetAvailableHeightForSplitter()
     {
         return GetActualSplitterHeight();
+    }
+
+    private void ForceRefreshSplitter()
+    {
+        try
+        {
+            // Multiple approaches to ensure the splitter visual is updated
+            
+            // 1. Invalidate the splitter and its panels
+            _splitter.Invalidate();
+            _splitter.Panel1?.Invalidate();
+            _splitter.Panel2?.Invalidate();
+            
+            // 2. Suspend and resume layout to force a complete redraw
+            _splitter.SuspendLayout();
+            _splitter.ResumeLayout();
+            
+            // 3. Invalidate the main content
+            Content?.Invalidate();
+            
+            // 4. Force a refresh of the entire form if needed
+            Invalidate();
+            
+            // 5. For some platforms, a slight delay and second invalidation helps
+            Application.Instance.AsyncInvoke(() =>
+            {
+                _splitter.Invalidate();
+                Content?.Invalidate();
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail on refresh issues
+            LoggingService.LogError(ex, "Failed to refresh splitter visual");
+        }
     }
 }
