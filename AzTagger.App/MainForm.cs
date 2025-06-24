@@ -528,6 +528,15 @@ resources
         _txtQuickFilter1Text.TextChanged += (_, _) => ScheduleDelayedFilter(1);
         _txtQuickFilter2Text.TextChanged += (_, _) => ScheduleDelayedFilter(2);
 
+        var _lnkClearFilters = new LinkButton { Text = "Clear filters" };
+        _lnkClearFilters.Click += (_, _) =>
+        {
+            _cboQuickFilter1Column.SelectedValue = string.Empty;
+            _cboQuickFilter2Column.SelectedValue = string.Empty;
+            _txtQuickFilter1Text.Text = string.Empty;
+            _txtQuickFilter2Text.Text = string.Empty;
+        };
+
         _btnFirstPage = new Button { Text = "⏮", ToolTip = "First page" };
         _btnPreviousPage = new Button { Text = "◀", ToolTip = "Previous page" };
         _btnNextPage = new Button { Text = "▶", ToolTip = "Next page" };
@@ -720,7 +729,9 @@ resources
             new TableCell(_txtQuickFilter1Text, false),
             new TableCell(cboQuickFilter2WithMargin, false),
             new TableCell(_txtQuickFilter2Text, false),
-            new TableCell(new Panel { Width = GetDpiScaledWidth(3) }, false), // separator
+            new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
+            new TableCell(_lnkClearFilters, false),
+            new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
             new TableCell(_lnkRegExDocs, false) 
         ));
         layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch));
