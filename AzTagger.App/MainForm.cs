@@ -811,8 +811,13 @@ resources
                 _isClosing = true;
                 LoggingService.CloseAndFlush();
             }
-            // Don't call Application.Instance.Quit() here to prevent loops
-            // The application will quit naturally when the main form closes
+            
+            // On macOS, explicitly quit the application when the main form closes
+            // This ensures the application doesn't stay running in the dock
+            if (Application.Instance.Platform.ID.StartsWith("Mac", StringComparison.OrdinalIgnoreCase))
+            {
+                Application.Instance.Quit();
+            }
         };
 
         Shown += (_, _) => 
@@ -942,8 +947,15 @@ resources
             SaveSettings();
             LoggingService.CloseAndFlush();
         }
-        // Simply close the window - this will naturally exit the application
+        
+        // Close the window first
         Close();
+        
+        // On macOS, ensure the application quits completely
+        if (Application.Instance.Platform.ID == "Mac")
+        {
+            Application.Instance.Quit();
+        }
     }
 
     private int GetDpiScaledWidth(int baseWidth)
