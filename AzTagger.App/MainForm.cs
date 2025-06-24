@@ -378,21 +378,6 @@ resources
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted));
         foreach (var prop in resourceProps)
         {
-            var defaultWidth = prop.Name switch
-            {
-                "EntityType" => GetDpiScaledWidth(100),
-                "SubscriptionName" => GetDpiScaledWidth(150),
-                "ResourceGroup" => GetDpiScaledWidth(150),
-                "ResourceName" => GetDpiScaledWidth(200),
-                "ResourceType" => GetDpiScaledWidth(200),
-                "Id" => GetDpiScaledWidth(300),
-                "SubscriptionId" => GetDpiScaledWidth(280),
-                "SubscriptionTags" => GetDpiScaledWidth(200),
-                "ResourceGroupTags" => GetDpiScaledWidth(200),
-                "ResourceTags" => GetDpiScaledWidth(200),
-                _ => GetDpiScaledWidth(150)
-            };
-            
             var cell = new TextBoxCell { Binding = Binding.Delegate<Resource, string>(r => FormatPropertyForGrid(r, prop.Name)) };
             
             GridColumn col = new GridColumn
@@ -401,7 +386,7 @@ resources
                 DataCell = cell,
                 CellToolTipBinding = Binding.Delegate<Resource, string>(r => FormatPropertyForTooltip(r, prop.Name)),
                 Sortable = true,
-                Width = defaultWidth
+                Width = GetDpiScaledWidth(150)
             };
             _columnPropertyMap[col] = prop.Name;
             _gvwResults.Columns.Add(col);
@@ -518,8 +503,10 @@ resources
         var propertyNames = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted))
             .Select(p => p.Name).ToList();
-        _cboQuickFilter1Column.DataStore = new List<string>(new[] { string.Empty, "All" }.Concat(propertyNames));
-        _cboQuickFilter2Column.DataStore = new List<string>(new[] { string.Empty, "All" }.Concat(propertyNames));
+        _cboQuickFilter1Column.DataStore = new List<string>(new[] { AzTagger.Models.Constants.QuickFilterNone, AzTagger.Models.Constants.QuickFilterAll }.Concat(propertyNames));
+        _cboQuickFilter1Column.SelectedValue = AzTagger.Models.Constants.QuickFilterNone;
+        _cboQuickFilter2Column.DataStore = new List<string>(new[] { AzTagger.Models.Constants.QuickFilterNone, AzTagger.Models.Constants.QuickFilterAll }.Concat(propertyNames));
+        _cboQuickFilter2Column.SelectedValue = AzTagger.Models.Constants.QuickFilterNone;
         _cboQuickFilter1Column.SelectedIndexChanged += (_, _) => FilterResults();
         _cboQuickFilter2Column.SelectedIndexChanged += (_, _) => FilterResults();
 
@@ -531,8 +518,8 @@ resources
         var _lnkClearFilters = new LinkButton { Text = "Clear filters" };
         _lnkClearFilters.Click += (_, _) =>
         {
-            _cboQuickFilter1Column.SelectedValue = string.Empty;
-            _cboQuickFilter2Column.SelectedValue = string.Empty;
+            _cboQuickFilter1Column.SelectedValue = AzTagger.Models.Constants.QuickFilterNone;
+            _cboQuickFilter2Column.SelectedValue = AzTagger.Models.Constants.QuickFilterNone;
             _txtQuickFilter1Text.Text = string.Empty;
             _txtQuickFilter2Text.Text = string.Empty;
         };
@@ -723,12 +710,12 @@ resources
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Results:" } });
         
         var quickFilterRow = new TableLayout();
-        var cboQuickFilter2WithMargin = new Panel { Padding = new Padding(GetDpiScaledWidth(4), 0, 0, 0), Content = _cboQuickFilter2Column };
         quickFilterRow.Rows.Add(new TableRow(
-            new TableCell(_cboQuickFilter1Column, false),
             new TableCell(_txtQuickFilter1Text, false),
-            new TableCell(cboQuickFilter2WithMargin, false),
+            new TableCell(_cboQuickFilter1Column, false),
+            new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
             new TableCell(_txtQuickFilter2Text, false),
+            new TableCell(_cboQuickFilter2Column, false),
             new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
             new TableCell(_lnkClearFilters, false),
             new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
@@ -1022,19 +1009,20 @@ resources
         int availableWidth = actualGridWidth;
         
         int colCount = _gvwResults.Columns.Count;
-        
+
         var columnWidths = new Dictionary<string, int>
         {
-            ["EntityType"] = GetDpiScaledWidth(100),
-            ["SubscriptionName"] = GetDpiScaledWidth(150),
-            ["ResourceGroup"] = GetDpiScaledWidth(150),
+            ["EntityType"] = GetDpiScaledWidth(170),
+            ["Id"] = GetDpiScaledWidth(120),
+            ["SubscriptionName"] = GetDpiScaledWidth(200),
+            ["ResourceGroup"] = GetDpiScaledWidth(200),
             ["ResourceName"] = GetDpiScaledWidth(200),
-            ["ResourceType"] = GetDpiScaledWidth(200),
-            ["Id"] = GetDpiScaledWidth(300),
-            ["SubscriptionId"] = GetDpiScaledWidth(280),
+            ["ResourceType"] = GetDpiScaledWidth(240),
+            ["SubscriptionId"] = GetDpiScaledWidth(180),
             ["SubscriptionTags"] = GetDpiScaledWidth(200),
             ["ResourceGroupTags"] = GetDpiScaledWidth(200),
-            ["ResourceTags"] = GetDpiScaledWidth(200)
+            ["ResourceTags"] = GetDpiScaledWidth(200),
+            ["CombinedTags"] = GetDpiScaledWidth(200)
         };
         
         int totalPreferredWidth = 0;

@@ -74,6 +74,10 @@ It runs on latst Windows 11 (WPF), macOS (Mac) and Linux (GTK).
 - Copy any tag cell value via right-click context menu
 - Open all hyperlinks of all tag values of a resource in the browser
 
+### User Interface
+
+- Dark mode supported on macOS (not yet on Windows and Linux by Eto.Forms)
+
 ### Error Handling and Logging
 
 - All errors logged to `errorlog.txt` files in the user's AppData Local folder.

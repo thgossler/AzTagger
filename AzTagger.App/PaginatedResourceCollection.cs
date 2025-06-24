@@ -211,16 +211,18 @@ public static class ResourceFilters
 
     public static Func<Resource, bool>? CreateRegexFilter(string? columnName, string? filterText)
     {
-        if (string.IsNullOrWhiteSpace(columnName) || string.IsNullOrWhiteSpace(filterText))
+        if (string.IsNullOrWhiteSpace(columnName) ||
+            columnName.Equals(Constants.QuickFilterNone, StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(filterText))
             return null;
 
-        // Handle "All" option - search across all properties
-        if (columnName == "All")
+        // Handle All option - search across all properties
+        if (columnName == Constants.QuickFilterAll)
         {
             try
             {
                 Regex? regex;
-                var cacheKey = $"All:{filterText}";
+                var cacheKey = $"{Constants.QuickFilterAll}:{filterText}";
                 
                 lock (_cacheLock)
                 {
