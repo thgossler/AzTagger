@@ -1,3 +1,6 @@
+// Copyright (c) Thomas Gossler. All rights reserved.
+// Licensed under the MIT license.
+
 using Eto.Drawing;
 using Eto.Forms;
 

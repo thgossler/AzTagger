@@ -1,3 +1,6 @@
+// Copyright (c) Thomas Gossler. All rights reserved.
+// Licensed under the MIT license.
+
 namespace AzTagger.App;
 
 public class TagEntry

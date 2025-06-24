@@ -1,3 +1,6 @@
+// Copyright (c) Thomas Gossler. All rights reserved.
+// Licensed under the MIT license.
+
 #nullable enable
 
 using System;
@@ -1422,40 +1425,7 @@ resources
 
     private void ShowAboutDialog()
     {
-        var version = GetType().Assembly.GetName().Version?.ToString() ?? "Unknown";
-        
-        var aboutDialog = new Dialog
-        {
-            Title = "About AzTagger",
-            ClientSize = new Size(350, 150),
-            Resizable = false
-        };
-
-        var content = new StackLayout
-        {
-            Orientation = Orientation.Vertical,
-            Spacing = 10,
-            Padding = 20,
-            Items =
-            {
-                new Label { Text = "AzTagger", Font = new Font(FontFamilies.Sans, 18, FontStyle.Bold), TextAlignment = TextAlignment.Center },
-                new Label { Text = $"Version {version}", TextAlignment = TextAlignment.Center },
-                new Label { Text = "A tool for querying and managing Azure resources and tags.", TextAlignment = TextAlignment.Center, Wrap = WrapMode.Word }
-            }
-        };
-
-        aboutDialog.Content = content;
-        
-        // Handle ESC key to close the dialog
-        aboutDialog.KeyDown += (_, e) =>
-        {
-            if (e.Key == Keys.Escape)
-            {
-                aboutDialog.Close();
-                e.Handled = true;
-            }
-        };
-
+        var aboutDialog = new AboutDialog();
         aboutDialog.ShowModal(this);
     }
 
