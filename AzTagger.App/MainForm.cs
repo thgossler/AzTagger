@@ -323,17 +323,17 @@ resources
             var normalizedQuery = _txtSearchQuery.Text.ToLower().Replace(" ", "").Replace("\r\n", "").Replace("\n", "").Trim();
             if (normalizedQuery.StartsWith("resources|") || normalizedQuery.StartsWith("resourcecontainers|"))
             {
-                _lblQueryMode!.Text = "(KQL full expression) --> not supported";
+                _lblQueryMode!.Text = "--> KQL full expression (not supported)";
                 _queryMode = QueryMode.KqlFull;
             }
             else if (normalizedQuery.StartsWith("|"))
             {
-                _lblQueryMode!.Text = "(KQL filter-only expression)";
+                _lblQueryMode!.Text = "--> KQL filter-only expression";
                 _queryMode = QueryMode.KqlFilter;
             }
             else if (normalizedQuery.Length > 0)
             {
-                _lblQueryMode!.Text = "(regular expression, applied to SubscriptionName, ResourceGroup and ResourceName)";
+                _lblQueryMode!.Text = "--> regex (applied to SubscriptionName, ResourceGroup and ResourceName)";
                 _queryMode = QueryMode.Regex;
             }
             else
@@ -523,8 +523,8 @@ resources
         _cboQuickFilter1Column.SelectedIndexChanged += (_, _) => FilterResults();
         _cboQuickFilter2Column.SelectedIndexChanged += (_, _) => FilterResults();
 
-        _txtQuickFilter1Text = new TextBox { Width = GetDpiScaledWidth(180) };
-        _txtQuickFilter2Text = new TextBox { Width = GetDpiScaledWidth(180) };
+        _txtQuickFilter1Text = new TextBox { Width = GetDpiScaledWidth(180), PlaceholderText = "Quick filter 1 regex..." };
+        _txtQuickFilter2Text = new TextBox { Width = GetDpiScaledWidth(180), PlaceholderText = "Quick filter 2 regex..." };
         _txtQuickFilter1Text.TextChanged += (_, _) => ScheduleDelayedFilter(1);
         _txtQuickFilter2Text.TextChanged += (_, _) => ScheduleDelayedFilter(2);
 
@@ -701,7 +701,8 @@ resources
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new StackLayout {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
-            Items = { new Label { Text = "Search Query:" }, _lblQueryMode }
+            Items = { new Label { Text = "Search Query:" },
+            _lblQueryMode }
         }});
         layout.Items.Add(new StackLayoutItem(_txtSearchQuery, HorizontalAlignment.Stretch) { Expand = false });
         layout.Items.Add(new StackLayoutItem(topRow, HorizontalAlignment.Stretch));
