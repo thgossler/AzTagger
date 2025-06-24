@@ -691,7 +691,7 @@ resources
         };
         recentSavedRow.Rows.Add(new TableRow(
             new TableCell(_cboRecentSearches, true),  // scaleWidth = true for both
-            new TableCell(new Panel { Width = GetDpiScaledWidth(3) }, false), // 2px separator
+            new TableCell(new Panel { Width = GetDpiScaledWidth(3) }, false), // separator
             new TableCell(_cboSavedQueries, false)
         ));
         _cboRecentSearches.Width = -1;
@@ -717,9 +717,10 @@ resources
         var cboQuickFilter2WithMargin = new Panel { Padding = new Padding(GetDpiScaledWidth(4), 0, 0, 0), Content = _cboQuickFilter2Column };
         quickFilterRow.Rows.Add(new TableRow(
             new TableCell(_cboQuickFilter1Column, false),
-            new TableCell(_txtQuickFilter1Text, true),
+            new TableCell(_txtQuickFilter1Text, false),
             new TableCell(cboQuickFilter2WithMargin, false),
-            new TableCell(_txtQuickFilter2Text, true),
+            new TableCell(_txtQuickFilter2Text, false),
+            new TableCell(new Panel { Width = GetDpiScaledWidth(3) }, false), // separator
             new TableCell(_lnkRegExDocs, false) 
         ));
         layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch));
@@ -800,12 +801,12 @@ resources
             Spacing = 10,
             Items =
             {
-                _lnkGitHub,
-                _lnkDonation,
                 _lnkEditSettings,
                 _lnkShowErrorLog,
                 _lnkResetDefaults,
                 new StackLayoutItem(null, true),
+                _lnkGitHub,
+                _lnkDonation,
                 _lblVersion
             }
         };
@@ -861,6 +862,9 @@ resources
                 ResizeResultsGridColumns();
                 ResizeTagsGridColumns();
             });
+
+            // Ensure the search query input always has focus on program start
+            _txtSearchQuery.Focus();
         };
         SizeChanged += (_, _) => 
         {
