@@ -126,9 +126,9 @@ public class Settings
 
     public void ResetToWindowDefaults()
     {
-        WindowSize = new WinSize(1500, 1000);
+        WindowSize = new WinSize(1280, 768);
         WindowLocation = WinLocation.Empty;
-        SplitterPosition = 425;
+        SplitterPosition = 260;
         LastSearchQuery = string.Empty;
         LastQuickFilter1Text = string.Empty;
         LastQuickFilter2Text = string.Empty;
