@@ -183,7 +183,7 @@ resources
     {
         _settings = SettingsService.Load();
 
-        Title = "AzTagger";
+        UpdateTitle();
         
         MinimumSize = new Size(1024, 768);
         
@@ -267,6 +267,7 @@ resources
             if (dlg.ShowModal(this))
             {
                 SettingsService.Save(_settings);
+                UpdateTitle(); // Update title when Azure context changes
             }
         };
 
@@ -734,6 +735,19 @@ resources
         };
     }
 
+    private void UpdateTitle()
+    {
+        var baseName = "AzTagger";
+        if (!string.IsNullOrEmpty(_settings.SelectedAzureContext))
+        {
+            Title = $"{baseName} - {_settings.SelectedAzureContext}";
+        }
+        else
+        {
+            Title = baseName;
+        }
+    }
+
     private void CreateMenuBar()
     {
         var closeCommand = new Command
@@ -1036,6 +1050,7 @@ resources
                     if (dlg.ShowModal(this))
                     {
                         SettingsService.Save(_settings);
+                        UpdateTitle(); // Update title when Azure context changes
                         _btnSearch.Enabled = true;
                         await SearchAsync();
                         return;

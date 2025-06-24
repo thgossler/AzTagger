@@ -21,9 +21,9 @@ public class AzureContextConfigDialog : Dialog<bool>
 
     public AzureContextConfigDialog(Settings settings, AzureService azureService)
     {
-        Title = "Azure Contexts";
-        ClientSize = new Size(640, 280);
-        MinimumSize = new Size(500, 260);
+        Title = "Environments";
+        ClientSize = new Size(800, 400);
+        MinimumSize = new Size(700, 350);
         Padding = 10;
         Resizable = true;
 
@@ -33,7 +33,7 @@ public class AzureContextConfigDialog : Dialog<bool>
         _grid = new GridView
         {
             DataStore = _contexts,
-            Size = new Size(-1, 120) // Height for exactly 3 rows
+            Size = new Size(-1, 160) // Height for more rows
         };
 
         // Initialize context menu
@@ -41,13 +41,14 @@ public class AzureContextConfigDialog : Dialog<bool>
 
         _grid.MouseDown += Grid_MouseDown;
         _grid.MouseUp += Grid_MouseUp;
+        _grid.CellDoubleClick += Grid_CellDoubleClick;
         
         // Track when the window gets focus to reopen context menu if needed
         this.GotFocus += Dialog_GotFocus;
 
         var nameColumn = new GridColumn
         {
-            HeaderText = "Name",
+            HeaderText = "Context Name",
             Editable = true,
             DataCell = new TextBoxCell { Binding = Binding.Property<AzureContext, string>(x => x.Name) },
             Width = 150
@@ -56,7 +57,7 @@ public class AzureContextConfigDialog : Dialog<bool>
         var envNames = azureService.GetAzureEnvironmentNames();
         var envColumn = new GridColumn
         {
-            HeaderText = "Environment",
+            HeaderText = "Azure Environment Name",
             Editable = true,
             DataCell = new ComboBoxCell
             {
@@ -68,15 +69,24 @@ public class AzureContextConfigDialog : Dialog<bool>
 
         var tenantColumn = new GridColumn
         {
-            HeaderText = "Tenant Id",
+            HeaderText = "Tenant ID",
             Editable = true,
             DataCell = new TextBoxCell { Binding = Binding.Property<AzureContext, string>(x => x.TenantId) },
+            Width = 290
+        };
+
+        var clientAppIdColumn = new GridColumn
+        {
+            HeaderText = "Client App ID",
+            Editable = true,
+            DataCell = new TextBoxCell { Binding = Binding.Property<AzureContext, string>(x => x.ClientAppId) },
             Width = 290
         };
 
         _grid.Columns.Add(nameColumn);
         _grid.Columns.Add(envColumn);
         _grid.Columns.Add(tenantColumn);
+        _grid.Columns.Add(clientAppIdColumn);
 
         var addButton = new Button 
         { 
@@ -103,8 +113,25 @@ public class AzureContextConfigDialog : Dialog<bool>
         };
         okButton.Click += (_, _) =>
         {
+            // Get the selected context (if any) to set as the active context
+            var selectedContext = _grid.SelectedItem as AzureContext;
+            
             settings.AzureContexts = new List<AzureContext>(_contexts);
-            settings.SelectedAzureContext = settings.AzureContexts.FirstOrDefault()?.Name ?? string.Empty;
+            
+            // Set the selected context as active, or fall back to first available
+            if (selectedContext != null)
+            {
+                settings.SelectedAzureContext = selectedContext.Name;
+            }
+            else if (settings.AzureContexts.Any())
+            {
+                settings.SelectedAzureContext = settings.AzureContexts.First().Name;
+            }
+            else
+            {
+                settings.SelectedAzureContext = string.Empty;
+            }
+            
             Close(true);
         };
 
@@ -124,6 +151,15 @@ public class AzureContextConfigDialog : Dialog<bool>
             Spacing = new Size(5, 5)
         };
 
+        // Add explanatory text
+        var explanationLabel = new Label
+        {
+            Text = "Add or remove Azure contexts here. At least one valid context is required. You can choose a custom name for each context which will be shown in the context selection list.\n\nThis application also needs to be registered in your Entra ID and its ClientAppId be configured. The registered application in Entra ID needs the following permissions:\n- Azure Service Management / Delegated / user_impersonation\n- Microsoft Graph / Delegated / User.Read",
+            Wrap = WrapMode.Word,
+            Size = new Size(-1, 80),
+            VerticalAlignment = VerticalAlignment.Top
+        };
+
         var buttonLayout = new StackLayout
         {
             Orientation = Orientation.Horizontal,
@@ -139,11 +175,46 @@ public class AzureContextConfigDialog : Dialog<bool>
             new TableCell(cancelButton, true) { ScaleWidth = false }
         ));
 
+        mainLayout.Rows.Add(new TableRow(explanationLabel) { ScaleHeight = false });
         mainLayout.Rows.Add(new TableRow(buttonLayout) { ScaleHeight = false });
         mainLayout.Rows.Add(new TableRow(_grid) { ScaleHeight = true });
         mainLayout.Rows.Add(new TableRow(bottomButtonLayout) { ScaleHeight = false });
 
         Content = mainLayout;
+        
+        // Select the currently active context when the dialog opens
+        SelectCurrentActiveContext(settings);
+    }
+
+    private void SelectCurrentActiveContext(Settings settings)
+    {
+        if (!string.IsNullOrEmpty(settings.SelectedAzureContext))
+        {
+            var activeContext = _contexts.FirstOrDefault(c => c.Name == settings.SelectedAzureContext);
+            if (activeContext != null)
+            {
+                var index = _contexts.IndexOf(activeContext);
+                if (index >= 0)
+                {
+                    _grid.SelectRow(index);
+                }
+            }
+        }
+        else if (_contexts.Any())
+        {
+            // If no active context is set, select the first one
+            _grid.SelectRow(0);
+        }
+    }
+
+    private void Grid_CellDoubleClick(object sender, GridCellMouseEventArgs e)
+    {
+        // Double-click confirms the dialog with the selected context
+        if (e.Item is AzureContext)
+        {
+            // Trigger the OK button click behavior
+            ((Button)DefaultButton).PerformClick();
+        }
     }
 
     private void InitializeContextMenu()
