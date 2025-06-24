@@ -159,7 +159,7 @@ public class AzureContextConfigDialog : Dialog<bool>
         {
             Text = "Add or remove Azure contexts here. At least one valid context is required. You can choose a custom name for each context which will be shown in the context selection list.\n\nThis application also needs to be registered in your Entra ID and its ClientAppId be configured. The registered application in Entra ID needs the following permissions:\n- Azure Service Management / Delegated / user_impersonation\n- Microsoft Graph / Delegated / User.Read",
             Wrap = WrapMode.Word,
-            Size = new Size(-1, 80),
+            Size = new Size(-1, 130),
             VerticalAlignment = VerticalAlignment.Top
         };
 

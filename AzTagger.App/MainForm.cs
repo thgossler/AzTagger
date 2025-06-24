@@ -882,7 +882,10 @@ resources
             Text = "&File"
         };
 
-        fileMenu.Items.Add(exitCommand);
+        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+        {
+            fileMenu.Items.Add(exitCommand);
+        }
 
         var menuBar = new MenuBar
         {
@@ -891,11 +894,6 @@ resources
 
         menuBar.QuitItem = exitCommand;
         menuBar.AboutItem = aboutItem;
-
-        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-        {
-            menuBar.ApplicationItems.Add(altF4ExitCommand);
-        }
 
         Menu = menuBar;
     }

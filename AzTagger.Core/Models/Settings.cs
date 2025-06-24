@@ -24,13 +24,13 @@ public class Settings
     public List<SavedSearchItem> SavedSearches { get; set; } = new List<SavedSearchItem>();
 
     [JsonPropertyName("WindowSize")]
-    public WinSize WindowSize { get; set; } = new WinSize(1500, 1000);
+    public WinSize WindowSize { get; set; } = new WinSize(1280, 768);
 
     [JsonPropertyName("WindowLocation")]
     public WinLocation WindowLocation { get; set; } = WinLocation.Empty;
 
     [JsonPropertyName("SplitterPosition")]
-    public int SplitterPosition { get; set; } = 425;
+    public int SplitterPosition { get; set; } = 260;
 
     [JsonPropertyName("ColorMode")]
     public string ColorMode { get; set; } = "System";
