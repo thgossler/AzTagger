@@ -887,11 +887,6 @@ resources
             Text = "&File"
         };
 
-        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-        {
-            fileMenu.Items.Add(exitCommand);
-        }
-
         var menuBar = new MenuBar
         {
             Items = { fileMenu }
