@@ -698,19 +698,30 @@ resources
         _cboSavedQueries.Width = GetDpiScaledWidth(150);
         layout.Items.Add(new StackLayoutItem(recentSavedRow, HorizontalAlignment.Stretch));
         
-        layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new StackLayout {
+        layout.Items.Add(new StackLayoutItem(new StackLayout {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
-            Items = { new Label { Text = "Search Query:" },
-            _lblQueryMode }
-        }});
+            Items = {
+                new Label { Text = "Search Query:" },
+                _lblQueryMode,
+                new StackLayoutItem(null, true), // stretch
+                _lnkResourceGraphDocs
+            }
+        }, HorizontalAlignment.Stretch));
+        
         layout.Items.Add(new StackLayoutItem(_txtSearchQuery, HorizontalAlignment.Stretch) { Expand = false });
         layout.Items.Add(new StackLayoutItem(topRow, HorizontalAlignment.Stretch));
         layout.Items.Add(new Panel { Padding = new Padding(0, 5, 0, 0), Content = new Label { Text = "Results:" } });
         
         var quickFilterRow = new TableLayout();
         var cboQuickFilter2WithMargin = new Panel { Padding = new Padding(GetDpiScaledWidth(4), 0, 0, 0), Content = _cboQuickFilter2Column };
-        quickFilterRow.Rows.Add(new TableRow(new TableCell(_cboQuickFilter1Column, false), new TableCell(_txtQuickFilter1Text, true), new TableCell(cboQuickFilter2WithMargin, false), new TableCell(_txtQuickFilter2Text, true), new TableCell(null, true)));
+        quickFilterRow.Rows.Add(new TableRow(
+            new TableCell(_cboQuickFilter1Column, false),
+            new TableCell(_txtQuickFilter1Text, true),
+            new TableCell(cboQuickFilter2WithMargin, false),
+            new TableCell(_txtQuickFilter2Text, true),
+            new TableCell(_lnkRegExDocs, false) 
+        ));
         layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch));
         
         var resultsPanel = new TableLayout { Spacing = new Size(5, 5) };
@@ -789,8 +800,6 @@ resources
             Spacing = 10,
             Items =
             {
-                _lnkRegExDocs,
-                _lnkResourceGraphDocs,
                 _lnkGitHub,
                 _lnkDonation,
                 _lnkEditSettings,
