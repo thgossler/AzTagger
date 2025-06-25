@@ -864,6 +864,7 @@ resources
             {
                 ResizeResultsGridColumns();
                 ResizeTagsGridColumns();
+                UpdateSortIndicators();
             });
 
             // Ensure the search query input always has focus on program start
@@ -1184,6 +1185,7 @@ resources
             _allResults = items;
             _paginatedResults.SetAllItems(_allResults);
             UpdatePaginationControls();
+            UpdateSortIndicators();
             SaveRecentSearch(_txtSearchQuery.Text);
         }
         catch (Exception ex)
@@ -1827,9 +1829,33 @@ resources
             : _allResults.OrderByDescending(r => GetPropertyValue(r, columnName)?.ToString()).ToList();
 
         _paginatedResults.SetAllItems(_allResults);
+        UpdateSortIndicators();
         FilterResults();
     }
-
+    
+    private void UpdateSortIndicators()
+    {
+        foreach (var column in _gvwResults.Columns)
+        {
+            if (_columnPropertyMap.TryGetValue(column, out var propertyName))
+            {
+                // Remove any existing indicators first
+                string headerText = propertyName;
+                
+                // If this is the sorted column, add the appropriate indicator
+                if (propertyName == _sortColumn)
+                {
+                    string indicator = _sortAscending ? " ▲" : " ▼";
+                    column.HeaderText = headerText + indicator;
+                }
+                else
+                {
+                    column.HeaderText = headerText;
+                }
+            }
+        }
+    }
+    
     private async Task RefreshTagsAsync()
     {
         var selected = _gvwResults.SelectedItems.Cast<Resource>().ToList();
