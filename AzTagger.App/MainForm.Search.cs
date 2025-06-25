@@ -1,8 +1,6 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
-#nullable enable
-
 using System;
 using System.Linq;
 using System.Threading.Tasks;

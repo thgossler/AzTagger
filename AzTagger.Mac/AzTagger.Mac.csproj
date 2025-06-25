@@ -13,6 +13,7 @@
     <CFBundleVersion>1.1.0</CFBundleVersion>
     <CFBundleShortVersionString>1.1.0</CFBundleShortVersionString>
     <CFBundleIconFile>Icon.icns</CFBundleIconFile>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="../images/icon.png">

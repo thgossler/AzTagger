@@ -1,8 +1,6 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
-#nullable enable
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,8 +26,8 @@ public class PaginatedResourceCollection
     private int _pageSize = 1000;
     private int _totalFilteredCount = 0;
     
-    private Func<Resource, bool>? _filter1;
-    private Func<Resource, bool>? _filter2;
+    private Func<Resource, bool> _filter1;
+    private Func<Resource, bool> _filter2;
     
     public ObservableCollection<Resource> DisplayedItems => _displayedItems;
     public IReadOnlyList<Resource> FilteredItems => _filteredItems;
@@ -40,7 +38,7 @@ public class PaginatedResourceCollection
     public bool HasNextPage => _currentPage < TotalPages - 1;
     public bool HasPreviousPage => _currentPage > 0;
     
-    public event EventHandler? FilterChanged;
+    public event EventHandler FilterChanged;
 
     public void SetAllItems(IEnumerable<Resource> items)
     {
@@ -57,7 +55,7 @@ public class PaginatedResourceCollection
         ApplyFiltersAndRefresh();
     }
 
-    public void SetFilters(Func<Resource, bool>? filter1, Func<Resource, bool>? filter2)
+    public void SetFilters(Func<Resource, bool> filter1, Func<Resource, bool> filter2)
     {
         _filter1 = filter1;
         _filter2 = filter2;
@@ -188,7 +186,7 @@ public class PaginatedResourceCollection
         }
     }
 
-    public Resource? GetItemAt(int globalIndex)
+    public Resource GetItemAt(int globalIndex)
     {
         if (globalIndex < 0 || globalIndex >= _totalFilteredCount)
             return null;
@@ -209,7 +207,7 @@ public static class ResourceFilters
     private static readonly Dictionary<string, Regex> _regexCache = new();
     private static readonly object _cacheLock = new object();
 
-    public static Func<Resource, bool>? CreateRegexFilter(string? columnName, string? filterText)
+    public static Func<Resource, bool> CreateRegexFilter(string columnName, string filterText)
     {
         if (string.IsNullOrWhiteSpace(columnName) ||
             columnName.Equals(Constants.QuickFilterNone, StringComparison.OrdinalIgnoreCase) ||
@@ -221,7 +219,7 @@ public static class ResourceFilters
         {
             try
             {
-                Regex? regex;
+                Regex regex;
                 var cacheKey = $"{Constants.QuickFilterAll}:{filterText}";
                 
                 lock (_cacheLock)
@@ -256,7 +254,7 @@ public static class ResourceFilters
 
         try
         {
-            Regex? regex;
+            Regex regex;
             var cacheKey = $"{columnName}:{filterText}";
             
             lock (_cacheLock)
@@ -296,7 +294,7 @@ public static class ResourceFilters
         }
     }
 
-    private static string FormatTags(IDictionary<string, string>? tags)
+    private static string FormatTags(IDictionary<string, string> tags)
     {
         if (tags == null || tags.Count == 0) return string.Empty;
         return string.Join(" ", tags.SelectMany(kvp => new[] { kvp.Key, kvp.Value }));

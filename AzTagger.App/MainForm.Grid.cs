@@ -1,8 +1,6 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -367,7 +365,7 @@ public partial class MainForm : Form
         }
     }
 
-    private static object? GetPropertyValue(Resource resource, string propertyName)
+    private static object GetPropertyValue(Resource resource, string propertyName)
     {
         var prop = typeof(Resource).GetProperty(propertyName);
         var value = prop?.GetValue(resource);

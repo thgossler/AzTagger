@@ -1,8 +1,6 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
-#nullable enable
-
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -15,17 +13,17 @@ public class AboutDialog : Dialog
 {
     public AboutDialog()
     {
-        var version = GetType().Assembly.GetName().Version?.ToString() ?? "Unknown";
+        var version = GetType().Assembly.GetName().Version.ToString();
         
         Title = "About AzTagger";
         ClientSize = new Size(400, 180);
         Resizable = false;
 
         // Load the application icon
-        ImageView? iconView = null;
+        ImageView iconView = null;
         try
         {
-            Image? iconImage = null;
+            Image iconImage = null;
             
             // Try multiple resource loading approaches
             string[] resourceNames = {

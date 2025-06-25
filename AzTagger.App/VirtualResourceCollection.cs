@@ -1,8 +1,6 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
-#nullable enable
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,7 +20,7 @@ public class VirtualResourceCollection : IList<Resource>, INotifyCollectionChang
     private readonly List<Resource> _filteredItems;
     private readonly object _lock = new object();
     
-    public event NotifyCollectionChangedEventHandler? CollectionChanged;
+    public event NotifyCollectionChangedEventHandler CollectionChanged;
 
     public VirtualResourceCollection()
     {
@@ -40,7 +38,7 @@ public class VirtualResourceCollection : IList<Resource>, INotifyCollectionChang
         }
     }
 
-    public void SetFilter(Func<Resource, bool>? filter)
+    public void SetFilter(Func<Resource, bool> filter)
     {
         lock (_lock)
         {
@@ -49,7 +47,7 @@ public class VirtualResourceCollection : IList<Resource>, INotifyCollectionChang
         }
     }
 
-    private Func<Resource, bool>? _currentFilter;
+    private Func<Resource, bool> _currentFilter;
 
     private void RefreshFilteredItems()
     {

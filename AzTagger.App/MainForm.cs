@@ -1,8 +1,6 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
-#nullable enable
-
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
@@ -42,10 +40,10 @@ public partial class MainForm : Form
     private  Label _lblResultsCount;
     private  Label _lblQueryMode;
 
-    private System.Threading.Timer? _quickFilter1Timer;
-    private System.Threading.Timer? _quickFilter2Timer;
-    private System.Threading.Timer? _resizeTimer;
-    private System.Threading.Timer? _splitterTimer;
+    private System.Threading.Timer _quickFilter1Timer;
+    private System.Threading.Timer _quickFilter2Timer;
+    private System.Threading.Timer _resizeTimer;
+    private System.Threading.Timer _splitterTimer;
 
     private  Button _btnFirstPage;
     private  Button _btnPreviousPage;
@@ -70,9 +68,9 @@ public partial class MainForm : Form
     private bool _sortAscending = true;
 
     private int _resultsContextRow = -1;
-    private GridColumn? _resultsContextColumn;
+    private GridColumn _resultsContextColumn;
     private int _tagsContextRow = -1;
-    private GridColumn? _tagsContextColumn;
+    private GridColumn _tagsContextColumn;
     private  Dictionary<GridColumn, string> _columnPropertyMap = new();
 
     private List<TagTemplate> _tagTemplates = new();

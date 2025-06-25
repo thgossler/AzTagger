@@ -1,8 +1,6 @@
 // Copyright (c) Thomas Gossler. All rights reserved.
 // Licensed under the MIT license.
 
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -145,7 +143,7 @@ public partial class MainForm : Form
 
         // Add handler for detecting double-clicks on column headers
         DateTime _lastHeaderClickTime = DateTime.MinValue;
-        GridColumn? _lastHeaderColumn = null;
+        GridColumn _lastHeaderColumn = null;
         const int doubleClickTimeThreshold = 500; // milliseconds
         
         _gvwResults.MouseDown += (s, e) => 
@@ -426,7 +424,7 @@ public partial class MainForm : Form
         // Set application icon
         try
         {
-            Icon? icon = null;
+            Icon icon = null;
             
             if (Platform.IsWpf)
             {
