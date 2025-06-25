@@ -6,6 +6,7 @@
     <SuppressNETSdkUnsupportedPlatformCheck>true</SuppressNETSdkUnsupportedPlatformCheck>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>../images/icon.ico</ApplicationIcon>
+    <AssemblyName>AzTagger</AssemblyName>
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>

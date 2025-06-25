@@ -51,7 +51,7 @@ public static class Program
         try
         {
             // Find icon file - try multiple locations
-            string? iconPath = null;
+            string iconPath = null;
             
             // First try the base directory
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;

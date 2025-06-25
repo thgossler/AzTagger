@@ -154,9 +154,11 @@ ARM64:
 ```
 Apple Silicon (arm64):
     dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-arm64
+    mv ./publish/mac-arm64/AzTagger.Mac.app ./publish/mac-arm64/AzTagger.app
 
 Intel (x64):
     dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-x64
+    mv ./publish/mac-x64/AzTagger.Mac.app ./publish/mac-x64/AzTagger.app
 ```
 
 ## Report Bugs

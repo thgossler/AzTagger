@@ -6,6 +6,7 @@
     <UseAppHost>true</UseAppHost>
     <ApplicationTitle>AzTagger</ApplicationTitle>
     <ApplicationId>com.thomasgossler.aztagger</ApplicationId>
+    <AssemblyName>AzTagger</AssemblyName>
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
