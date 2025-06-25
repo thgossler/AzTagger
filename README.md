@@ -40,7 +40,7 @@ querying of Azure resources and tag management. It allows fast search and filter
 resources, resource groups, and subscriptions using Azure Resource Graph for your Entra ID tenant.
 It runs on latst Windows 11 (WPF), macOS (Mac) and Linux (GTK).
 
-<img src="./images/screenshot.jpg" alt="Screenshot" width="2049">
+<img src="./images/screenshot.png" alt="Screenshot" width="2049">
 
 ## Features
 

@@ -7,7 +7,6 @@
     <SuppressNETSdkUnsupportedPlatformCheck>true</SuppressNETSdkUnsupportedPlatformCheck>
     <UseAppHost>true</UseAppHost>
     <CreatePackage>true</CreatePackage>
-    <AssemblyName>AzTagger</AssemblyName>
     <CFBundleDisplayName>AzTagger</CFBundleDisplayName>
     <CFBundleName>AzTagger</CFBundleName>
     <CFBundleIdentifier>com.aztools.aztagger</CFBundleIdentifier>

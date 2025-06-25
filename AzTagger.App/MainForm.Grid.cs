@@ -467,6 +467,7 @@ public partial class MainForm : Form
             return;
             
         string textToInsert;
+        int newRelativeCaretIndexFromEnd = int.MinValue;
         
         // Special handling for Tag columns
         if (propertyName.EndsWith("Tags"))
@@ -475,7 +476,17 @@ public partial class MainForm : Form
         }
         else
         {
-            textToInsert = propertyName;
+            string currentLineText = _txtSearchQuery.Text?.Substring(0, _txtSearchQuery.CaretIndex).Split(new[] { '\n' }, StringSplitOptions.None).LastOrDefault() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(currentLineText))
+            {
+                textToInsert = $"| where {propertyName} =~ ''";
+                newRelativeCaretIndexFromEnd = -1; // Position before the closing quote
+            }
+            else
+            {
+                textToInsert = propertyName;
+            }
         }
         
         // Insert the text at the current cursor position
@@ -487,9 +498,13 @@ public partial class MainForm : Form
             : currentText.Insert(caretPosition, textToInsert);
             
         _txtSearchQuery.Text = newText;
-        
+
         // Set the caret position after the inserted text
         _txtSearchQuery.CaretIndex = caretPosition + textToInsert.Length;
+        if (newRelativeCaretIndexFromEnd != int.MinValue)
+        {
+            _txtSearchQuery.CaretIndex += newRelativeCaretIndexFromEnd;
+        }
         
         // Set focus to the query text field
         _txtSearchQuery.Focus();
