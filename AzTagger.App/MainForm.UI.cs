@@ -138,13 +138,47 @@ public partial class MainForm : Form
     private void CreateResultsGrid()
     {
         _gvwResults.CellDoubleClick += (_, _) => OpenSelectedResourceInPortal();
-        _gvwResults.ColumnHeaderClick += (_, e) => SortResults(e.Column);
         _gvwResults.SelectionChanged += (_, _) => LoadTagsForSelection();
 
-        // Add handler for detecting double-clicks on column headers
+        // Add handler for detecting double-clicks on column headers and managing sort timing
         DateTime _lastHeaderClickTime = DateTime.MinValue;
         GridColumn _lastHeaderColumn = null;
-        const int doubleClickTimeThreshold = 500; // milliseconds
+        GridColumn _pendingSortColumn = null;
+        System.Threading.Timer _sortTimer = null;
+        bool _doubleClickDetected = false;
+        const int doubleClickTimeThreshold = 250; // milliseconds
+        
+        // Handle column header clicks with delayed sorting to avoid sorting on double-click
+        _gvwResults.ColumnHeaderClick += (_, e) =>
+        {
+            // If a double-click was already detected in MouseDown, ignore this ColumnHeaderClick
+            if (_doubleClickDetected)
+            {
+                _doubleClickDetected = false; // Reset for next time
+                return;
+            }
+            
+            var now = DateTime.Now;
+            _pendingSortColumn = e.Column;
+            
+            // Cancel any pending sort timer
+            _sortTimer?.Dispose();
+            
+            // Update tracking variables for this click
+            _lastHeaderClickTime = now;
+            _lastHeaderColumn = e.Column;
+            
+            // Start a timer to sort after the double-click threshold
+            _sortTimer = new System.Threading.Timer(_ =>
+            {
+                if (_pendingSortColumn == e.Column && !_doubleClickDetected)
+                {
+                    Application.Instance.AsyncInvoke(() => SortResults(e.Column));
+                }
+                _sortTimer?.Dispose();
+                _sortTimer = null;
+            }, null, doubleClickTimeThreshold + 20, System.Threading.Timeout.Infinite);
+        };
         
         _gvwResults.MouseDown += (s, e) => 
         {
@@ -159,18 +193,22 @@ public partial class MainForm : Form
                 if (_lastHeaderColumn == cell.Column && 
                     (now - _lastHeaderClickTime).TotalMilliseconds < doubleClickTimeThreshold)
                 {
-                    // Double-click detected, insert column name into query
+                    // Double-click detected
+                    _doubleClickDetected = true;
+                    
+                    // Insert column name into query
                     InsertColumnNameIntoQuery(cell.Column);
+                    
+                    // Cancel any pending sort operation
+                    _pendingSortColumn = null;
+                    _sortTimer?.Dispose();
+                    _sortTimer = null;
+                    
                     // Reset tracking vars to prevent triple-click detection
                     _lastHeaderClickTime = DateTime.MinValue;
                     _lastHeaderColumn = null;
                 }
-                else
-                {
-                    // Record this click for potential double-click detection
-                    _lastHeaderClickTime = now;
-                    _lastHeaderColumn = cell.Column;
-                }
+                // Note: For single clicks, we let ColumnHeaderClick handle the tracking variables
             }
             else if (e.Buttons == MouseButtons.Alternate && cell != null && cell.RowIndex >= 0 && cell.Column != null)
             {
