@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
@@ -237,7 +238,7 @@ public partial class MainForm : Form
                 DataCell = cell,
                 CellToolTipBinding = Binding.Delegate<Resource, string>(r => FormatPropertyForTooltip(r, prop.Name)),
                 Sortable = true,
-                Width = GetDpiScaledWidth(150)
+                Width = GetDpiScaledSize(150)
             };
             _columnPropertyMap[col] = prop.Name;
             _gvwResults.Columns.Add(col);
@@ -252,7 +253,7 @@ public partial class MainForm : Form
             Editable = true,
             DataCell = new TextBoxCell { Binding = Binding.Property<TagEntry, string>(t => t.Key) },
             CellToolTipBinding = Binding.Property<TagEntry, string>(t => t.Key),
-            Width = GetDpiScaledWidth(150)
+            Width = GetDpiScaledSize(150)
         };
         var valueCol = new GridColumn
         {
@@ -260,7 +261,7 @@ public partial class MainForm : Form
             Editable = true,
             DataCell = new TextBoxCell { Binding = Binding.Property<TagEntry, string>(t => t.Value) },
             CellToolTipBinding = Binding.Property<TagEntry, string>(t => t.Value),
-            Width = GetDpiScaledWidth(250)
+            Width = GetDpiScaledSize(250)
         };
         _gvwTags.Columns.Add(keyCol);
         _gvwTags.Columns.Add(valueCol);
@@ -381,6 +382,44 @@ public partial class MainForm : Form
 
         _txtQuickFilter1Text.TextChanged += (_, _) => ScheduleDelayedFilter(1);
         _txtQuickFilter2Text.TextChanged += (_, _) => ScheduleDelayedFilter(2);
+        
+        // Add button click handlers for exclude functionality
+        _btnQuickFilter1Exclude.Click += (_, _) => ToggleIncludeExcludeFilter(_txtQuickFilter1Text);
+        _btnQuickFilter2Exclude.Click += (_, _) => ToggleIncludeExcludeFilter(_txtQuickFilter2Text);
+    }
+
+    private void ToggleIncludeExcludeFilter(TextBox textBox)
+    {
+        var currentText = textBox.Text?.Trim();
+        if (string.IsNullOrEmpty(currentText))
+        {
+            MessageBox.Show(this, "No text to convert to exclude pattern.", "Info", MessageBoxButtons.OK, MessageBoxType.Information);
+            return;
+        }
+
+        // Check if it's already an exclusion pattern and extract the original text
+        if (currentText.StartsWith("^(?!.*") && currentText.EndsWith(").*$"))
+        {
+            // Extract the escaped text from the pattern: ^(?!.*escaped_text).*$
+            var startIndex = "^(?!.*".Length;
+            var endIndex = currentText.Length - ").*$".Length;
+            if (endIndex > startIndex)
+            {
+                var extractedText = currentText.Substring(startIndex, endIndex - startIndex);
+                // Unescape the text to get back to the original
+                var originalText = Regex.Unescape(extractedText);
+                textBox.Text = originalText;
+            }
+            return;
+        }
+
+        // Escape special regex characters in the text
+        var escapedText = Regex.Escape(currentText);
+        
+        // Create negative lookahead pattern to exclude the text
+        var excludePattern = $"^(?!.*{escapedText}).*$";
+        
+        textBox.Text = excludePattern;
     }
 
     private void CreateTagTemplateControls()
@@ -617,7 +656,7 @@ public partial class MainForm : Form
         };
     }
 
-    private int GetDpiScaledWidth(int baseWidth)
+    private int GetDpiScaledSize(int baseWidth)
     {
         try
         {

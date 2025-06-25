@@ -27,7 +27,7 @@ public partial class MainForm : Form
         }
         else
         {
-            _fixedTagsPanelHeight = GetDpiScaledWidth(200);
+            _fixedTagsPanelHeight = GetDpiScaledSize(200);
         }
     }
 
@@ -112,7 +112,7 @@ public partial class MainForm : Form
         }
         
         int baseUIHeight = 320;
-        int nonSplitterUIHeight = GetDpiScaledWidth(baseUIHeight);
+        int nonSplitterUIHeight = GetDpiScaledSize(baseUIHeight);
         var estimatedHeight = Math.Max(300, ClientSize.Height - nonSplitterUIHeight);
         
         return estimatedHeight;

@@ -35,8 +35,10 @@ public partial class MainForm : Form
 
     private  DropDown _cboQuickFilter1Column;
     private  TextBox _txtQuickFilter1Text;
+    private  Button _btnQuickFilter1Exclude;
     private  DropDown _cboQuickFilter2Column;
     private  TextBox _txtQuickFilter2Text;
+    private  Button _btnQuickFilter2Exclude;
     private  Label _lblResultsCount;
     private  Label _lblQueryMode;
 
@@ -86,7 +88,7 @@ public partial class MainForm : Form
         get 
         {
             var availableHeight = GetActualSplitterHeight();
-            return Math.Max(GetDpiScaledWidth(60), (int)(availableHeight * 0.2));
+            return Math.Max(GetDpiScaledSize(60), (int)(availableHeight * 0.2));
         }
     }
     
@@ -95,7 +97,7 @@ public partial class MainForm : Form
         get 
         {
             var availableHeight = GetActualSplitterHeight(); 
-            return Math.Max(GetDpiScaledWidth(60), (int)(availableHeight * 0.2));
+            return Math.Max(GetDpiScaledSize(60), (int)(availableHeight * 0.2));
         }
     }
     
@@ -216,8 +218,10 @@ resources
             SpellCheck = false,
             TextReplacements = TextReplacements.None
         };
-        _txtQuickFilter1Text = new TextBox { Width = GetDpiScaledWidth(150), PlaceholderText = "Quick filter 1 regex..." };
-        _txtQuickFilter2Text = new TextBox { Width = GetDpiScaledWidth(150), PlaceholderText = "Quick filter 2 regex..." };
+        _txtQuickFilter1Text = new TextBox { Width = GetDpiScaledSize(150), PlaceholderText = "Quick filter 1 regex..." };
+        _btnQuickFilter1Exclude = new Button { Text = "!", Width = GetDpiScaledSize(6), Height = GetDpiScaledSize(6), ToolTip = "Toggle include/exclude filter" };
+        _txtQuickFilter2Text = new TextBox { Width = GetDpiScaledSize(150), PlaceholderText = "Quick filter 2 regex..." };
+        _btnQuickFilter2Exclude = new Button { Text = "!", Width = GetDpiScaledSize(6), Height = GetDpiScaledSize(6), ToolTip = "Toggle include/exclude filter" };
 
         // Initialize buttons
         _btnSearch = new Button { Text = "Search" };
@@ -242,9 +246,9 @@ resources
         // Initialize dropdowns
         _cboRecentSearches = new DropDown();
         _cboSavedQueries = new DropDown();
-        _cboQuickFilter1Column = new DropDown { Width = GetDpiScaledWidth(130) };
-        _cboQuickFilter2Column = new DropDown { Width = GetDpiScaledWidth(130) };
-        _cboTagTemplates = new DropDown { Width = GetDpiScaledWidth(200) };
+        _cboQuickFilter1Column = new DropDown { Width = GetDpiScaledSize(130) };
+        _cboQuickFilter2Column = new DropDown { Width = GetDpiScaledSize(130) };
+        _cboTagTemplates = new DropDown { Width = GetDpiScaledSize(200) };
 
         // Initialize labels
         _lblResultsCount = new Label();
@@ -303,11 +307,11 @@ resources
             {
                 _btnSearch,
                 searchProgressPanel,
-                new Panel { Width = GetDpiScaledWidth(10) },
+                new Panel { Width = GetDpiScaledSize(10) },
                 _btnSaveQuery,
                 _btnCopyQuery,
                 _btnClearQuery,
-                new Panel { Width = GetDpiScaledWidth(10) },
+                new Panel { Width = GetDpiScaledSize(10) },
                 configureButton,
                 null
             }
@@ -327,11 +331,11 @@ resources
         };
         recentSavedRow.Rows.Add(new TableRow(
             new TableCell(_cboRecentSearches, true),  // scaleWidth = true for both
-            new TableCell(new Panel { Width = GetDpiScaledWidth(3) }, false), // separator
+            new TableCell(new Panel { Width = GetDpiScaledSize(3) }, false), // separator
             new TableCell(_cboSavedQueries, false)
         ));
         _cboRecentSearches.Width = -1;
-        _cboSavedQueries.Width = GetDpiScaledWidth(250);
+        _cboSavedQueries.Width = GetDpiScaledSize(250);
         layout.Items.Add(new StackLayoutItem(recentSavedRow, HorizontalAlignment.Stretch));
         
         layout.Items.Add(new StackLayoutItem(new StackLayout {
@@ -362,13 +366,15 @@ resources
         var quickFilterRow = new TableLayout();
         quickFilterRow.Rows.Add(new TableRow(
             new TableCell(_txtQuickFilter1Text, true),
+            new TableCell(_btnQuickFilter1Exclude, false),
             new TableCell(_cboQuickFilter1Column, false),
-            new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
+            new TableCell(new Panel { Width = GetDpiScaledSize(5) }, false), // separator
             new TableCell(_txtQuickFilter2Text, true),
+            new TableCell(_btnQuickFilter2Exclude, false),
             new TableCell(_cboQuickFilter2Column, false),
-            new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
+            new TableCell(new Panel { Width = GetDpiScaledSize(5) }, false), // separator
             new TableCell(_lnkClearFilters, false),
-            new TableCell(new Panel { Width = GetDpiScaledWidth(5) }, false), // separator
+            new TableCell(new Panel { Width = GetDpiScaledSize(5) }, false), // separator
             new TableCell(_lnkRegExDocs, false) 
         ));
         layout.Items.Add(new StackLayoutItem(quickFilterRow, HorizontalAlignment.Stretch) { VerticalAlignment = VerticalAlignment.Center });
@@ -423,7 +429,7 @@ resources
             Panel1 = resultsPanel,
             Panel2 = tagsPanel,
             Position = Math.Max(100, _settings.SplitterPosition),
-            SplitterWidth = GetDpiScaledWidth(8)
+            SplitterWidth = GetDpiScaledSize(8)
         };
         
         _splitter.PositionChanged += (_, _) =>
@@ -442,7 +448,7 @@ resources
         
         layout.Items.Add(new StackLayoutItem(_splitter, HorizontalAlignment.Stretch, true));
 
-        layout.Items.Add(new Panel { Height = GetDpiScaledWidth(2) });
+        layout.Items.Add(new Panel { Height = GetDpiScaledSize(2) });
 
         var linksRow = new StackLayout
         {

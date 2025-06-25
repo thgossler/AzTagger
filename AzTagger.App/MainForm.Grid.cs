@@ -18,10 +18,10 @@ public partial class MainForm : Form
         if (_gvwResults.Columns.Count == 0)
             return;
         
-        int tolerance = GetDpiScaledWidth(20);
+        int tolerance = GetDpiScaledSize(20);
         int actualGridWidth = _gvwResults.Width - tolerance;
         
-        if (actualGridWidth <= GetDpiScaledWidth(100))
+        if (actualGridWidth <= GetDpiScaledSize(100))
             return;
         
         int availableWidth = actualGridWidth;
@@ -30,17 +30,17 @@ public partial class MainForm : Form
 
         var columnWidths = new Dictionary<string, int>
         {
-            ["EntityType"] = GetDpiScaledWidth(170),
-            ["Id"] = GetDpiScaledWidth(120),
-            ["SubscriptionName"] = GetDpiScaledWidth(200),
-            ["ResourceGroup"] = GetDpiScaledWidth(200),
-            ["ResourceName"] = GetDpiScaledWidth(200),
-            ["ResourceType"] = GetDpiScaledWidth(240),
-            ["SubscriptionId"] = GetDpiScaledWidth(180),
-            ["SubscriptionTags"] = GetDpiScaledWidth(200),
-            ["ResourceGroupTags"] = GetDpiScaledWidth(200),
-            ["ResourceTags"] = GetDpiScaledWidth(200),
-            ["CombinedTags"] = GetDpiScaledWidth(200)
+            ["EntityType"] = GetDpiScaledSize(170),
+            ["Id"] = GetDpiScaledSize(120),
+            ["SubscriptionName"] = GetDpiScaledSize(200),
+            ["ResourceGroup"] = GetDpiScaledSize(200),
+            ["ResourceName"] = GetDpiScaledSize(200),
+            ["ResourceType"] = GetDpiScaledSize(240),
+            ["SubscriptionId"] = GetDpiScaledSize(180),
+            ["SubscriptionTags"] = GetDpiScaledSize(200),
+            ["ResourceGroupTags"] = GetDpiScaledSize(200),
+            ["ResourceTags"] = GetDpiScaledSize(200),
+            ["CombinedTags"] = GetDpiScaledSize(200)
         };
         
         int totalPreferredWidth = 0;
@@ -54,7 +54,7 @@ public partial class MainForm : Form
             }
             else
             {
-                totalPreferredWidth += GetDpiScaledWidth(150);
+                totalPreferredWidth += GetDpiScaledSize(150);
             }
         }
         
@@ -63,7 +63,7 @@ public partial class MainForm : Form
         for (int i = 0; i < colCount; i++)
         {
             var column = _gvwResults.Columns[i];
-            int preferredWidth = GetDpiScaledWidth(150);
+            int preferredWidth = GetDpiScaledSize(150);
             
             if (_columnPropertyMap.TryGetValue(column, out var propertyName) && 
                 columnWidths.TryGetValue(propertyName, out var configuredWidth))
@@ -72,17 +72,17 @@ public partial class MainForm : Form
             }
             
             int scaledWidth = (int)(preferredWidth * scaleFactor);
-            int finalWidth = Math.Max(GetDpiScaledWidth(40), scaledWidth);
+            int finalWidth = Math.Max(GetDpiScaledSize(40), scaledWidth);
             column.Width = finalWidth;
         }
         
-        int totalMinimumWidth = colCount * GetDpiScaledWidth(40);
-        if (totalMinimumWidth > availableWidth && availableWidth > GetDpiScaledWidth(100))
+        int totalMinimumWidth = colCount * GetDpiScaledSize(40);
+        if (totalMinimumWidth > availableWidth && availableWidth > GetDpiScaledSize(100))
         {
             int evenDistributedWidth = availableWidth / colCount;
             for (int i = 0; i < colCount; i++)
             {
-                _gvwResults.Columns[i].Width = Math.Max(GetDpiScaledWidth(25), evenDistributedWidth);
+                _gvwResults.Columns[i].Width = Math.Max(GetDpiScaledSize(25), evenDistributedWidth);
             }
         }
     }
@@ -92,10 +92,10 @@ public partial class MainForm : Form
         if (_gvwTags.Columns.Count == 0)
             return;
         
-        int tolerance = GetDpiScaledWidth(20);
+        int tolerance = GetDpiScaledSize(20);
         int actualGridWidth = _gvwTags.Width - tolerance;
         
-        if (actualGridWidth <= GetDpiScaledWidth(80))
+        if (actualGridWidth <= GetDpiScaledSize(80))
             return;
         
         int availableWidth = actualGridWidth;
@@ -103,18 +103,18 @@ public partial class MainForm : Form
         int keyColWidth = availableWidth / 3;
         int valueColWidth = availableWidth - keyColWidth;
         
-        int minKeyWidth = GetDpiScaledWidth(50);
-        int minValueWidth = GetDpiScaledWidth(80);
+        int minKeyWidth = GetDpiScaledSize(50);
+        int minValueWidth = GetDpiScaledSize(80);
         
         keyColWidth = Math.Max(keyColWidth, minKeyWidth);
         valueColWidth = Math.Max(valueColWidth, minValueWidth);
         
-        if (minKeyWidth + minValueWidth > availableWidth && availableWidth > GetDpiScaledWidth(60))
+        if (minKeyWidth + minValueWidth > availableWidth && availableWidth > GetDpiScaledSize(60))
         {
             keyColWidth = availableWidth / 3;
             valueColWidth = availableWidth - keyColWidth;
-            keyColWidth = Math.Max(GetDpiScaledWidth(20), keyColWidth);
-            valueColWidth = Math.Max(GetDpiScaledWidth(30), valueColWidth);
+            keyColWidth = Math.Max(GetDpiScaledSize(20), keyColWidth);
+            valueColWidth = Math.Max(GetDpiScaledSize(30), valueColWidth);
         }
         
         if (_gvwTags.Columns.Count >= 2)
