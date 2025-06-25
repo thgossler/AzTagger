@@ -95,9 +95,7 @@ _Hint for your interest: The migration from a .NET 9 Windows Forms application i
 
 ## Building and Running
 
-Clone the repository and build all projects:
-
-`dotnet build AzTagger.sln -c Release`
+Clone the repository, open in VS Code, select the desired target platform and hit F5 to build and run the program.
 
 ### Build and Run for Each Platform
 
@@ -130,6 +128,36 @@ Intel (x64):
 ### Publish
 
 You can publish self-contained executables for each platform using `dotnet publish` with the same `--framework` and `--runtime` parameters.
+
+#### Windows
+
+```
+x64:
+    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0 --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-x64
+
+ARM64:
+    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0 --runtime win-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-arm64
+```
+
+#### Linux
+
+```
+x64:
+    dotnet publish AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net9.0 --runtime linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/linux-x64
+
+ARM64:
+    dotnet publish AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net9.0 --runtime linux-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/linux-arm64
+```
+
+#### macOS
+
+```
+Apple Silicon (arm64):
+    dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-arm64
+
+Intel (x64):
+    dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-x64
+```
 
 ## Report Bugs
 

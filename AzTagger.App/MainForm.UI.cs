@@ -64,12 +64,7 @@ public partial class MainForm : Form
     {
         KeyDown += (_, e) =>
         {
-            if (e.Key == Keys.Escape)
-            {
-                ExitApplication();
-                e.Handled = true;
-            }
-            else if (e.Key == Keys.PageUp && e.Modifiers == Keys.None)
+            if (e.Key == Keys.PageUp && e.Modifiers == Keys.None)
             {
                 _paginatedResults.PreviousPage();
                 UpdatePaginationControls();
