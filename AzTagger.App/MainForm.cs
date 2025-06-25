@@ -373,7 +373,43 @@ resources
         };
 
         _gvwResults = new GridView { DataStore = _paginatedResults.DisplayedItems, AllowMultipleSelection = true };
+        _gvwResults.CellDoubleClick += (_, _) => OpenSelectedResourceInPortal();
+        _gvwResults.ColumnHeaderClick += (_, e) => SortResults(e.Column);
+        _gvwResults.SelectionChanged += (_, _) => LoadTagsForSelection();
+
+        // Add handler for detecting double-clicks on column headers
+        DateTime _lastHeaderClickTime = DateTime.MinValue;
+        GridColumn? _lastHeaderColumn = null;
+        const int doubleClickTimeThreshold = 500; // milliseconds
         
+        _gvwResults.MouseDown += (s, e) => 
+        {
+            // Try to get the cell at the click location
+            var cell = _gvwResults.GetCellAt(e.Location);
+            
+            // If row index is -1, it's likely a header click
+            if (cell?.RowIndex == -1 && cell?.Column != null)
+            {
+                var now = DateTime.Now;
+                // Check if it's a double click (same column, within time threshold)
+                if (_lastHeaderColumn == cell.Column && 
+                    (now - _lastHeaderClickTime).TotalMilliseconds < doubleClickTimeThreshold)
+                {
+                    // Double-click detected, insert column name into query
+                    InsertColumnNameIntoQuery(cell.Column);
+                    // Reset tracking vars to prevent triple-click detection
+                    _lastHeaderClickTime = DateTime.MinValue;
+                    _lastHeaderColumn = null;
+                }
+                else
+                {
+                    // Record this click for potential double-click detection
+                    _lastHeaderClickTime = now;
+                    _lastHeaderColumn = cell.Column;
+                }
+            }
+        };
+
         var resourceProps = typeof(Resource).GetProperties()
             .Where(p => p.Name != nameof(Resource.CombinedTagsFormatted));
         foreach (var prop in resourceProps)
@@ -1854,6 +1890,40 @@ resources
                 }
             }
         }
+    }
+    
+    private void InsertColumnNameIntoQuery(GridColumn column)
+    {
+        if (!_columnPropertyMap.TryGetValue(column, out var propertyName))
+            return;
+            
+        string textToInsert;
+        
+        // Special handling for Tag columns
+        if (propertyName.EndsWith("Tags"))
+        {
+            textToInsert = $"{propertyName}[''] =~ ''";
+        }
+        else
+        {
+            textToInsert = propertyName;
+        }
+        
+        // Insert the text at the current cursor position
+        int caretPosition = _txtSearchQuery.CaretIndex;
+        string currentText = _txtSearchQuery.Text ?? string.Empty;
+        
+        string newText = currentText.Length == 0 
+            ? textToInsert 
+            : currentText.Insert(caretPosition, textToInsert);
+            
+        _txtSearchQuery.Text = newText;
+        
+        // Set the caret position after the inserted text
+        _txtSearchQuery.CaretIndex = caretPosition + textToInsert.Length;
+        
+        // Set focus to the query text field
+        _txtSearchQuery.Focus();
     }
     
     private async Task RefreshTagsAsync()
