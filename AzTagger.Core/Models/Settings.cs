@@ -11,6 +11,10 @@ namespace AzTagger.Models;
 
 public class Settings
 {
+    static public readonly WinLocation DefaultWindowLocation = WinLocation.Empty;
+    static public readonly WinSize DefaultWindowSize = new WinSize(1280, 768);
+    static public readonly int DefaultSplitterPosition = 260;
+
     [JsonPropertyName("AzureContexts")]
     public List<AzureContext> AzureContexts { get; set; } = new List<AzureContext>();
 
@@ -24,13 +28,13 @@ public class Settings
     public List<SavedSearchItem> SavedSearches { get; set; } = new List<SavedSearchItem>();
 
     [JsonPropertyName("WindowSize")]
-    public WinSize WindowSize { get; set; } = new WinSize(1280, 768);
+    public WinSize WindowSize { get; set; } = DefaultWindowSize;
 
     [JsonPropertyName("WindowLocation")]
-    public WinLocation WindowLocation { get; set; } = WinLocation.Empty;
+    public WinLocation WindowLocation { get; set; } = DefaultWindowLocation;
 
     [JsonPropertyName("SplitterPosition")]
-    public int SplitterPosition { get; set; } = 260;
+    public int SplitterPosition { get; set; } = DefaultSplitterPosition;
 
     [JsonPropertyName("ColorMode")]
     public string ColorMode { get; set; } = "System";
@@ -126,9 +130,9 @@ public class Settings
 
     public void ResetToWindowDefaults()
     {
-        WindowSize = new WinSize(1280, 768);
-        WindowLocation = WinLocation.Empty;
-        SplitterPosition = 260;
+        WindowLocation = DefaultWindowLocation;
+        WindowSize = DefaultWindowSize;
+        SplitterPosition = DefaultSplitterPosition;
         LastSearchQuery = string.Empty;
         LastQuickFilter1Text = string.Empty;
         LastQuickFilter2Text = string.Empty;

@@ -485,7 +485,18 @@ public partial class MainForm : Form
         {
             _settings.ResetToWindowDefaults();
             ClientSize = new Size(_settings.WindowSize.Width, _settings.WindowSize.Height);
-            Location = new Point(_settings.WindowLocation.X, _settings.WindowLocation.Y);
+            if (_settings.WindowLocation != Settings.WinLocation.Empty)
+            {
+                Location = new Point(_settings.WindowLocation.X, _settings.WindowLocation.Y);
+            }
+            else
+            {
+                // Center the window if no location is set
+                var screen = Screen.PrimaryScreen;
+                var centerX = (int)((screen.WorkingArea.Width - ClientSize.Width) / 2 + screen.WorkingArea.X);
+                var centerY = (int)((screen.WorkingArea.Height - ClientSize.Height) / 2 + screen.WorkingArea.Y);
+                Location = new Point(centerX, centerY);
+            }
             _splitter!.Position = _settings.SplitterPosition;
             Invalidate();
         };
@@ -497,7 +508,7 @@ public partial class MainForm : Form
         try
         {
             Icon icon = null;
-            
+
             if (Platform.IsWpf)
             {
                 // Try embedded resource first
@@ -569,7 +580,7 @@ public partial class MainForm : Form
                     }
                 }
             }
-            
+
             if (icon != null)
             {
                 Icon = icon;
@@ -580,9 +591,9 @@ public partial class MainForm : Form
             // Log error but don't fail the application
             System.Diagnostics.Debug.WriteLine($"Failed to load application icon: {ex.Message}");
         }
-        
+
         MinimumSize = new Size(1024, 768);
-        
+
         if (_settings.WindowSize.Width > 0 && _settings.WindowSize.Height > 0)
         {
             var width = Math.Max(_settings.WindowSize.Width, 1024);
@@ -590,10 +601,22 @@ public partial class MainForm : Form
             ClientSize = new Size(width, height);
         }
         else
-            ClientSize = new Size(1024, 768);
+        {
+            ClientSize = new Size(Settings.DefaultWindowSize.Width, Settings.DefaultWindowSize.Height);
+        }
 
-        if (_settings.WindowLocation.X > 0 || _settings.WindowLocation.Y > 0)
+        if (_settings.WindowLocation != Settings.WinLocation.Empty)
+        {
             Location = new Point(_settings.WindowLocation.X, _settings.WindowLocation.Y);
+        }
+        else
+        {
+            // Center the window if no location is set
+            var screen = Screen.PrimaryScreen;
+            var centerX = (int)((screen.WorkingArea.Width - ClientSize.Width) / 2 + screen.WorkingArea.X);
+            var centerY = (int)((screen.WorkingArea.Height - ClientSize.Height) / 2 + screen.WorkingArea.Y);
+            Location = new Point(centerX, centerY);
+        }
     }
 
     private void SetupFormEvents()
