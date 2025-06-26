@@ -102,8 +102,8 @@ Clone the repository, open in VS Code, select the desired target platform and hi
 #### Windows
 
 ```
-dotnet build AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0 --runtime win-x64
-dotnet run --project AzTagger.Wpf/AzTagger.Wpf.csproj --framework net9.0 --runtime win-x64
+dotnet build AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0-windows --runtime win-x64
+dotnet run --project AzTagger.Wpf/AzTagger.Wpf.csproj --framework net9.0-windows --runtime win-x64
 ```
 
 #### Linux
@@ -133,10 +133,10 @@ You can publish self-contained executables for each platform using `dotnet publi
 
 ```
 x64:
-    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0 --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-x64
+    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0-windows --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-x64
 
 ARM64:
-    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0 --runtime win-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-arm64
+    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0-windows --runtime win-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-arm64
 ```
 
 #### Linux

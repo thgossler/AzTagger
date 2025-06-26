@@ -14,12 +14,12 @@
             "console": "internalConsole",
             "windows": {
                 "preLaunchTask": "build: wpf (windows only)",
-                "program": "${workspaceFolder}/AzTagger.Wpf/bin/Debug/net9.0-windows/AzTagger.Wpf.dll",
+                "program": "${workspaceFolder}/AzTagger.Wpf/bin/Debug/net9.0-windows/AzTagger.dll",
                 "cwd": "${workspaceFolder}/AzTagger.Wpf"
             },
             "linux": {
                 "preLaunchTask": "build: gtk",
-                "program": "${workspaceFolder}/AzTagger.Gtk/bin/Debug/net9.0/AzTagger.Gtk.dll",
+                "program": "${workspaceFolder}/AzTagger.Gtk/bin/Debug/net9.0/AzTagger.dll",
                 "cwd": "${workspaceFolder}/AzTagger.Gtk"
             },
             "osx": {
@@ -60,16 +60,6 @@
             "cwd": "${workspaceFolder}/AzTagger.Wpf",
             "stopAtEntry": false,
             "console": "internalConsole"
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Debug All Projects",
-            "configurations": [
-                ".NET Debug: Mac",
-                ".NET Debug: GTK (Linux/Unix)"
-            ],
-            "stopAll": true
         }
     ]
 }
