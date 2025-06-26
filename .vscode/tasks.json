@@ -378,7 +378,10 @@
 				"publish: mac-x64",
 				"publish: mac-arm64"
 			],
-			"group": "none"
+			"group": "none",
+			"problemMatcher": [
+				"$msCompile"
+			]
 		},
 		{
 			"label": "publish: all-linux",
@@ -387,7 +390,10 @@
 				"publish: linux-x64",
 				"publish: linux-arm64"
 			],
-			"group": "none"
+			"group": "none",
+			"problemMatcher": [
+				"$msCompile"
+			]
 		},
 		{
 			"label": "restore",
