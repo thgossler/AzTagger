@@ -42,6 +42,8 @@ It runs on latst Windows 11 (WPF), macOS (Mac) and Linux (GTK).
 
 <img src="./images/screenshot.png" alt="Screenshot" width="2049">
 
+See also this AI-auto-generated comprehensive description on [DeepWiki](https://deepwiki.com/thgossler/AzTagger).
+
 ## Features
 
 ### User Authentication and Tenant Selection
