@@ -9,6 +9,7 @@
     <CreatePackage>true</CreatePackage>
     <CFBundleDisplayName>AzTagger</CFBundleDisplayName>
     <CFBundleName>AzTagger</CFBundleName>
+    <MacBundleName>AzTagger</MacBundleName>
     <CFBundleIdentifier>com.aztools.aztagger</CFBundleIdentifier>
     <CFBundleVersion>1.2.0</CFBundleVersion>
     <CFBundleShortVersionString>1.2.0</CFBundleShortVersionString>

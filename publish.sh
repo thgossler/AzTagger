@@ -57,10 +57,10 @@ echo "Created: publish/AzTagger-v$VERSION-win-x64.zip"
 zip -j "AzTagger-v$VERSION-win-arm64.zip" win-arm64/*.exe win-arm64/*.dll
 echo "Created: publish/AzTagger-v$VERSION-win-arm64.zip"
 
-zip -r "AzTagger-v$VERSION-mac-x64.zip" mac-x64/AzTagger.Mac.app
+(cd mac-x64 && zip -r "../AzTagger-v$VERSION-mac-x64.zip" AzTagger.app)
 echo "Created: publish/AzTagger-v$VERSION-mac-x64.zip"
 
-zip -r "AzTagger-v$VERSION-mac-arm64.zip" mac-arm64/AzTagger.Mac.app
+(cd mac-arm64 && zip -r "../AzTagger-v$VERSION-mac-arm64.zip" AzTagger.app)
 echo "Created: publish/AzTagger-v$VERSION-mac-arm64.zip"
 
 zip -j "AzTagger-v$VERSION-linux-gtk-x64.zip" linux-x64/AzTagger linux-x64/*.png

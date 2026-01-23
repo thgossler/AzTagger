@@ -50,6 +50,9 @@ See also this AI-auto-generated comprehensive description on [DeepWiki](https://
 
 - Interactive sign-in to Entra ID via web browser, support for SSO and multi-factor authentication (MFA)
 - Support for multiple parallel Azure contexts including environment (e.g., AzurePublicCloud, AzureChina), Entra ID tenant and app ID
+- **Note:** The application must be registered in Entra ID with the following authentication redirect URIs configured:
+  - `http://localhost`
+  - `aztagger://auth`
 
 ### Search Functionality
 
@@ -86,14 +89,12 @@ See also this AI-auto-generated comprehensive description on [DeepWiki](https://
 
 ## Used Technologies
 
-- C# .NET 9
+- C# .NET 10
 - Eto.Forms, supporting for Windows 11 (WPF), Linux (GTK), and macOS (Mac)
 - SeriLog
 - Azure Identity
 - Azure Resource Manager
 - Azure Resource Graph
-
-_Hint for your interest: The migration from a .NET 9 Windows Forms application into a cross-platform .NET 9 Eto.Forms application was done within 3 days with help of OpenAI Codex and then GitHub Copilot using Claude Sonnet 4 (Preview) and GPT 4.1 models._
 
 ## Building and Running
 
@@ -104,63 +105,63 @@ Clone the repository, open in VS Code, select the desired target platform and hi
 #### Windows
 
 ```
-dotnet build AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0-windows --runtime win-x64
-dotnet run --project AzTagger.Wpf/AzTagger.Wpf.csproj --framework net9.0-windows --runtime win-x64
+dotnet build AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net10.0-windows --runtime win-x64
+dotnet run --project AzTagger.Wpf/AzTagger.Wpf.csproj --framework net10.0-windows --runtime win-x64
 ```
 
 #### Linux
 
 ```
-dotnet build AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net9.0 --runtime linux-x64
-dotnet run --project AzTagger.Gtk/AzTagger.Gtk.csproj --framework net9.0 --runtime linux-x64
+dotnet build AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net10.0 --runtime linux-x64
+dotnet run --project AzTagger.Gtk/AzTagger.Gtk.csproj --framework net10.0 --runtime linux-x64
 ```
 
 #### macOS
 
 ```
 Apple Silicon (arm64):
-    dotnet build AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-arm64
-    dotnet run --project AzTagger.Mac/AzTagger.Mac.csproj --framework net9.0 --runtime osx-arm64
+    dotnet build AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net10.0 --runtime osx-arm64
+    dotnet run --project AzTagger.Mac/AzTagger.Mac.csproj --framework net10.0 --runtime osx-arm64
 
 Intel (x64):
-    dotnet build AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-x64
-    dotnet run --project AzTagger.Mac/AzTagger.Mac.csproj --framework net9.0 --runtime osx-x64
+    dotnet build AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net10.0 --runtime osx-x64
+    dotnet run --project AzTagger.Mac/AzTagger.Mac.csproj --framework net10.0 --runtime osx-x64
 ```
 
 ### Publish
 
 You can publish self-contained executables for each platform using `dotnet publish` with the same `--framework` and `--runtime` parameters.
 
+You can also use the `publish.sh` or `publish.cmd` scripts.
+
 #### Windows
 
 ```
 x64:
-    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0-windows --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-x64
+    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net10.0-windows --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-x64
 
 ARM64:
-    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net9.0-windows --runtime win-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-arm64
+    dotnet publish AzTagger.Wpf/AzTagger.Wpf.csproj -c Release --framework net10.0-windows --runtime win-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/win-arm64
 ```
 
 #### Linux
 
 ```
 x64:
-    dotnet publish AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net9.0 --runtime linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/linux-x64
+    dotnet publish AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net10.0 --runtime linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/linux-x64
 
 ARM64:
-    dotnet publish AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net9.0 --runtime linux-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/linux-arm64
+    dotnet publish AzTagger.Gtk/AzTagger.Gtk.csproj -c Release --framework net10.0 --runtime linux-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/linux-arm64
 ```
 
 #### macOS
 
 ```
 Apple Silicon (arm64):
-    dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-arm64
-    mv ./publish/mac-arm64/AzTagger.Mac.app ./publish/mac-arm64/AzTagger.app
+    dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net10.0 --runtime osx-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-arm64
 
 Intel (x64):
-    dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net9.0 --runtime osx-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-x64
-    mv ./publish/mac-x64/AzTagger.Mac.app ./publish/mac-x64/AzTagger.app
+    dotnet publish AzTagger.Mac/AzTagger.Mac.csproj -c Release --framework net10.0 --runtime osx-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./publish/mac-x64
 ```
 
 ## Report Bugs
