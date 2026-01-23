@@ -11,6 +11,7 @@ using Azure.ResourceManager.Resources;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +29,7 @@ public class AzureService
         public InteractiveBrowserCredential Credential;
         public ArmClient ArmClient;
         public TenantResource TenantResource;
+        public AuthenticationRecord AuthRecord;
     }
     List<SigninContext> _signinContexts = new List<SigninContext>();
 
@@ -45,10 +47,58 @@ public class AzureService
         }
     }
 
+    private static readonly string AuthRecordsDir =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AzTagger", "auth");
+
     public AzureService(Settings settings)
     {
         _settings = settings;
         _azContext = _settings.GetAzureContext();
+    }
+
+    private string GetAuthRecordPath(string contextName)
+    {
+        // Sanitize the context name to be safe for file names
+        var safeName = string.Join("_", contextName.Split(Path.GetInvalidFileNameChars()));
+        return Path.Combine(AuthRecordsDir, $"{safeName}.authrecord");
+    }
+
+    private async Task<AuthenticationRecord> LoadAuthenticationRecordAsync(string contextName)
+    {
+        var path = GetAuthRecordPath(contextName);
+        if (!File.Exists(path))
+            return null;
+
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+            return await AuthenticationRecord.DeserializeAsync(stream);
+        }
+        catch (Exception ex)
+        {
+            LoggingService.LogInfo($"Failed to load authentication record: {ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task SaveAuthenticationRecordAsync(string contextName, AuthenticationRecord record)
+    {
+        if (record == null)
+            return;
+
+        try
+        {
+            if (!Directory.Exists(AuthRecordsDir))
+                Directory.CreateDirectory(AuthRecordsDir);
+
+            var path = GetAuthRecordPath(contextName);
+            using var stream = new FileStream(path, FileMode.Create, FileAccess.Write);
+            await record.SerializeAsync(stream);
+        }
+        catch (Exception ex)
+        {
+            LoggingService.LogInfo($"Failed to save authentication record: {ex.Message}");
+        }
     }
 
     public async Task<List<TenantData>> GetAvailableTenantsAsync(string environmentName = null)
@@ -125,6 +175,10 @@ public class AzureService
             {
                 authorityHost = AzureAuthorityHosts.AzureGovernment;
             }
+
+            // Try to load a previously saved AuthenticationRecord for silent authentication
+            var savedAuthRecord = await LoadAuthenticationRecordAsync(_azContext.Name);
+            
             var options = new InteractiveBrowserCredentialOptions
             {
                 AuthorityHost = authorityHost,
@@ -134,9 +188,21 @@ public class AzureService
                 TokenCachePersistenceOptions = new TokenCachePersistenceOptions
                 {
                     Name = $"AzTaggerTokenCache_{_azContext.AzureEnvironmentName}"
-                }
+                },
+                AuthenticationRecord = savedAuthRecord
             };
             signinContext.Credential = new InteractiveBrowserCredential(options);
+
+            // If we don't have a saved auth record, authenticate interactively and save it
+            if (savedAuthRecord == null)
+            {
+                signinContext.AuthRecord = await signinContext.Credential.AuthenticateAsync();
+                await SaveAuthenticationRecordAsync(_azContext.Name, signinContext.AuthRecord);
+            }
+            else
+            {
+                signinContext.AuthRecord = savedAuthRecord;
+            }
 
             var armClientOptions = new ArmClientOptions { Environment = _azContext.ArmEnvironment };
             signinContext.ArmClient = new ArmClient(signinContext.Credential, _azContext.TenantId, armClientOptions);
