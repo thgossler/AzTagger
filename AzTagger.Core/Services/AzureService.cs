@@ -30,6 +30,7 @@ public class AzureService
         public ArmClient ArmClient;
         public TenantResource TenantResource;
         public AuthenticationRecord AuthRecord;
+        public bool SessionValidated;
     }
     List<SigninContext> _signinContexts = new List<SigninContext>();
 
@@ -149,7 +150,7 @@ public class AzureService
             RedirectUri = new Uri("http://localhost"),
             TokenCachePersistenceOptions = new TokenCachePersistenceOptions
             {
-                Name = $"AzTaggerTokenCache_{environmentName ?? _azContext.AzureEnvironmentName}"
+                Name = $"AzTaggerTokenCache_{environmentName ?? _azContext?.AzureEnvironmentName ?? "Default"}"
             },
         };
 
@@ -180,10 +181,22 @@ public class AzureService
 
         if (signinContext != null && signinContext.Credential != null && signinContext.ArmClient != null && signinContext.TenantResource != null)
         {
-            if (!refresh && await IsSessionValidAsync(signinContext))
+            // Skip validation if already validated to avoid redundant Keychain access on macOS
+            if (!refresh && signinContext.SessionValidated)
             {
                 return;
             }
+        }
+
+        // Check if we have a saved auth record before creating new context
+        var savedAuthRecord = await LoadAuthenticationRecordAsync(_azContext.Name);
+        
+        // If we have a valid signin context and a saved auth record, trust it without validation
+        if (!refresh && signinContext != null && signinContext.Credential != null && 
+            signinContext.ArmClient != null && signinContext.TenantResource != null && savedAuthRecord != null)
+        {
+            signinContext.SessionValidated = true;
+            return;
         }
 
         _signinContexts.RemoveAll(sc => sc.AzureContextName.Equals(_azContext.Name));
@@ -202,9 +215,6 @@ public class AzureService
             {
                 authorityHost = AzureAuthorityHosts.AzureGovernment;
             }
-
-            // Try to load a previously saved AuthenticationRecord for silent authentication
-            var savedAuthRecord = await LoadAuthenticationRecordAsync(_azContext.Name);
             
             var options = new InteractiveBrowserCredentialOptions
             {
@@ -245,6 +255,9 @@ public class AzureService
         {
             throw new Exception("Failed to sign in to Azure.");
         }
+
+        // Mark session as validated to avoid redundant Keychain access on subsequent calls
+        signinContext.SessionValidated = true;
     }
 
     private async Task<bool> IsSessionValidAsync(SigninContext signinContext)
