@@ -403,3 +403,5 @@ local.*
 TODO.*
 Temp/
 .DS_Store
+
+upgrades/
