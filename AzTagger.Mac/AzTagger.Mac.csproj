@@ -26,6 +26,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
-    <PackageReference Include="Eto.Platform.Mac64" Version="2.9.0" />
+    <PackageReference Include="Eto.Platform.Mac64" Version="2.10.2" />
   </ItemGroup>
 </Project>

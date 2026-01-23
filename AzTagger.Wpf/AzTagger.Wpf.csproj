@@ -11,7 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
-    <PackageReference Include="Eto.Platform.Wpf" Version="2.9.0" />
+    <PackageReference Include="Eto.Platform.Wpf" Version="2.10.2" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
   </ItemGroup>
 </Project>
