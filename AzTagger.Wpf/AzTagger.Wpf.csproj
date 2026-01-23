@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk" Condition="'$(OS)' == 'Windows_NT'">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <SuppressNETSdkUnsupportedPlatformCheck>true</SuppressNETSdkUnsupportedPlatformCheck>
     <UseWPF>true</UseWPF>
@@ -11,7 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../AzTagger.App/AzTagger.App.csproj" />
-    <PackageReference Include="Eto.Platform.Wpf" Version="2.9.0" />
+    <PackageReference Include="Eto.Platform.Wpf" Version="2.10.2" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
   </ItemGroup>
 </Project>

@@ -1,17 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.14.0" />
-    <PackageReference Include="Azure.ResourceManager.Resources" Version="1.10.0" />
-    <PackageReference Include="Microsoft.Graph" Version="5.81.0" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.72.1" />
-    <PackageReference Include="Azure.ResourceManager" Version="1.13.1" />
-    <PackageReference Include="Azure.ResourceManager.ResourceGraph" Version="1.0.1" />
+    <PackageReference Include="Azure.Identity" Version="1.17.1" />
+    <PackageReference Include="Azure.ResourceManager.Resources" Version="1.11.2" />
+    <PackageReference Include="Microsoft.Graph" Version="5.101.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.81.0" />
+    <PackageReference Include="Azure.ResourceManager" Version="1.13.2" />
+    <PackageReference Include="Azure.ResourceManager.ResourceGraph" Version="1.1.0" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
 </Project>
