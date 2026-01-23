@@ -80,6 +80,7 @@ public partial class MainForm : Form
     private List<TagTemplate> _tagTemplates = new();
 
     private  ObservableCollection<TagEntry> _tags = new();
+    private Dictionary<string, string> _originalTags = new();
     private  PaginatedResourceCollection _paginatedResults = new();
     private List<Resource> _allResults = new();
 

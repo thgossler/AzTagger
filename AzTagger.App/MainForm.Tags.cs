@@ -18,6 +18,7 @@ public partial class MainForm : Form
     private void LoadTagsForSelection()
     {
         _tags.Clear();
+        _originalTags.Clear();
         
         var selectedResources = _gvwResults.SelectedItems.Cast<Resource>().ToList();
         
@@ -36,6 +37,7 @@ public partial class MainForm : Form
                 foreach (var kvp in res.CombinedTags.OrderBy(k => k.Key))
                 {
                     _tags.Add(new TagEntry { Key = kvp.Key, Value = kvp.Value });
+                    _originalTags[kvp.Key] = kvp.Value;
                 }
             }
         }
@@ -89,6 +91,7 @@ public partial class MainForm : Form
             foreach (var kvp in commonTags.OrderBy(k => k.Key))
             {
                 _tags.Add(new TagEntry { Key = kvp.Key, Value = kvp.Value });
+                _originalTags[kvp.Key] = kvp.Value;
             }
         }
     }
@@ -102,9 +105,16 @@ public partial class MainForm : Form
         var tagsToUpdate = _tags
             .Where(t => !string.IsNullOrWhiteSpace(t.Key))
             .ToDictionary(t => t.Key, t => t.Value);
+        
+        // Determine which tags were deleted by comparing original tags with current tags
+        var currentTagKeys = tagsToUpdate.Keys.ToHashSet();
+        var tagsToRemove = _originalTags
+            .Where(kv => !currentTagKeys.Contains(kv.Key))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+        
         try
         {
-            var errors = await _azureService.UpdateTagsAsync(selected, tagsToUpdate, null);
+            var errors = await _azureService.UpdateTagsAsync(selected, tagsToUpdate, tagsToRemove);
             if (errors.Length > 0)
             {
                 MessageBox.Show(this, string.Join("\n", errors.Distinct()), "Error", MessageBoxButtons.OK, MessageBoxType.Error);
@@ -115,6 +125,8 @@ public partial class MainForm : Form
                 var tags = GetEntityTags(res);
                 foreach (var kv in tagsToUpdate)
                     tags[kv.Key] = kv.Value;
+                foreach (var kv in tagsToRemove)
+                    tags.Remove(kv.Key);
                 res.CombinedTags = new Dictionary<string, string>(tags);
                 
                 // Reload the row in the grid to reflect updated tags
