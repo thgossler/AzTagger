@@ -232,6 +232,7 @@ public partial class MainForm : Form
                     local.CombinedTags = up.CombinedTags;
                 }
             }
+            _paginatedResults.Refresh();
             LoadTagsForSelection();
         }
         catch (Exception ex)

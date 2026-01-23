@@ -197,6 +197,14 @@ public class PaginatedResourceCollection
     {
         return _filteredItems.IndexOf(item);
     }
+
+    /// <summary>
+    /// Forces a refresh of the displayed items to update the UI when item properties have changed.
+    /// </summary>
+    public void Refresh()
+    {
+        RefreshDisplayedItems();
+    }
 }
 
 /// <summary>
