@@ -4,6 +4,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Threading;
 using Eto.Drawing;
 using Eto.Forms;
 using AzTagger.Models;
@@ -16,6 +17,7 @@ public partial class MainForm : Form
     // Fields and properties
     private Settings _settings;
     private AzureService _azureService;
+    private CancellationTokenSource _searchCts;
 
     // UI Controls
     private TextArea _txtSearchQuery;
@@ -298,6 +300,9 @@ resources
             }
         };
 
+        var logoutButton = new Button { Text = "Logout" };
+        logoutButton.Click += (_, _) => _azureService.LogoutCurrentContext();
+
         var searchProgressPanel = new Panel { Content = _searchProgress, Width = 28, Height = 24, MinimumSize = new Size(28, 24) };
         var topRow = new StackLayout
         {
@@ -313,6 +318,7 @@ resources
                 _btnClearQuery,
                 new Panel { Width = GetDpiScaledSize(10) },
                 configureButton,
+                logoutButton,
                 null
             }
         };

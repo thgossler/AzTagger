@@ -14,4 +14,4 @@ export GDK_BACKEND=quartz
 
 # Run the GTK application
 cd "$(dirname "$0")"
-./AzTagger.Gtk/bin/Debug/net9.0/AzTagger.Gtk "$@"
+./AzTagger.Gtk/bin/Debug/net10.0/AzTagger.Gtk "$@"

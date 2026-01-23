@@ -283,11 +283,73 @@ public partial class MainForm : Form
                 }
             }
         };
+        _gvwTags.MouseUp += (s, e) =>
+        {
+            if (e.Buttons == MouseButtons.Primary)
+            {
+                var cell = _gvwTags.GetCellAt(e.Location);
+                // If clicked on empty area (no cell or row index < 0), add a new tag
+                if (cell == null || cell.RowIndex < 0)
+                {
+                    AddNewTag();
+                }
+            }
+        };
+        _gvwTags.SelectionChanged += (s, e) =>
+        {
+            // Remove any empty tag rows that are no longer selected
+            RemoveUnselectedEmptyTags();
+        };
+    }
+
+    private void RemoveUnselectedEmptyTags()
+    {
+        var selectedIndex = _gvwTags.SelectedRow;
+        for (int i = _tags.Count - 1; i >= 0; i--)
+        {
+            if (i != selectedIndex && string.IsNullOrWhiteSpace(_tags[i].Key) && string.IsNullOrWhiteSpace(_tags[i].Value))
+            {
+                _tags.RemoveAt(i);
+                // Adjust selected index if we removed an item before it
+                if (i < selectedIndex)
+                    selectedIndex--;
+            }
+        }
+    }
+
+    private void AddNewTag()
+    {
+        // Check if there's already an empty tag row
+        for (int i = 0; i < _tags.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(_tags[i].Key) && string.IsNullOrWhiteSpace(_tags[i].Value))
+            {
+                // Select the existing empty row instead of adding a new one
+                _gvwTags.SelectRow(i);
+                // Begin editing the Key column (column 0)
+                _gvwTags.BeginEdit(i, 0);
+                return;
+            }
+        }
+        
+        var newTag = new TagEntry { Key = "", Value = "" };
+        _tags.Add(newTag);
+        // Select the new row
+        var newRowIndex = _tags.Count - 1;
+        _gvwTags.SelectRow(newRowIndex);
+        // Focus grid and defer BeginEdit to allow the grid to render the new row first
+        _gvwTags.Focus();
+        Application.Instance.AsyncInvoke(() =>
+        {
+            Application.Instance.AsyncInvoke(() => _gvwTags.BeginEdit(newRowIndex, 0));
+        });
     }
 
     private void CreateContextMenus()
     {
         // Tags context menu
+        var tagAddNewItem = new ButtonMenuItem { Text = "Add tag" };
+        tagAddNewItem.Click += (_, _) => AddNewTag();
         var tagAddFilterItem = new ButtonMenuItem { Text = "Add to filter query" };
         tagAddFilterItem.Click += (_, _) => AddTagToFilterQuery(false);
         var tagExcludeFilterItem = new ButtonMenuItem { Text = "Exclude in filter query" };
@@ -300,7 +362,7 @@ public partial class MainForm : Form
         };
         var tagCopyValueItem = new ButtonMenuItem { Text = "Copy cell value" };
         tagCopyValueItem.Click += (_, _) => CopyTagContextCellValue();
-        _tagsContextMenu = new ContextMenu { Items = { tagAddFilterItem, tagExcludeFilterItem, tagDeleteItem, tagCopyValueItem } };
+        _tagsContextMenu = new ContextMenu { Items = { tagAddNewItem, new SeparatorMenuItem(), tagAddFilterItem, tagExcludeFilterItem, new SeparatorMenuItem(), tagDeleteItem, tagCopyValueItem } };
         _gvwTags.ContextMenu = _tagsContextMenu;
 
         // Results context menu

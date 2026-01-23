@@ -101,6 +101,33 @@ public class AzureService
         }
     }
 
+    public void LogoutCurrentContext()
+    {
+        _azContext = _settings.GetAzureContext();
+        var contextName = _azContext?.Name;
+        if (string.IsNullOrEmpty(contextName))
+            return;
+
+        // Remove the signin context from memory
+        _signinContexts.RemoveAll(sc => sc.AzureContextName.Equals(contextName));
+
+        // Delete the authentication record file
+        try
+        {
+            var path = GetAuthRecordPath(contextName);
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (Exception ex)
+        {
+            LoggingService.LogInfo($"Failed to delete authentication record: {ex.Message}");
+        }
+
+        // Note: The MSAL token cache is managed by the Azure.Identity library
+        // and clearing it programmatically requires more complex handling.
+        // Deleting the auth record is sufficient to force re-authentication.
+    }
+
     public async Task<List<TenantData>> GetAvailableTenantsAsync(string environmentName = null)
     {
         var armEnvironment = GetAzureEnvironmentByName(environmentName) ?? _azContext.ArmEnvironment;

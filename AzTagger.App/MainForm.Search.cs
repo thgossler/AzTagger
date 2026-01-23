@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Eto.Forms;
 using AzTagger.Models;
@@ -59,18 +60,38 @@ public partial class MainForm : Form
                 "Info", MessageBoxButtons.OK, MessageBoxType.Information);
             return;
         }
+        
+        // Cancel any previous search
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var cancellationToken = _searchCts.Token;
+        
+        // Disable button for 1 second to prevent accidental double clicks
         _btnSearch.Enabled = false;
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1000);
+            Application.Instance.Invoke(() => _btnSearch.Enabled = true);
+        });
+        
         _searchProgress.Visible = true;
         try
         {
             await EnsureSignedInAsync();
             var query = BuildQuery();
-            var items = (await _azureService.QueryResourcesAsync(query)).ToList();
+            var items = (await _azureService.QueryResourcesAsync(query, cancellationToken)).ToList();
+            
+            cancellationToken.ThrowIfCancellationRequested();
+            
             _allResults = items;
             _paginatedResults.SetAllItems(_allResults);
             UpdatePaginationControls();
             UpdateSortIndicators();
             SaveRecentSearch(_txtSearchQuery.Text);
+        }
+        catch (OperationCanceledException)
+        {
+            // Search was cancelled, ignore
         }
         catch (Exception ex)
         {
@@ -92,7 +113,6 @@ public partial class MainForm : Form
                     {
                         SettingsService.Save(_settings);
                         UpdateTitle(); // Update title when Azure context changes
-                        _btnSearch.Enabled = true;
                         await SearchAsync();
                         return;
                     }
@@ -105,7 +125,6 @@ public partial class MainForm : Form
         }
         finally
         {
-            _btnSearch.Enabled = true;
             _searchProgress.Visible = false;
         }
     }
