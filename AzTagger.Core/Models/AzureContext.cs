@@ -87,12 +87,12 @@ public class AzureContext
     {
         get
         {
-            var field = typeof(ArmEnvironment).GetField(AzureEnvironmentName);
-            if (field == null)
+            var fieldInfo = typeof(ArmEnvironment).GetField(AzureEnvironmentName);
+            if (fieldInfo == null)
             {
                 throw new ArgumentException("Invalid Azure Environment name specified");
             }
-            return (ArmEnvironment)field.GetValue(null);
+            return (ArmEnvironment)fieldInfo.GetValue(null)!;
         }
     }
 
