@@ -20,7 +20,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzTagger.App", "AzTagger.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzTagger.Wpf", "AzTagger.Wpf\AzTagger.Wpf.csproj", "{E93996D2-7065-4AF2-902B-D3913C95B98B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzTagger.Gtk", "AzTagger.Gtk\AzTagger.Gtk.csproj", "{5174FDD3-417D-4F86-B3D8-59AB76875817}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzTagger.Gtk", "AzTagger.Gtk\AzTagger.Gtk.csproj", "{5174FDD3-417D-4F86-B3D8-59AB76875817}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzTagger.Mac", "AzTagger.Mac\AzTagger.Mac.csproj", "{2C835CA9-72F9-4E53-93D7-C07586300361}"
 EndProject
