@@ -116,8 +116,14 @@ public partial class MainForm : Form
                 foreach (var kv in tagsToUpdate)
                     tags[kv.Key] = kv.Value;
                 res.CombinedTags = new Dictionary<string, string>(tags);
+                
+                // Reload the row in the grid to reflect updated tags
+                var displayIndex = _paginatedResults.DisplayedItems.IndexOf(res);
+                if (displayIndex >= 0)
+                {
+                    _gvwResults.ReloadData(displayIndex);
+                }
             }
-            MessageBox.Show(this, "Tags updated", MessageBoxButtons.OK);
         }
         catch (Exception ex)
         {
@@ -221,6 +227,7 @@ public partial class MainForm : Form
             var ids = string.Join(", ", selected.Select(r => $"'{r.Id}'"));
             var query = BaseQuery + "\n| where Id in (" + ids + ") | project Id, SubscriptionTags, ResourceGroupTags, ResourceTags, CombinedTags";
             var updated = await _azureService.QueryResourcesAsync(query);
+            var updatedRowIndices = new List<int>();
             foreach (var up in updated)
             {
                 var local = _allResults.FirstOrDefault(r => r.Id == up.Id);
@@ -230,9 +237,22 @@ public partial class MainForm : Form
                     local.ResourceGroupTags = up.ResourceGroupTags;
                     local.ResourceTags = up.ResourceTags;
                     local.CombinedTags = up.CombinedTags;
+                    
+                    // Find the row index in the displayed items for UI refresh
+                    var displayIndex = _paginatedResults.DisplayedItems.IndexOf(local);
+                    if (displayIndex >= 0)
+                    {
+                        updatedRowIndices.Add(displayIndex);
+                    }
                 }
             }
-            _paginatedResults.Refresh();
+            
+            // Reload only the updated rows to preserve selection and scroll position
+            foreach (var rowIndex in updatedRowIndices)
+            {
+                _gvwResults.ReloadData(rowIndex);
+            }
+            
             LoadTagsForSelection();
         }
         catch (Exception ex)
