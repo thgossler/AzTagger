@@ -22,7 +22,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzTagger.Wpf", "AzTagger.Wp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzTagger.Gtk", "AzTagger.Gtk\AzTagger.Gtk.csproj", "{5174FDD3-417D-4F86-B3D8-59AB76875817}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzTagger.Mac", "AzTagger.Mac\AzTagger.Mac.csproj", "{2C835CA9-72F9-4E53-93D7-C07586300361}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzTagger.Mac", "AzTagger.Mac\AzTagger.Mac.csproj", "{2C835CA9-72F9-4E53-93D7-C07586300361}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
