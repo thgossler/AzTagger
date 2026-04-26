@@ -126,6 +126,7 @@ public partial class MainForm : Form
         _btnSearch.Click += async (_, _) => await SearchAsync();
         _btnClearQuery.Click += (_, _) => _txtSearchQuery.Text = string.Empty;
         _btnCopyQuery.Click += (_, _) => Clipboard.Instance.Text = BuildQuery();
+        _btnExportResults.Click += (_, _) => ExportResults();
         _btnSaveQuery.Click += (_, _) => SaveQuery();
         _cboRecentSearches.SelectedIndexChanged += (_, _) => OnRecentSearchSelected();
         _cboSavedQueries.SelectedIndexChanged += (_, _) => OnSavedQuerySelected();
@@ -283,6 +284,16 @@ public partial class MainForm : Form
                 }
             }
         };
+        _gvwTags.CellEditing += (s, e) =>
+        {
+            _tagsEditingRow = e.Row;
+            _tagsEditingColumn = e.Column;
+        };
+        _gvwTags.CellEdited += (s, e) =>
+        {
+            _tagsEditingRow = -1;
+            _tagsEditingColumn = -1;
+        };
         _gvwTags.MouseUp += (s, e) =>
         {
             if (e.Buttons == MouseButtons.Primary)
@@ -292,6 +303,21 @@ public partial class MainForm : Form
                 if (cell == null || cell.RowIndex < 0)
                 {
                     AddNewTag();
+                }
+                else if (_tagsEditingRow >= 0 && cell.RowIndex == _tagsEditingRow)
+                {
+                    // On macOS, when clicking within a cell already in edit mode,
+                    // MouseDown is not fired (only MouseUp). The native text editor
+                    // doesn't receive the click for cursor positioning.
+                    // Deselect the text by accessing the native field editor.
+                    Application.Instance.AsyncInvoke(() =>
+                    {
+                        try
+                        {
+                            PositionTagsCursorAtClick(cell.RowIndex, cell.ColumnIndex, e.Location);
+                        }
+                        catch { }
+                    });
                 }
             }
         };
@@ -343,6 +369,135 @@ public partial class MainForm : Form
         {
             Application.Instance.AsyncInvoke(() => _gvwTags.BeginEdit(newRowIndex, 0));
         });
+    }
+
+    private void PositionTagsCursorAtClick(int row, int column, PointF clickLocation)
+    {
+        try
+        {
+            object controlObject = _gvwTags.ControlObject;
+            if (controlObject == null) return;
+
+            // Get the field editor (MacFieldEditor) from the window
+            var windowProp = controlObject.GetType().GetProperty("Window");
+            var window = windowProp?.GetValue(controlObject);
+            if (window == null) return;
+
+            object fieldEditor = null;
+            foreach (var m in window.GetType().GetMethods())
+            {
+                if (m.Name == "FieldEditor" && m.GetParameters().Length == 2
+                    && m.GetParameters()[0].ParameterType == typeof(bool))
+                {
+                    fieldEditor = m.Invoke(window, new object[] { false, controlObject });
+                    break;
+                }
+            }
+            if (fieldEditor == null) return;
+
+            // Get the text value to know the length
+            var textProp = fieldEditor.GetType().GetProperty("Value")
+                        ?? fieldEditor.GetType().GetProperty("StringValue");
+            var text = textProp?.GetValue(fieldEditor)?.ToString() ?? "";
+
+            // Determine the character index at the click location using the
+            // field editor's NSLayoutManager (NSTextView has LayoutManager + TextContainer)
+            long cursorPos = text.Length; // Default: end of text
+
+            try
+            {
+                // Convert click point to the field editor's coordinate system
+                object localPoint = null;
+                foreach (var m in fieldEditor.GetType().GetMethods())
+                {
+                    if (m.Name == "ConvertPointFromView" && m.GetParameters().Length == 2)
+                    {
+                        var cgPointType = m.GetParameters()[0].ParameterType;
+                        var cgPoint = Activator.CreateInstance(cgPointType, new object[] { (double)clickLocation.X, (double)clickLocation.Y });
+                        localPoint = m.Invoke(fieldEditor, new object[] { cgPoint, controlObject });
+                        break;
+                    }
+                }
+
+                if (localPoint != null)
+                {
+                    var lpType = localPoint.GetType();
+                    var xField = lpType.GetField("X") ?? lpType.GetField("x");
+                    var yField = lpType.GetField("Y") ?? lpType.GetField("y");
+                    double lpX = xField != null ? Convert.ToDouble(xField.GetValue(localPoint)) : 0;
+                    double lpY = yField != null ? Convert.ToDouble(yField.GetValue(localPoint)) : 0;
+
+                    // Adjust for TextContainerOrigin
+                    var originProp = fieldEditor.GetType().GetProperty("TextContainerOrigin");
+                    if (originProp != null)
+                    {
+                        var origin = originProp.GetValue(fieldEditor);
+                        if (origin != null)
+                        {
+                            var oxField = origin.GetType().GetField("X") ?? origin.GetType().GetField("x");
+                            var oyField = origin.GetType().GetField("Y") ?? origin.GetType().GetField("y");
+                            if (oxField != null) lpX -= Convert.ToDouble(oxField.GetValue(origin));
+                            if (oyField != null) lpY -= Convert.ToDouble(oyField.GetValue(origin));
+                        }
+                    }
+
+                    // Use a small Y to ensure we're within the text line bounds
+                    lpY = 2.0;
+
+                    var layoutMgr = fieldEditor.GetType().GetProperty("LayoutManager")?.GetValue(fieldEditor);
+                    var textContainer = fieldEditor.GetType().GetProperty("TextContainer")?.GetValue(fieldEditor);
+
+                    if (layoutMgr != null && textContainer != null)
+                    {
+                        foreach (var m in layoutMgr.GetType().GetMethods())
+                        {
+                            if (m.Name == "CharacterIndexForPoint" && m.GetParameters().Length == 3)
+                            {
+                                var cgPointType = m.GetParameters()[0].ParameterType;
+                                var pt = Activator.CreateInstance(cgPointType, new object[] { lpX, lpY });
+                                var fractionType = m.GetParameters()[2].ParameterType.GetElementType();
+                                var fraction = fractionType != null ? Activator.CreateInstance(fractionType) : (object)0.0f;
+                                var args = new object[] { pt, textContainer, fraction };
+                                var result = m.Invoke(layoutMgr, args);
+                                if (result != null)
+                                {
+                                    long charIndex = Convert.ToInt64(result);
+                                    double frac = Convert.ToDouble(args[2]);
+                                    cursorPos = frac >= 0.5 ? Math.Min(charIndex + 1, text.Length) : charIndex;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                cursorPos = text.Length;
+            }
+
+            // Set SelectedRange to position cursor (deselects any selection)
+            var selRangeProp = fieldEditor.GetType().GetProperty("SelectedRange");
+            if (selRangeProp != null)
+            {
+                var rangeType = selRangeProp.PropertyType;
+                var locationField = rangeType.GetField("Location") ?? rangeType.GetField("location");
+                var lengthField = rangeType.GetField("Length") ?? rangeType.GetField("length");
+
+                if (locationField != null && lengthField != null)
+                {
+                    object rangeBoxed = Activator.CreateInstance(rangeType);
+                    var fieldType = locationField.FieldType;
+                    locationField.SetValue(rangeBoxed, Convert.ChangeType(cursorPos, fieldType));
+                    lengthField.SetValue(rangeBoxed, Convert.ChangeType((long)0, fieldType));
+                    selRangeProp.SetValue(fieldEditor, rangeBoxed);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LoggingService.WriteImmediateLog($"PositionTagsCursorAtClick error: {ex}", "ERROR");
+        }
     }
 
     private void CreateContextMenus()
@@ -415,11 +570,22 @@ public partial class MainForm : Form
         _btnLastPage.Click += (_, _) => { _paginatedResults.GoToPage(_paginatedResults.TotalPages - 1); UpdatePaginationControls(); };
         _cboPageSize.SelectedIndexChanged += (_, _) => 
         {
-            if (int.TryParse(_cboPageSize.SelectedValue?.ToString(), out int pageSize))
+            var selectedValue = _cboPageSize.SelectedValue?.ToString();
+            int pageSize;
+            if (selectedValue == "All")
             {
-                _paginatedResults.SetPageSize(pageSize);
-                UpdatePaginationControls();
+                pageSize = int.MaxValue;
             }
+            else if (int.TryParse(selectedValue, out int parsed))
+            {
+                pageSize = parsed;
+            }
+            else
+            {
+                return;
+            }
+            _paginatedResults.SetPageSize(pageSize);
+            UpdatePaginationControls();
         };
 
         _paginatedResults.FilterChanged += (_, _) => UpdatePaginationControls();

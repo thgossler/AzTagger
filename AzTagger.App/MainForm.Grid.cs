@@ -472,7 +472,17 @@ public partial class MainForm : Form
         // Special handling for Tag columns
         if (propertyName.EndsWith("Tags"))
         {
-            textToInsert = $"{propertyName}[''] =~ ''";
+            string currentLineText = _txtSearchQuery.Text?.Substring(0, _txtSearchQuery.CaretIndex).Split(new[] { '\n' }, StringSplitOptions.None).LastOrDefault() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(currentLineText))
+            {
+                textToInsert = $"| where {propertyName}[''] =~ ''";
+                newRelativeCaretIndexFromEnd = -8; // Position inside the tag name quotes
+            }
+            else
+            {
+                textToInsert = $"{propertyName}[''] =~ ''";
+            }
         }
         else
         {

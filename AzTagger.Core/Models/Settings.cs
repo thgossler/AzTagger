@@ -48,6 +48,9 @@ public class Settings
     [JsonPropertyName("LastQuickFilter2Text")]
     public string LastQuickFilter2Text { get; set; } = string.Empty;
 
+    [JsonPropertyName("LastExportFolder")]
+    public string LastExportFolder { get; set; } = string.Empty;
+
     public void SanitizeAzureContextsSetting()
     {
         if (AzureContexts == null || AzureContexts.Count == 0)

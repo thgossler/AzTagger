@@ -34,7 +34,7 @@ public class PaginatedResourceCollection
     public int TotalFilteredCount => _totalFilteredCount;
     public int CurrentPage => _currentPage;
     public int PageSize => _pageSize;
-    public int TotalPages => (_totalFilteredCount + _pageSize - 1) / _pageSize;
+    public int TotalPages => _totalFilteredCount == 0 ? 0 : (_pageSize >= _totalFilteredCount ? 1 : (_totalFilteredCount + _pageSize - 1) / _pageSize);
     public bool HasNextPage => _currentPage < TotalPages - 1;
     public bool HasPreviousPage => _currentPage > 0;
     

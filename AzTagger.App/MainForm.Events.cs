@@ -4,7 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Eto.Forms;
 using AzTagger.Models;
@@ -157,6 +160,161 @@ public partial class MainForm : Form
             Clipboard.Instance.Text = FormatTags(tags, Environment.NewLine);
         else
             Clipboard.Instance.Text = value?.ToString() ?? string.Empty;
+    }
+
+    private void ExportResults()
+    {
+        var items = _paginatedResults.FilteredItems;
+        if (items == null || items.Count == 0)
+        {
+            MessageBox.Show(this, "No results to export.", "Info", MessageBoxButtons.OK, MessageBoxType.Information);
+            return;
+        }
+
+        var saveDialog = new SaveFileDialog
+        {
+            Title = "Export Results",
+            Filters =
+            {
+                new FileFilter("JSON Files", ".json"),
+                new FileFilter("CSV Files", ".csv")
+            }
+        };
+
+        if (!string.IsNullOrEmpty(_settings.LastExportFolder) && Directory.Exists(_settings.LastExportFolder))
+        {
+            saveDialog.Directory = new Uri(_settings.LastExportFolder);
+        }
+        else
+        {
+            var homeFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (Directory.Exists(homeFolder))
+            {
+                saveDialog.Directory = new Uri(homeFolder);
+            }
+        }
+
+        if (saveDialog.ShowDialog(this) != DialogResult.Ok)
+            return;
+
+        var filePath = saveDialog.FileName;
+        _settings.LastExportFolder = Path.GetDirectoryName(filePath);
+        SettingsService.Save(_settings);
+
+        try
+        {
+            var extension = Path.GetExtension(filePath)?.ToLowerInvariant();
+            if (extension == ".json")
+            {
+                ExportAsJson(filePath, items);
+            }
+            else if (extension == ".csv")
+            {
+                ExportAsCsv(filePath, items);
+            }
+            else
+            {
+                // Determine from the selected filter
+                var filterIndex = saveDialog.CurrentFilterIndex;
+                if (filterIndex == 1)
+                    ExportAsCsv(filePath, items);
+                else
+                    ExportAsJson(filePath, items);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoggingService.LogError(ex, "Failed to export results");
+            MessageBox.Show(this, $"Failed to export results: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxType.Error);
+        }
+    }
+
+    private static void ExportAsJson(string filePath, IReadOnlyList<Resource> items)
+    {
+        var exportData = items.Select(r => new Dictionary<string, object>
+        {
+            ["EntityType"] = r.EntityType ?? "",
+            ["Id"] = r.Id ?? "",
+            ["SubscriptionName"] = r.SubscriptionName ?? "",
+            ["SubscriptionId"] = r.SubscriptionId ?? "",
+            ["ResourceGroup"] = r.ResourceGroup ?? "",
+            ["ResourceName"] = r.ResourceName ?? "",
+            ["ResourceType"] = r.ResourceType ?? "",
+            ["SubscriptionTags"] = r.SubscriptionTags ?? new Dictionary<string, string>(),
+            ["ResourceGroupTags"] = r.ResourceGroupTags ?? new Dictionary<string, string>(),
+            ["ResourceTags"] = r.ResourceTags ?? new Dictionary<string, string>(),
+            ["CombinedTags"] = r.CombinedTags ?? new Dictionary<string, string>()
+        }).ToList();
+
+        var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        File.WriteAllText(filePath, json, Encoding.UTF8);
+    }
+
+    private static void ExportAsCsv(string filePath, IReadOnlyList<Resource> items)
+    {
+        var columns = new[] { "EntityType", "Id", "SubscriptionName", "SubscriptionId", "ResourceGroup", "ResourceName", "ResourceType", "SubscriptionTags", "ResourceGroupTags", "ResourceTags", "CombinedTags" };
+        var tagColumns = new HashSet<string> { "SubscriptionTags", "ResourceGroupTags", "ResourceTags", "CombinedTags" };
+
+        var sb = new StringBuilder();
+
+        // Header
+        sb.AppendLine(string.Join(",", columns));
+
+        // Rows
+        foreach (var r in items)
+        {
+            var values = new List<string>();
+            foreach (var col in columns)
+            {
+                string value;
+                if (tagColumns.Contains(col))
+                {
+                    var tags = col switch
+                    {
+                        "SubscriptionTags" => r.SubscriptionTags,
+                        "ResourceGroupTags" => r.ResourceGroupTags,
+                        "ResourceTags" => r.ResourceTags,
+                        "CombinedTags" => r.CombinedTags,
+                        _ => null
+                    };
+                    value = tags != null && tags.Count > 0
+                        ? JsonSerializer.Serialize(tags)
+                        : "";
+                }
+                else
+                {
+                    value = col switch
+                    {
+                        "EntityType" => r.EntityType,
+                        "Id" => r.Id,
+                        "SubscriptionName" => r.SubscriptionName,
+                        "SubscriptionId" => r.SubscriptionId,
+                        "ResourceGroup" => r.ResourceGroup,
+                        "ResourceName" => r.ResourceName,
+                        "ResourceType" => r.ResourceType,
+                        _ => ""
+                    } ?? "";
+                }
+                values.Add(CsvEscape(value));
+            }
+            sb.AppendLine(string.Join(",", values));
+        }
+
+        File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
+    }
+
+    private static string CsvEscape(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+        {
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     private void SaveSettings()

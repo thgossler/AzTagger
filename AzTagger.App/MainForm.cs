@@ -27,6 +27,7 @@ public partial class MainForm : Form
     private  Button _btnSearch;
     private  Button _btnClearQuery;
     private  Button _btnCopyQuery;
+    private  Button _btnExportResults;
     private  Button _btnSaveQuery;
     private  Button _btnApplyTags;
     private  DropDown _cboTagTemplates;
@@ -75,6 +76,8 @@ public partial class MainForm : Form
     private GridColumn _resultsContextColumn;
     private int _tagsContextRow = -1;
     private GridColumn _tagsContextColumn;
+    private int _tagsEditingRow = -1;
+    private int _tagsEditingColumn = -1;
     private  Dictionary<GridColumn, string> _columnPropertyMap = new();
 
     private List<TagTemplate> _tagTemplates = new();
@@ -230,6 +233,7 @@ resources
         _btnSearch = new Button { Text = "Search" };
         _btnClearQuery = new Button { Text = "Clear" };
         _btnCopyQuery = new Button { Text = "Copy Query" };
+        _btnExportResults = new Button { Text = "Export Results" };
         _btnSaveQuery = new Button { Text = "Save Query" };
         _btnApplyTags = new Button { Text = "Apply Tags" };
         _btnEditTemplates = new Button { Text = "Edit Templates" };
@@ -241,7 +245,7 @@ resources
         _btnLastPage = new Button { Text = "⏭", ToolTip = "Last page" };
         _lblPageInfo = new Label { Text = "Page 0 of 0" };
         _cboPageSize = new ComboBox { 
-            DataStore = new[] { "100", "500", "1000", "2000", "5000" }, 
+            DataStore = new[] { "100", "500", "1000", "2000", "5000", "All" }, 
             SelectedIndex = 2,
             ToolTip = "Number of items to display per page"
         };
@@ -316,6 +320,7 @@ resources
                 new Panel { Width = GetDpiScaledSize(10) },
                 _btnSaveQuery,
                 _btnCopyQuery,
+                _btnExportResults,
                 _btnClearQuery,
                 new Panel { Width = GetDpiScaledSize(10) },
                 configureButton,
