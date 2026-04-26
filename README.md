@@ -79,6 +79,11 @@ See also this AI-auto-generated comprehensive description on [DeepWiki](https://
 - Copy any tag cell value via right-click context menu
 - Open all hyperlinks of all tag values of a resource in the browser
 
+### Export Results
+
+- Export current (filtered) search results to JSON or CSV files
+- Remembers the last used export folder
+
 ### User Interface
 
 - Dark mode supported on macOS (not yet on Windows and Linux by Eto.Forms)
